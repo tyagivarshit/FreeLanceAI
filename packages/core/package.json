@@ -1,0 +1,24 @@
+{
+  "name": "@freelanceos/core",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Core workspace shell establishing domain boundaries and business rules interfaces for FreelanceOS",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit",
+    "clean": "node -e \"const fs = require('fs'); fs.rmSync('dist', { recursive: true, force: true }); fs.rmSync('tsconfig.tsbuildinfo', { force: true });\""
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "@freelanceos/ts-config": "*"
+  }
+}

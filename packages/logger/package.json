@@ -1,0 +1,27 @@
+{
+  "name": "@freelanceos/logger",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Enterprise structured logging, correlation context, and observability contracts for FreelanceOS",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit",
+    "clean": "node -e \"const fs = require('fs'); fs.rmSync('dist', { recursive: true, force: true }); fs.rmSync('tsconfig.tsbuildinfo', { force: true });\""
+  },
+  "dependencies": {
+    "@freelanceos/config": "*",
+    "pino": "9.3.2"
+  },
+  "devDependencies": {
+    "@freelanceos/ts-config": "*"
+  }
+}

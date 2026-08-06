@@ -1,0 +1,25 @@
+version: 2
+updates:
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "08:00"
+      timezone: "Etc/UTC"
+    open-pull-requests-limit: 5
+    groups:
+      lint-and-format:
+        patterns:
+          - "eslint*"
+          - "prettier*"
+          - "typescript-eslint*"
+      typescript-dependencies:
+        patterns:
+          - "typescript"
+          - "@types/*"
+    ignore:
+      - dependency-name: "node"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "typescript"
+        update-types: ["version-update:semver-major"]

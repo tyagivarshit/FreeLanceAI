@@ -1,0 +1,43 @@
+{
+  "name": "freelanceos",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Root workspace package configuration for FreelanceOS Modular Monorepo",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "engines": {
+    "node": "20.16.0",
+    "npm": "10.8.2"
+  },
+  "packageManager": "npm@10.8.2",
+  "scripts": {
+    "build": "turbo run build",
+    "dev": "turbo run dev",
+    "lint": "turbo run lint",
+    "lint:fix": "turbo run lint:fix",
+    "typecheck": "turbo run typecheck",
+    "test": "turbo run test",
+    "test:unit": "turbo run test:unit",
+    "test:integration": "turbo run test:integration",
+    "test:e2e": "turbo run test:e2e",
+    "format": "prettier --write \"**/*.{ts,tsx,js,json,md}\"",
+    "format:check": "prettier --check \"**/*.{ts,tsx,js,json,md}\"",
+    "format:staged": "lint-staged",
+    "clean": "turbo run clean",
+    "prepare": "husky"
+  },
+  "devDependencies": {
+    "turbo": "2.0.14",
+    "typescript": "5.5.4",
+    "@types/node": "20.14.12",
+    "eslint": "9.8.0",
+    "prettier": "3.3.3",
+    "eslint-config-prettier": "9.1.0",
+    "typescript-eslint": "8.0.0",
+    "husky": "9.1.4",
+    "lint-staged": "15.2.7"
+  },
+  "license": "UNLICENSED"
+}

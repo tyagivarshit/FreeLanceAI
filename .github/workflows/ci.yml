@@ -1,0 +1,66 @@
+name: Continuous Integration
+
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - "**.md"
+      - "docs/**"
+      - ".editorconfig"
+      - ".prettierignore"
+      - ".gitignore"
+      - ".gitattributes"
+  pull_request:
+    branches: [main]
+    paths-ignore:
+      - "**.md"
+      - "docs/**"
+      - ".editorconfig"
+      - ".prettierignore"
+      - ".gitignore"
+      - ".gitattributes"
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    name: Lint, Typecheck, & Build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+
+      - name: Setup Node.js Environment
+        uses: actions/setup-node@601291d996c5b77ee3e3855c94a0911521d6e247 # v4.0.3
+        with:
+          node-version: 20.16.0
+          cache: npm
+
+      - name: Install Monorepo Dependencies
+        run: npm ci
+
+      - name: Restore Turborepo Cache
+        uses: actions/cache@0c45773b623bec8c35a4998b09db04889f46d4c1 # v4.0.2
+        with:
+          path: .turbo
+          key: ${{ runner.os }}-turbo-${{ hashFiles('package-lock.json', 'turbo.json', 'tsconfig.json') }}
+          restore-keys: |
+            ${{ runner.os }}-turbo-
+
+      - name: Verify Formatting Code Style
+        run: npm run format:check
+
+      - name: Run ESLint Quality Checks
+        run: npm run lint
+
+      - name: Verify TypeScript Type-checking
+        run: npm run typecheck
+
+      - name: Build Monorepo Workspaces
+        run: npm run build
