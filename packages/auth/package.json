@@ -1,0 +1,31 @@
+{
+  "name": "@freelanceos/auth",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Session runtime and token verification foundation for FreelanceOS",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit",
+    "clean": "node -e \"const fs = require('fs'); fs.rmSync('dist', { recursive: true, force: true }); fs.rmSync('tsconfig.tsbuildinfo', { force: true });\""
+  },
+  "dependencies": {
+    "@freelanceos/config": "*",
+    "@freelanceos/db": "*",
+    "@freelanceos/logger": "*",
+    "drizzle-orm": "0.32.1",
+    "jsonwebtoken": "9.0.2"
+  },
+  "devDependencies": {
+    "@freelanceos/ts-config": "*",
+    "@types/jsonwebtoken": "9.0.6"
+  }
+}

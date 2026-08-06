@@ -99,7 +99,9 @@
  *    - Migrations:   [Future Responsibility - Not Implemented]
  *    - Client Pool:  [Future Responsibility - Not Implemented]
  */
-export { verifyConnection, closeDatabaseConnection } from "./client.js";
+export { verifyConnection, closeDatabaseConnection, db } from "./client.js";
 export { runInTransaction } from "./transaction.js";
 export { tenantIdColumn, primaryKeyColumn, auditTimestamps } from "./schema/helpers.js";
+// Export Authentication Domain Schemas and Relations
+export { users, userStatusEnum, userPasswordHashes, sessions, emailVerifications, passwordResets, usersRelations, userPasswordHashesRelations, sessionsRelations, emailVerificationsRelations, passwordResetsRelations, } from "./schema/auth.js";
 //# sourceMappingURL=index.js.map

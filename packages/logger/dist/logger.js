@@ -6,7 +6,7 @@ import { getContextStore } from "./context.js";
 const basePinoLogger = pino({
     level: runtimeConfig.NODE_ENV === "production" ? "info" : "debug",
     formatters: {
-        level: (label) => ({ level: label })
+        level: (label) => ({ level: label }),
     },
     timestamp: pino.stdTimeFunctions.isoTime,
     redact: {
@@ -18,10 +18,10 @@ const basePinoLogger = pino({
             "creditCard",
             "authorization",
             "email", // PII Masking: Basic guidelines
-            "phoneNumber"
+            "phoneNumber",
         ],
-        censor: "[REDACTED]"
-    }
+        censor: "[REDACTED]",
+    },
 });
 /**
  * Structured Logger abstraction.
@@ -46,8 +46,8 @@ class EnterpriseLogger {
                 error: {
                     message: error.message,
                     stack: error.stack,
-                    name: error.name
-                }
+                    name: error.name,
+                },
             }
             : {};
         this.pino[level]({ ...context, ...metadata, ...errMetadata }, message);
