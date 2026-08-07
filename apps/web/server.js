@@ -52,16 +52,26 @@ const server = http.createServer(async (req, res) => {
         const ipAddress = req.socket.remoteAddress || "127.0.0.1";
 
         let platform = "unknown";
-        if (userAgent.includes("Windows")) platform = "Windows";
-        else if (userAgent.includes("Macintosh")) platform = "macOS";
-        else if (userAgent.includes("Linux")) platform = "Linux";
-        else if (userAgent.includes("Android")) platform = "Android";
-        else if (userAgent.includes("iPhone")) platform = "iOS";
+        if (userAgent.includes("Windows")) {
+          platform = "Windows";
+        } else if (userAgent.includes("Macintosh")) {
+          platform = "macOS";
+        } else if (userAgent.includes("Linux")) {
+          platform = "Linux";
+        } else if (userAgent.includes("Android")) {
+          platform = "Android";
+        } else if (userAgent.includes("iPhone")) {
+          platform = "iOS";
+        }
 
         let browser = "unknown";
-        if (userAgent.includes("Chrome")) browser = "Chrome";
-        else if (userAgent.includes("Firefox")) browser = "Firefox";
-        else if (userAgent.includes("Safari")) browser = "Safari";
+        if (userAgent.includes("Chrome")) {
+          browser = "Chrome";
+        } else if (userAgent.includes("Firefox")) {
+          browser = "Firefox";
+        } else if (userAgent.includes("Safari")) {
+          browser = "Safari";
+        }
 
         const sessionMetadata = {
           userAgent,
@@ -125,7 +135,7 @@ const server = http.createServer(async (req, res) => {
   }
 
   // 2. Serve static pages
-  let filePath = path.join(__dirname, req.url === "/" ? "index.html" : req.url);
+  const filePath = path.join(__dirname, req.url === "/" ? "index.html" : req.url);
   const ext = path.extname(filePath);
   const contentType = MIME_TYPES[ext] || "text/plain";
 
