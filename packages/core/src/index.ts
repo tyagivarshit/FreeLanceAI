@@ -111,3 +111,25 @@ export type {
   ClientTimelineProperties,
   TimelineAggregateStore,
 } from "./timeline.js";
+
+export {
+  Money,
+  Payment,
+  PAYMENT_CREATED,
+  PAYMENT_AUTHORIZED,
+  PAYMENT_CAPTURED,
+  PAYMENT_COMPLETED,
+  PAYMENT_FAILED,
+  PAYMENT_CANCELLED,
+} from "./payment.js";
+
+export type {
+  PaymentState,
+  PaymentDomainEventName,
+  PaymentEventPublisher,
+  MonetaryPolicy,
+  PaymentProperties,
+  PaymentPersistenceContract,
+  PaymentAggregateStore,
+  PaymentQueryProjection,
+} from "./payment.js";
