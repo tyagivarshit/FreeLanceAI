@@ -1,4 +1,3 @@
-export {};
 /*
  * =====================================================================
  * @freelanceos/core Workspace API Boundary & Architectural Governance
@@ -64,4 +63,5 @@ export {};
  *    - Specifications:       [Future Responsibility - Not Implemented]
  *    - Factories:            [Future Responsibility - Not Implemented]
  */
+export { isValidEmailFormat, normalizeEmailAddress, validatePasswordStrength, } from "./validation.js";
 //# sourceMappingURL=index.js.map

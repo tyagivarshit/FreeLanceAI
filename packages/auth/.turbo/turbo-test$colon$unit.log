@@ -1,0 +1,59 @@
+
+> @freelanceos/auth@0.1.0 test:unit
+> node --env-file=../../.env.test --test dist/*.test.js
+
+TAP version 13
+# {"level":"info","time":"2026-08-07T05:24:40.752Z","pid":25024,"hostname":"Tyagi","msg":"Anti-enumeration triggered for email: existing@example.com. Simulating successful signup."}
+# Subtest: Signup Use Case Validation & Mock Flow Tests
+    # Subtest: should throw ValidationError if password is too short
+    ok 1 - should throw ValidationError if password is too short
+      ---
+      duration_ms: 1.9512
+      type: 'test'
+      ...
+    # Subtest: should throw DuplicateEmailError if user exists and anti-enumeration is disabled
+    ok 2 - should throw DuplicateEmailError if user exists and anti-enumeration is disabled
+      ---
+      duration_ms: 0.6814
+      type: 'test'
+      ...
+    # Subtest: should return success and not write to DB if user exists and anti-enumeration is enabled
+    ok 3 - should return success and not write to DB if user exists and anti-enumeration is enabled
+      ---
+      duration_ms: 1.7861
+      type: 'test'
+      ...
+    # Subtest: should execute transaction and insert records on successful new registration
+    ok 4 - should execute transaction and insert records on successful new registration
+      ---
+      duration_ms: 12.9032
+      type: 'test'
+      ...
+    # Subtest: should execute transaction and return signedAccessToken if auto-login is active
+    ok 5 - should execute transaction and return signedAccessToken if auto-login is active
+      ---
+      duration_ms: 17.1799
+      type: 'test'
+      ...
+    1..5
+ok 1 - Signup Use Case Validation & Mock Flow Tests
+  ---
+  duration_ms: 35.7955
+  type: 'suite'
+  ...
+# {"level":"info","time":"2026-08-07T05:24:40.753Z","pid":25024,"hostname":"Tyagi","payload":{"email":"existing@example.com","userId":"existing-uuid"},"msg":"[Event Dispatcher] Emitted event: REGISTRATION_ATTEMPT_ON_EXISTING_EMAIL"}
+# {"level":"info","time":"2026-08-07T05:24:40.765Z","pid":25024,"hostname":"Tyagi","payload":{"userId":"mock-user-uuid","normalizedEmail":"newuser@gmail.com","registeredAt":"2026-08-07T05:24:40.765Z"},"msg":"[Event Dispatcher] Emitted event: IDENTITY_REGISTERED"}
+# {"level":"info","time":"2026-08-07T05:24:40.766Z","pid":25024,"hostname":"Tyagi","data":{"userId":"mock-user-uuid","email":"newuser@gmail.com","token":"70e209dcf844e9ca41e978e6b22921dbc0b35b8704f1bbe08e54f70f5b5b70fd"},"msg":"[Background Task Dispatcher] Dispatching task: SEND_VERIFICATION_EMAIL"}
+# {"level":"info","time":"2026-08-07T05:24:40.783Z","pid":25024,"hostname":"Tyagi","payload":{"userId":"mock-user-uuid","normalizedEmail":"autosession@gmail.com","registeredAt":"2026-08-07T05:24:40.770Z"},"msg":"[Event Dispatcher] Emitted event: IDENTITY_REGISTERED"}
+# {"level":"info","time":"2026-08-07T05:24:40.783Z","pid":25024,"hostname":"Tyagi","data":{"userId":"mock-user-uuid","email":"autosession@gmail.com","token":"4ad980f34258fe086cdb27c408a4fe77eb939433231c8d8b542464a5caa45f54"},"msg":"[Background Task Dispatcher] Dispatching task: SEND_VERIFICATION_EMAIL"}
+# {"level":"info","time":"2026-08-07T05:24:40.789Z","pid":25024,"hostname":"Tyagi","data":{"userId":"mock-user-uuid","email":"newuser@gmail.com","token":"70e209dcf844e9ca41e978e6b22921dbc0b35b8704f1bbe08e54f70f5b5b70fd"},"msg":"[Background Task Execution] Executed task: SEND_VERIFICATION_EMAIL"}
+# {"level":"info","time":"2026-08-07T05:24:40.789Z","pid":25024,"hostname":"Tyagi","data":{"userId":"mock-user-uuid","email":"autosession@gmail.com","token":"4ad980f34258fe086cdb27c408a4fe77eb939433231c8d8b542464a5caa45f54"},"msg":"[Background Task Execution] Executed task: SEND_VERIFICATION_EMAIL"}
+1..1
+# tests 5
+# suites 1
+# pass 5
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1291.6837

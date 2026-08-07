@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Create your FreelanceOS account. The ultimate operating system for modern freelancers.">
+  <title>Sign Up — FreelanceOS</title>
+  <!-- Google Fonts Outfit & Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="signup-container">
+    <div class="signup-card">
+      <div class="header">
+        <div class="logo" aria-hidden="true">F</div>
+        <h1>Create your account</h1>
+        <p class="subtitle">Start managing your freelance business with FreelanceOS</p>
+      </div>
+
+      <!-- Success Panel -->
+      <div id="success-panel" class="success-panel hidden" role="region" aria-live="polite">
+        <div class="success-icon" aria-hidden="true">✓</div>
+        <h2>Verify your email</h2>
+        <p id="success-message">We've sent a verification link to your email address. Please click the link to activate your account.</p>
+        <div class="success-actions">
+          <p class="notice">Check your spam folder if you don't receive it within a few minutes.</p>
+        </div>
+      </div>
+
+      <!-- Main Form -->
+      <form id="signup-form" novalidate>
+        <!-- Error Alert -->
+        <div id="error-alert" class="error-alert hidden" role="alert" aria-live="assertive">
+          <div class="error-icon" aria-hidden="true">⚠</div>
+          <div class="error-content">
+            <h3 id="error-title">Registration Failed</h3>
+            <ul id="error-list"></ul>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="email">Email address</label>
+          <input 
+            type="email" 
+            id="email" 
+            name="email" 
+            autocomplete="email" 
+            required 
+            aria-required="true"
+            placeholder="you@example.com"
+          >
+        </div>
+
+        <div class="form-group">
+          <label for="password">Password</label>
+          <input 
+            type="password" 
+            id="password" 
+            name="password" 
+            autocomplete="new-password" 
+            required 
+            aria-required="true"
+            placeholder="••••••••••••"
+          >
+          
+          <!-- Password Requirements Checklist -->
+          <div class="password-requirements" id="password-requirements">
+            <div class="strength-bar-container">
+              <div class="strength-bar" id="strength-bar"></div>
+            </div>
+            <ul>
+              <li id="req-length" class="requirement">At least 12 characters</li>
+              <li id="req-uppercase" class="requirement">At least one uppercase letter</li>
+              <li id="req-lowercase" class="requirement">At least one lowercase letter</li>
+              <li id="req-digit" class="requirement">At least one number</li>
+              <li id="req-special" class="requirement">At least one special character</li>
+            </ul>
+          </div>
+        </div>
+
+        <button type="submit" id="submit-button">
+          <span id="button-text">Create account</span>
+          <span id="button-spinner" class="spinner hidden" aria-hidden="true"></span>
+        </button>
+      </form>
+    </div>
+  </div>
+  <script src="app.js"></script>
+</body>
+</html>

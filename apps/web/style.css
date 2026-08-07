@@ -1,0 +1,364 @@
+/* =====================================================================
+   FreelanceOS Design System Tokens & Base Styles
+   ===================================================================== */
+
+:root {
+  --bg-primary: hsl(222, 47%, 4%);
+  --bg-card: hsla(222, 47%, 7%, 0.6);
+  --border-color: hsla(222, 47%, 20%, 0.4);
+  --border-focus: hsl(217, 90%, 60%);
+  
+  --text-primary: hsl(0, 0%, 98%);
+  --text-secondary: hsl(215, 20%, 65%);
+  --text-muted: hsl(215, 15%, 45%);
+  
+  --brand-primary: hsl(263, 90%, 52%);
+  --brand-secondary: hsl(217, 90%, 61%);
+  --brand-gradient: linear-gradient(135deg, var(--brand-primary) 0%, var(--brand-secondary) 100%);
+  
+  --success: hsl(142, 70%, 45%);
+  --error: hsl(0, 84%, 60%);
+  --error-bg: hsla(0, 84%, 10%, 0.5);
+  --error-border: hsla(0, 84%, 30%, 0.4);
+  
+  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+  --font-display: 'Outfit', system-ui, -apple-system, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: var(--font-sans);
+  background-color: var(--bg-primary);
+  background-image: radial-gradient(circle at 50% 50%, hsl(222, 47%, 10%) 0%, var(--bg-primary) 100%);
+  color: var(--text-primary);
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+/* =====================================================================
+   Signup Container & Card (Glassmorphism layout)
+   ===================================================================== */
+
+.signup-container {
+  width: 100%;
+  max-width: 450px;
+}
+
+.signup-card {
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 20px;
+  padding: 40px;
+  backdrop-filter: blur(16px);
+  box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.6);
+}
+
+.header {
+  text-align: center;
+  margin-bottom: 32px;
+}
+
+.logo {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  background: var(--brand-gradient);
+  border-radius: 12px;
+  font-family: var(--font-display);
+  font-size: 24px;
+  font-weight: 800;
+  color: #fff;
+  margin-bottom: 16px;
+  box-shadow: 0 0 20px hsla(263, 90%, 52%, 0.3);
+}
+
+h1 {
+  font-family: var(--font-display);
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+  margin-bottom: 8px;
+}
+
+.subtitle {
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+/* =====================================================================
+   Form Controls & Elements
+   ===================================================================== */
+
+.form-group {
+  margin-bottom: 24px;
+  display: flex;
+  flex-direction: column;
+}
+
+label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+  letter-spacing: 0.2px;
+}
+
+input {
+  background: hsla(222, 47%, 2%, 0.5);
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  padding: 12px 16px;
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  font-size: 15px;
+  transition: all 0.2s ease;
+}
+
+input::placeholder {
+  color: var(--text-muted);
+}
+
+input:focus {
+  outline: none;
+  border-color: var(--border-focus);
+  background: hsla(222, 47%, 2%, 0.8);
+  box-shadow: 0 0 0 3px hsla(217, 90%, 60%, 0.15);
+}
+
+/* =====================================================================
+   Password strength bar & specifications checklist
+   ===================================================================== */
+
+.password-requirements {
+  margin-top: 12px;
+}
+
+.strength-bar-container {
+  height: 4px;
+  background: hsla(222, 47%, 20%, 0.5);
+  border-radius: 2px;
+  overflow: hidden;
+  margin-bottom: 12px;
+}
+
+.strength-bar {
+  height: 100%;
+  width: 0%;
+  border-radius: 2px;
+  transition: width 0.3s ease, background-color 0.3s ease;
+}
+
+.strength-weak {
+  background-color: var(--error);
+}
+
+.strength-medium {
+  background-color: hsl(45, 90%, 50%);
+}
+
+.strength-strong {
+  background-color: var(--success);
+}
+
+.password-requirements ul {
+  list-style: none;
+}
+
+.requirement {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-bottom: 6px;
+  display: flex;
+  align-items: center;
+  transition: color 0.2s ease;
+}
+
+.requirement::before {
+  content: "•";
+  margin-right: 8px;
+  font-size: 16px;
+  color: var(--text-muted);
+  transition: color 0.2s ease;
+}
+
+.requirement.met {
+  color: var(--text-secondary);
+}
+
+.requirement.met::before {
+  content: "✓";
+  color: var(--success);
+  font-size: 12px;
+  font-weight: bold;
+}
+
+/* =====================================================================
+   Buttons & Loaders
+   ===================================================================== */
+
+button[type="submit"] {
+  width: 100%;
+  background: var(--brand-gradient);
+  border: none;
+  border-radius: 10px;
+  padding: 14px;
+  color: #fff;
+  font-family: var(--font-sans);
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  transition: transform 0.1s ease, box-shadow 0.2s ease;
+}
+
+button[type="submit"]:hover:not(:disabled) {
+  box-shadow: 0 0 20px hsla(263, 90%, 52%, 0.4);
+}
+
+button[type="submit"]:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+button[type="submit"]:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.spinner {
+  width: 18px;
+  height: 18px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  border-top-color: #fff;
+  animation: spin 0.8s linear infinite;
+  margin-left: 10px;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* =====================================================================
+   Success & Failure Notification Layouts
+   ===================================================================== */
+
+.success-panel {
+  text-align: center;
+  padding: 10px 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.success-icon {
+  width: 56px;
+  height: 56px;
+  background-color: hsla(142, 70%, 45%, 0.15);
+  border: 1px solid var(--success);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--success);
+  font-size: 24px;
+  font-weight: bold;
+  margin-bottom: 20px;
+}
+
+.success-panel h2 {
+  font-family: var(--font-display);
+  font-size: 24px;
+  font-weight: 700;
+  margin-bottom: 12px;
+}
+
+.success-panel p {
+  font-size: 14px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+  margin-bottom: 24px;
+}
+
+.notice {
+  font-size: 12px !important;
+  color: var(--text-muted) !important;
+}
+
+.error-alert {
+  background-color: var(--error-bg);
+  border: 1px solid var(--error-border);
+  border-radius: 10px;
+  padding: 16px;
+  margin-bottom: 24px;
+  display: flex;
+}
+
+.error-icon {
+  color: var(--error);
+  font-size: 18px;
+  font-weight: bold;
+  margin-right: 12px;
+}
+
+.error-content h3 {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 6px;
+}
+
+.error-content ul {
+  list-style: none;
+}
+
+.error-content li {
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.4;
+}
+
+.error-content li::before {
+  content: "•";
+  color: var(--error);
+  margin-right: 6px;
+}
+
+/* =====================================================================
+   Utility Classes
+   ===================================================================== */
+
+.hidden {
+  display: none !important;
+}
+
+/* =====================================================================
+   Responsive layout specifications
+   ===================================================================== */
+
+@media (max-width: 480px) {
+  body {
+    padding: 16px;
+  }
+
+  .signup-card {
+    padding: 24px;
+    border-radius: 16px;
+  }
+
+  h1 {
+    font-size: 24px;
+  }
+}

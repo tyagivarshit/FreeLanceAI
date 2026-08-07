@@ -17,5 +17,19 @@ export const environmentSchema = z.object({
     SESSION_COOKIE_HTTPONLY: z.coerce.boolean().default(true),
     SESSION_COOKIE_PATH: z.string().default("/"),
     SESSION_COOKIE_DOMAIN: z.string().optional(),
+    // Signup Password Policies
+    CONFIG_PASSWORD_MIN_LENGTH: z.coerce.number().default(12),
+    CONFIG_PASSWORD_MAX_LENGTH: z.coerce.number().default(128),
+    CONFIG_PASSWORD_COMPLEXITY_REQUIRED: z.coerce.boolean().default(true),
+    // Signup Hashing Policies
+    CONFIG_PASSWORD_HASH_ALGORITHM: z.enum(["pbkdf2", "scrypt"]).default("scrypt"),
+    CONFIG_PASSWORD_HASH_ROUNDS: z.coerce.number().default(10), // Salt rounds/parameters
+    // Signup Email Normalization Policies
+    CONFIG_EMAIL_STRIP_SUBADDRESS: z.coerce.boolean().default(true),
+    CONFIG_EMAIL_STRIP_DOTS: z.coerce.boolean().default(true),
+    // Signup General Policies
+    CONFIG_SIGNUP_ANTI_ENUMERATION_ENABLED: z.coerce.boolean().default(false),
+    CONFIG_REQUIRE_VERIFICATION_FOR_SESSION: z.coerce.boolean().default(false),
+    CONFIG_EMAIL_VERIFICATION_LIFETIME_SEC: z.coerce.number().default(86400),
 });
 //# sourceMappingURL=schema.js.map

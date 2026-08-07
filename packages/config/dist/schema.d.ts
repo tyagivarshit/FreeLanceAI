@@ -14,6 +14,16 @@ export declare const environmentSchema: z.ZodObject<{
     SESSION_COOKIE_HTTPONLY: z.ZodDefault<z.ZodBoolean>;
     SESSION_COOKIE_PATH: z.ZodDefault<z.ZodString>;
     SESSION_COOKIE_DOMAIN: z.ZodOptional<z.ZodString>;
+    CONFIG_PASSWORD_MIN_LENGTH: z.ZodDefault<z.ZodNumber>;
+    CONFIG_PASSWORD_MAX_LENGTH: z.ZodDefault<z.ZodNumber>;
+    CONFIG_PASSWORD_COMPLEXITY_REQUIRED: z.ZodDefault<z.ZodBoolean>;
+    CONFIG_PASSWORD_HASH_ALGORITHM: z.ZodDefault<z.ZodEnum<["pbkdf2", "scrypt"]>>;
+    CONFIG_PASSWORD_HASH_ROUNDS: z.ZodDefault<z.ZodNumber>;
+    CONFIG_EMAIL_STRIP_SUBADDRESS: z.ZodDefault<z.ZodBoolean>;
+    CONFIG_EMAIL_STRIP_DOTS: z.ZodDefault<z.ZodBoolean>;
+    CONFIG_SIGNUP_ANTI_ENUMERATION_ENABLED: z.ZodDefault<z.ZodBoolean>;
+    CONFIG_REQUIRE_VERIFICATION_FOR_SESSION: z.ZodDefault<z.ZodBoolean>;
+    CONFIG_EMAIL_VERIFICATION_LIFETIME_SEC: z.ZodDefault<z.ZodNumber>;
 }, "strip", z.ZodTypeAny, {
     NODE_ENV: "development" | "production" | "test";
     API_PORT: number;
@@ -28,6 +38,16 @@ export declare const environmentSchema: z.ZodObject<{
     SESSION_COOKIE_SECURE: boolean;
     SESSION_COOKIE_HTTPONLY: boolean;
     SESSION_COOKIE_PATH: string;
+    CONFIG_PASSWORD_MIN_LENGTH: number;
+    CONFIG_PASSWORD_MAX_LENGTH: number;
+    CONFIG_PASSWORD_COMPLEXITY_REQUIRED: boolean;
+    CONFIG_PASSWORD_HASH_ALGORITHM: "pbkdf2" | "scrypt";
+    CONFIG_PASSWORD_HASH_ROUNDS: number;
+    CONFIG_EMAIL_STRIP_SUBADDRESS: boolean;
+    CONFIG_EMAIL_STRIP_DOTS: boolean;
+    CONFIG_SIGNUP_ANTI_ENUMERATION_ENABLED: boolean;
+    CONFIG_REQUIRE_VERIFICATION_FOR_SESSION: boolean;
+    CONFIG_EMAIL_VERIFICATION_LIFETIME_SEC: number;
     SESSION_COOKIE_DOMAIN?: string | undefined;
 }, {
     DATABASE_URL: string;
@@ -44,6 +64,16 @@ export declare const environmentSchema: z.ZodObject<{
     SESSION_COOKIE_HTTPONLY?: boolean | undefined;
     SESSION_COOKIE_PATH?: string | undefined;
     SESSION_COOKIE_DOMAIN?: string | undefined;
+    CONFIG_PASSWORD_MIN_LENGTH?: number | undefined;
+    CONFIG_PASSWORD_MAX_LENGTH?: number | undefined;
+    CONFIG_PASSWORD_COMPLEXITY_REQUIRED?: boolean | undefined;
+    CONFIG_PASSWORD_HASH_ALGORITHM?: "pbkdf2" | "scrypt" | undefined;
+    CONFIG_PASSWORD_HASH_ROUNDS?: number | undefined;
+    CONFIG_EMAIL_STRIP_SUBADDRESS?: boolean | undefined;
+    CONFIG_EMAIL_STRIP_DOTS?: boolean | undefined;
+    CONFIG_SIGNUP_ANTI_ENUMERATION_ENABLED?: boolean | undefined;
+    CONFIG_REQUIRE_VERIFICATION_FOR_SESSION?: boolean | undefined;
+    CONFIG_EMAIL_VERIFICATION_LIFETIME_SEC?: number | undefined;
 }>;
 export type Environment = z.infer<typeof environmentSchema>;
 //# sourceMappingURL=schema.d.ts.map

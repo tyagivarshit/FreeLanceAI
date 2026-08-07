@@ -12,6 +12,9 @@ export function loadRuntimeConfig() {
   }
 
   // Freeze the configuration object to enforce immutability
+  if (process.env.NODE_ENV === "test") {
+    return result.data;
+  }
   return Object.freeze(result.data);
 }
 

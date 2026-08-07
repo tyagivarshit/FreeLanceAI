@@ -1,0 +1,88 @@
+
+> @freelanceos/core@0.1.0 test:unit
+> node --test dist/*.test.js
+
+TAP version 13
+# Subtest: Email Normalization
+    # Subtest: should trim and lowercase standard emails
+    ok 1 - should trim and lowercase standard emails
+      ---
+      duration_ms: 2.029
+      type: 'test'
+      ...
+    # Subtest: should strip sub-addresses for gmail domain by default
+    ok 2 - should strip sub-addresses for gmail domain by default
+      ---
+      duration_ms: 0.2473
+      type: 'test'
+      ...
+    # Subtest: should strip dots for gmail domain by default
+    ok 3 - should strip dots for gmail domain by default
+      ---
+      duration_ms: 0.1666
+      type: 'test'
+      ...
+    # Subtest: should not strip sub-addresses or dots for non-gmail domains
+    ok 4 - should not strip sub-addresses or dots for non-gmail domains
+      ---
+      duration_ms: 0.1958
+      type: 'test'
+      ...
+    1..4
+ok 1 - Email Normalization
+  ---
+  duration_ms: 3.7861
+  type: 'suite'
+  ...
+# Subtest: Password Strength Validation
+    # Subtest: should pass a valid complex password
+    ok 1 - should pass a valid complex password
+      ---
+      duration_ms: 0.3686
+      type: 'test'
+      ...
+    # Subtest: should fail on short passwords
+    ok 2 - should fail on short passwords
+      ---
+      duration_ms: 0.5628
+      type: 'test'
+      ...
+    # Subtest: should fail on missing uppercase letters
+    ok 3 - should fail on missing uppercase letters
+      ---
+      duration_ms: 0.2171
+      type: 'test'
+      ...
+    # Subtest: should fail on missing lowercase letters
+    ok 4 - should fail on missing lowercase letters
+      ---
+      duration_ms: 0.2764
+      type: 'test'
+      ...
+    # Subtest: should fail on missing numbers
+    ok 5 - should fail on missing numbers
+      ---
+      duration_ms: 0.249
+      type: 'test'
+      ...
+    # Subtest: should fail on missing special characters
+    ok 6 - should fail on missing special characters
+      ---
+      duration_ms: 0.2869
+      type: 'test'
+      ...
+    1..6
+ok 2 - Password Strength Validation
+  ---
+  duration_ms: 2.3673
+  type: 'suite'
+  ...
+1..2
+# tests 10
+# suites 2
+# pass 10
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 144.051

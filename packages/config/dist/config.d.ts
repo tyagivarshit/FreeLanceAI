@@ -12,6 +12,16 @@ export declare function loadRuntimeConfig(): Readonly<{
     SESSION_COOKIE_SECURE: boolean;
     SESSION_COOKIE_HTTPONLY: boolean;
     SESSION_COOKIE_PATH: string;
+    CONFIG_PASSWORD_MIN_LENGTH: number;
+    CONFIG_PASSWORD_MAX_LENGTH: number;
+    CONFIG_PASSWORD_COMPLEXITY_REQUIRED: boolean;
+    CONFIG_PASSWORD_HASH_ALGORITHM: "pbkdf2" | "scrypt";
+    CONFIG_PASSWORD_HASH_ROUNDS: number;
+    CONFIG_EMAIL_STRIP_SUBADDRESS: boolean;
+    CONFIG_EMAIL_STRIP_DOTS: boolean;
+    CONFIG_SIGNUP_ANTI_ENUMERATION_ENABLED: boolean;
+    CONFIG_REQUIRE_VERIFICATION_FOR_SESSION: boolean;
+    CONFIG_EMAIL_VERIFICATION_LIFETIME_SEC: number;
     SESSION_COOKIE_DOMAIN?: string | undefined;
 }>;
 export declare const runtimeConfig: Readonly<{
@@ -28,6 +38,16 @@ export declare const runtimeConfig: Readonly<{
     SESSION_COOKIE_SECURE: boolean;
     SESSION_COOKIE_HTTPONLY: boolean;
     SESSION_COOKIE_PATH: string;
+    CONFIG_PASSWORD_MIN_LENGTH: number;
+    CONFIG_PASSWORD_MAX_LENGTH: number;
+    CONFIG_PASSWORD_COMPLEXITY_REQUIRED: boolean;
+    CONFIG_PASSWORD_HASH_ALGORITHM: "pbkdf2" | "scrypt";
+    CONFIG_PASSWORD_HASH_ROUNDS: number;
+    CONFIG_EMAIL_STRIP_SUBADDRESS: boolean;
+    CONFIG_EMAIL_STRIP_DOTS: boolean;
+    CONFIG_SIGNUP_ANTI_ENUMERATION_ENABLED: boolean;
+    CONFIG_REQUIRE_VERIFICATION_FOR_SESSION: boolean;
+    CONFIG_EMAIL_VERIFICATION_LIFETIME_SEC: number;
     SESSION_COOKIE_DOMAIN?: string | undefined;
 }>;
 //# sourceMappingURL=config.d.ts.map
