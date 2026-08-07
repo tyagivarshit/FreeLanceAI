@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Login — FreelanceOS</title>
+    <link rel="stylesheet" href="/style.css" />
+    <!-- Outfit & Inter Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Outfit:wght@700;800&display=swap" rel="stylesheet" />
+  </head>
+  <body>
+    <div class="signup-container">
+      <div class="signup-card">
+        <!-- Logo and Header -->
+        <div class="header">
+          <div class="logo" aria-hidden="true">F</div>
+          <h1>Welcome back</h1>
+          <p class="subtitle">Log in to your FreelanceOS workspace</p>
+        </div>
+
+        <!-- Accessible Alert Section -->
+        <div id="error-alert" class="error-alert hidden" role="region" aria-live="assertive" aria-label="Error details">
+          <div class="error-icon" aria-hidden="true">✕</div>
+          <div class="error-content">
+            <h3 id="error-title">Login failed</h3>
+            <ul id="error-list"></ul>
+          </div>
+        </div>
+
+        <!-- Success Panel -->
+        <div id="success-panel" class="success-panel hidden" role="region" aria-live="polite">
+          <div class="success-icon" aria-hidden="true">✓</div>
+          <h2>Authentication Successful</h2>
+          <p id="success-message">You have successfully logged in. Your active session has been initialized.</p>
+        </div>
+
+        <!-- Login Form -->
+        <form id="login-form" novalidate>
+          <div class="form-group">
+            <label for="email">Work Email</label>
+            <input
+              type="email"
+              id="email"
+              placeholder="name@company.com"
+              required
+              autocomplete="email"
+              aria-required="true"
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="password">Password</label>
+            <input
+              type="password"
+              id="password"
+              placeholder="••••••••••••"
+              required
+              autocomplete="current-password"
+              aria-required="true"
+            />
+          </div>
+
+          <button type="submit" id="submit-button">
+            <span id="button-text">Log in</span>
+            <div id="button-spinner" class="spinner hidden" aria-hidden="true"></div>
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <script src="/login.js"></script>
+  </body>
+</html>

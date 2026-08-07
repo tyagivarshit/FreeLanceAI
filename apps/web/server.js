@@ -4,10 +4,10 @@ import path from "path";
 import { fileURLToPath } from "url";
 import {
   signupUser,
-  ValidationError,
-  DuplicateEmailError,
-  getSessionCookieConfig,
-  serializeCookie,
+  loginUser,
+  mapAuthError,
+  parseUserAgent,
+  issueSessionCookie,
 } from "@freelanceos/auth";
 import { runtimeConfig } from "@freelanceos/config";
 import { logger } from "@freelanceos/logger";
@@ -50,36 +50,7 @@ const server = http.createServer(async (req, res) => {
         // Build session metadata from request details
         const userAgent = req.headers["user-agent"] || "unknown";
         const ipAddress = req.socket.remoteAddress || "127.0.0.1";
-
-        let platform = "unknown";
-        if (userAgent.includes("Windows")) {
-          platform = "Windows";
-        } else if (userAgent.includes("Macintosh")) {
-          platform = "macOS";
-        } else if (userAgent.includes("Linux")) {
-          platform = "Linux";
-        } else if (userAgent.includes("Android")) {
-          platform = "Android";
-        } else if (userAgent.includes("iPhone")) {
-          platform = "iOS";
-        }
-
-        let browser = "unknown";
-        if (userAgent.includes("Chrome")) {
-          browser = "Chrome";
-        } else if (userAgent.includes("Firefox")) {
-          browser = "Firefox";
-        } else if (userAgent.includes("Safari")) {
-          browser = "Safari";
-        }
-
-        const sessionMetadata = {
-          userAgent,
-          ipAddress,
-          platform,
-          browser,
-          deviceName: platform,
-        };
+        const sessionMetadata = parseUserAgent(userAgent, ipAddress);
 
         const result = await signupUser({
           email,
@@ -89,9 +60,7 @@ const server = http.createServer(async (req, res) => {
 
         // Set stateful refresh token cookie securely
         if (result.tokens) {
-          const cookieConfig = getSessionCookieConfig(result.tokens.refreshToken);
-          const cookieHeader = serializeCookie(cookieConfig);
-          res.setHeader("Set-Cookie", cookieHeader);
+          res.setHeader("Set-Cookie", issueSessionCookie(result.tokens.refreshToken));
         }
 
         res.writeHead(201, { "Content-Type": "application/json" });
@@ -99,7 +68,6 @@ const server = http.createServer(async (req, res) => {
           JSON.stringify({
             success: true,
             user: result.user,
-            signedAccessToken: result.tokens ? result.tokens.signedAccessToken : undefined,
             verificationTriggered: result.verificationTriggered,
           }),
         );
@@ -109,26 +77,59 @@ const server = http.createServer(async (req, res) => {
           error: err instanceof Error ? err : new Error(String(err)),
         });
 
-        if (err instanceof ValidationError) {
-          res.writeHead(400, { "Content-Type": "application/json" });
-          res.end(
-            JSON.stringify({ success: false, code: "VALIDATION_FAILED", errors: err.errors }),
-          );
-        } else if (err instanceof DuplicateEmailError) {
-          res.writeHead(409, { "Content-Type": "application/json" });
-          res.end(
-            JSON.stringify({ success: false, code: "DUPLICATE_EMAIL", message: err.message }),
-          );
-        } else {
-          res.writeHead(500, { "Content-Type": "application/json" });
-          res.end(
-            JSON.stringify({
-              success: false,
-              code: "INTERNAL_ERROR",
-              message: "An infrastructure error occurred.",
-            }),
-          );
+        const httpResponse = mapAuthError(err);
+        res.writeHead(httpResponse.statusCode, { "Content-Type": "application/json" });
+        res.end(JSON.stringify(httpResponse.body));
+      }
+    });
+    return;
+  }
+
+  // 1B. Hook the Login use case to POST /api/login
+  if (req.url === "/api/login" && req.method === "POST") {
+    let body = "";
+    req.on("data", (chunk) => {
+      body += chunk;
+    });
+
+    req.on("end", async () => {
+      try {
+        const payload = JSON.parse(body);
+        const { email, password } = payload;
+
+        // Build session metadata from request details
+        const userAgent = req.headers["user-agent"] || "unknown";
+        const ipAddress = req.socket.remoteAddress || "127.0.0.1";
+        const sessionMetadata = parseUserAgent(userAgent, ipAddress);
+
+        const result = await loginUser({
+          email,
+          password,
+          sessionMetadata,
+        });
+
+        // Set stateful refresh token cookie securely
+        if (result.tokens) {
+          res.setHeader("Set-Cookie", issueSessionCookie(result.tokens.refreshToken));
         }
+
+        res.writeHead(200, { "Content-Type": "application/json" });
+        res.end(
+          JSON.stringify({
+            success: true,
+            user: result.user,
+            verificationTriggered: result.verificationTriggered,
+          }),
+        );
+      } catch (err) {
+        logger.error({
+          message: "Login API request failed",
+          error: err instanceof Error ? err : new Error(String(err)),
+        });
+
+        const httpResponse = mapAuthError(err);
+        res.writeHead(httpResponse.statusCode, { "Content-Type": "application/json" });
+        res.end(JSON.stringify(httpResponse.body));
       }
     });
     return;
@@ -151,5 +152,6 @@ const server = http.createServer(async (req, res) => {
 });
 
 server.listen(PORT, () => {
+  // eslint-disable-next-line no-console
   console.log(`[Web Server] Running on http://localhost:${PORT}`);
 });

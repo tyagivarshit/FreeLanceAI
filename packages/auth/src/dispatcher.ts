@@ -17,12 +17,40 @@ export interface SendVerificationEmailPayload {
   token: string;
 }
 
+export interface LoginSucceededPayload {
+  userId: string;
+  ipAddress: string;
+  deviceName: string;
+}
+
+export interface LoginFailedPayload {
+  email: string;
+  reason: string;
+  ipAddress: string;
+}
+
+export interface AccountLockedPayload {
+  userId: string;
+  email: string;
+}
+
+export interface NewDeviceDetectedPayload {
+  userId: string;
+  ipAddress: string;
+  browser: string;
+  platform: string;
+}
+
 export interface EventDispatcher {
   publish(eventName: "IDENTITY_REGISTERED", payload: IdentityRegisteredPayload): Promise<void>;
   publish(
     eventName: "REGISTRATION_ATTEMPT_ON_EXISTING_EMAIL",
     payload: RegistrationAttemptExistingEmailPayload,
   ): Promise<void>;
+  publish(eventName: "LOGIN_SUCCEEDED", payload: LoginSucceededPayload): Promise<void>;
+  publish(eventName: "LOGIN_FAILED", payload: LoginFailedPayload): Promise<void>;
+  publish(eventName: "ACCOUNT_LOCKED", payload: AccountLockedPayload): Promise<void>;
+  publish(eventName: "NEW_DEVICE_DETECTED", payload: NewDeviceDetectedPayload): Promise<void>;
 }
 
 export interface BackgroundTaskDispatcher {
@@ -34,10 +62,7 @@ export interface BackgroundTaskDispatcher {
  * Publishes events asynchronously and records structured audits.
  */
 export class QueueEventDispatcher implements EventDispatcher {
-  async publish(
-    eventName: string,
-    payload: IdentityRegisteredPayload | RegistrationAttemptExistingEmailPayload,
-  ): Promise<void> {
+  async publish(eventName: string, payload: unknown): Promise<void> {
     logger.info({
       message: `[Event Dispatcher] Emitted event: ${eventName}`,
       payload,
@@ -50,7 +75,7 @@ export class QueueEventDispatcher implements EventDispatcher {
  * Offloads execution out of the main request-response thread.
  */
 export class QueueBackgroundTaskDispatcher implements BackgroundTaskDispatcher {
-  async dispatch(taskName: string, data: SendVerificationEmailPayload): Promise<void> {
+  async dispatch(taskName: string, data: unknown): Promise<void> {
     logger.info({
       message: `[Background Task Dispatcher] Dispatching task: ${taskName}`,
       data,
