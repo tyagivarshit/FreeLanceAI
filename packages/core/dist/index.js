@@ -72,4 +72,6 @@ export { AttachmentMetadata, AttachmentVisibility, Attachment, ATTACHMENT_CREATE
 export { RepositoryMetadata, RepositoryVisibility, Repository, REPOSITORY_REGISTERED, REPOSITORY_UPDATED, REPOSITORY_AVAILABLE, REPOSITORY_ARCHIVED, REPOSITORY_REMOVED, } from "./repository.js";
 export { AiRequestMetadata, AiRequest, AI_REQUEST_RECEIVED, AI_REQUEST_ACCEPTED, AI_REQUEST_ORCHESTRATING, AI_REQUEST_COMPLETED, AI_REQUEST_FAILED, } from "./ai-gateway.js";
 export { LogicalVisibilityClassification, PromptDefinition, PromptMetadata, PromptVersion, Prompt, PROMPT_REGISTERED, PROMPT_UPDATED, PROMPT_PUBLISHED, PROMPT_DEPRECATED, PROMPT_ARCHIVED, } from "./prompt-registry.js";
+export { ContextBlueprint, ContextMetadata, ContextAssemblyRule, ContextSourceReference, Context, CONTEXT_REGISTERED, CONTEXT_VALIDATED, CONTEXT_PUBLISHED, CONTEXT_ARCHIVED, } from "./context-builder.js";
+export { MemoryMetadata, MemoryRetentionRule, MemoryEntry, MemorySnapshot, Memory, MEMORY_VALIDATED, MEMORY_PUBLISHED, MEMORY_ARCHIVED, } from "./memory.js";
 //# sourceMappingURL=index.js.map

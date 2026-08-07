@@ -260,3 +260,64 @@ export type {
   PromptAggregateStore,
   PromptProperties,
 } from "./prompt-registry.js";
+
+export {
+  ContextBlueprint,
+  ContextMetadata,
+  ContextAssemblyRule,
+  ContextSourceReference,
+  Context,
+  CONTEXT_REGISTERED,
+  CONTEXT_VALIDATED,
+  CONTEXT_PUBLISHED,
+  CONTEXT_ARCHIVED,
+} from "./context-builder.js";
+
+export type {
+  ContextLifecycleState,
+  ContextBlueprintProperties,
+  ContextMetadataProperties,
+  ContextAssemblyRuleProperties,
+  ContextSourceType,
+  ContextSourceReferenceProperties,
+  ContextDomainEventName,
+  ContextRegisteredEvent,
+  ContextValidatedEvent,
+  ContextPublishedEvent,
+  ContextArchivedEvent,
+  ContextDomainEvent,
+  ContextEventPublisher,
+  ContextQueryProjection,
+  ContextPersistenceContract,
+  ContextAggregateStore,
+  ContextProperties,
+} from "./context-builder.js";
+
+export {
+  MemoryMetadata,
+  MemoryRetentionRule,
+  MemoryEntry,
+  MemorySnapshot,
+  Memory,
+  MEMORY_VALIDATED,
+  MEMORY_PUBLISHED,
+  MEMORY_ARCHIVED,
+} from "./memory.js";
+
+export type {
+  MemoryLifecycleState,
+  MemoryMetadataProperties,
+  MemoryRetentionRuleProperties,
+  MemoryEntryProperties,
+  MemorySnapshotProperties,
+  MemoryDomainEventName,
+  MemoryValidatedEvent,
+  MemoryPublishedEvent,
+  MemoryArchivedEvent,
+  MemoryDomainEvent,
+  MemoryEventPublisher,
+  MemoryQueryProjection,
+  MemoryPersistenceContract,
+  MemoryAggregateStore,
+  MemoryProperties,
+} from "./memory.js";
