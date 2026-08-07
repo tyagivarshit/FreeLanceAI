@@ -75,7 +75,7 @@ export async function validateSession(accessToken) {
         .limit(1);
     const firstCredential = credentials[0];
     if (!firstCredential || firstCredential.credentialVersion !== payload.credentialVersion) {
-        throw new InvalidTokenError("User credentials have changed. Session invalidated.", "INVALID");
+        throw new InvalidTokenError("User credentials have changed. Session invalidated.", "INVALID", payload.userId, payload.sessionId);
     }
     // 3. Assert active session database state
     const sessionList = await db

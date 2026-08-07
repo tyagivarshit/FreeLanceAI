@@ -19,6 +19,8 @@ export class InvalidTokenError extends AuthError {
   constructor(
     message: string,
     public readonly code: "EXPIRED" | "INVALID",
+    public readonly userId?: string,
+    public readonly sessionId?: string,
   ) {
     super(message);
     this.name = "InvalidTokenError";

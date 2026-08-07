@@ -36,6 +36,8 @@ export const environmentSchema = z.object({
     CONFIG_LOCKOUT_DURATION_SEC: z.coerce.number().default(900),
     // Session Capacity Policies
     CONFIG_MAX_CONCURRENT_SESSIONS: z.coerce.number().default(5),
-    CONFIG_CONCURRENT_SESSION_STRATEGY: z.enum(["revoke_oldest", "deny_access"]).default("revoke_oldest"),
+    CONFIG_CONCURRENT_SESSION_STRATEGY: z
+        .enum(["revoke_oldest", "deny_access"])
+        .default("revoke_oldest"),
 });
 //# sourceMappingURL=schema.js.map

@@ -127,12 +127,117 @@ document.addEventListener("DOMContentLoaded", () => {
   function showSuccess(user) {
     form.classList.add("hidden");
     successPanel.classList.remove("hidden");
+    logoutActions.classList.remove("hidden");
+    logoutSuccessMessage.classList.add("hidden");
+    globalConfirmPanel.classList.add("hidden");
     const successMsg = document.getElementById("success-message");
     successMsg.textContent = `Welcome back! You have successfully established a secure session as ${user.email}.`;
+    logoutButton.focus();
   }
 
   function hideSuccess() {
     successPanel.classList.add("hidden");
     form.classList.remove("hidden");
+  }
+
+  // Logout UI Selectors
+  const logoutButton = document.getElementById("logout-button");
+  const logoutText = document.getElementById("logout-text");
+  const logoutSpinner = document.getElementById("logout-spinner");
+
+  const globalLogoutButton = document.getElementById("global-logout-button");
+  const globalLogoutSpinner = document.getElementById("global-logout-spinner");
+
+  const globalConfirmPanel = document.getElementById("global-confirm-panel");
+  const confirmGlobalButton = document.getElementById("confirm-global-button");
+  const cancelGlobalButton = document.getElementById("cancel-global-button");
+
+  const logoutSuccessMessage = document.getElementById("logout-success-message");
+  const logoutActions = document.getElementById("logout-actions");
+
+  // Single Device Logout Event Listener
+  logoutButton.addEventListener("click", async () => {
+    await performLogout(false);
+  });
+
+  // Global Logout triggers Confirmation Dialog
+  globalLogoutButton.addEventListener("click", () => {
+    logoutActions.classList.add("hidden");
+    globalConfirmPanel.classList.remove("hidden");
+    confirmGlobalButton.focus(); // Set focus for accessibility
+  });
+
+  cancelGlobalButton.addEventListener("click", () => {
+    globalConfirmPanel.classList.add("hidden");
+    logoutActions.classList.remove("hidden");
+    globalLogoutButton.focus();
+  });
+
+  confirmGlobalButton.addEventListener("click", async () => {
+    await performLogout(true);
+  });
+
+  async function performLogout(global = false) {
+    setLogoutLoading(true, global);
+    hideError();
+
+    try {
+      const data = await window.authActions.logout({ global });
+
+      if (data.success) {
+        globalConfirmPanel.classList.add("hidden");
+        logoutActions.classList.add("hidden");
+        logoutSuccessMessage.classList.remove("hidden");
+
+        // Restore login form after success delay
+        setTimeout(() => {
+          logoutSuccessMessage.classList.add("hidden");
+          successPanel.classList.add("hidden");
+          form.classList.remove("hidden");
+          emailInput.value = "";
+          passwordInput.value = "";
+          emailInput.focus();
+        }, 2000);
+      } else {
+        showErrors("Logout Failed", [
+          data.message || "An unexpected error occurred during logout.",
+        ]);
+        globalConfirmPanel.classList.add("hidden");
+        logoutActions.classList.remove("hidden");
+      }
+    } catch (err) {
+      showErrors("Logout Failed", [
+        err.message || "Could not connect to the authentication server for logout.",
+      ]);
+      globalConfirmPanel.classList.add("hidden");
+      logoutActions.classList.remove("hidden");
+    } finally {
+      setLogoutLoading(false, global);
+    }
+  }
+
+  function setLogoutLoading(isLoading, global) {
+    if (isLoading) {
+      logoutButton.disabled = true;
+      globalLogoutButton.disabled = true;
+      confirmGlobalButton.disabled = true;
+      cancelGlobalButton.disabled = true;
+      if (global) {
+        confirmGlobalButton.textContent = "Logging out...";
+        globalLogoutSpinner.classList.remove("hidden");
+      } else {
+        logoutText.textContent = "Logging out...";
+        logoutSpinner.classList.remove("hidden");
+      }
+    } else {
+      logoutButton.disabled = false;
+      globalLogoutButton.disabled = false;
+      confirmGlobalButton.disabled = false;
+      cancelGlobalButton.disabled = false;
+      confirmGlobalButton.textContent = "Yes, log out all";
+      logoutText.textContent = "Log out from this device";
+      logoutSpinner.classList.add("hidden");
+      globalLogoutSpinner.classList.add("hidden");
+    }
   }
 });

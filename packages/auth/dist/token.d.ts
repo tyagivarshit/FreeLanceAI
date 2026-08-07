@@ -8,7 +8,9 @@ export declare class AuthError extends Error {
 }
 export declare class InvalidTokenError extends AuthError {
     readonly code: "EXPIRED" | "INVALID";
-    constructor(message: string, code: "EXPIRED" | "INVALID");
+    readonly userId?: string | undefined;
+    readonly sessionId?: string | undefined;
+    constructor(message: string, code: "EXPIRED" | "INVALID", userId?: string | undefined, sessionId?: string | undefined);
 }
 export declare class SessionNotFoundError extends AuthError {
     readonly sessionId: string;

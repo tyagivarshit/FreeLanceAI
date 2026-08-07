@@ -34,6 +34,30 @@
           <div class="success-icon" aria-hidden="true">✓</div>
           <h2>Authentication Successful</h2>
           <p id="success-message">You have successfully logged in. Your active session has been initialized.</p>
+
+          <div class="logout-actions" id="logout-actions">
+            <button id="logout-button" class="btn btn-secondary" aria-label="Log out from this device">
+              <span id="logout-text">Log out from this device</span>
+              <div id="logout-spinner" class="spinner hidden" aria-hidden="true"></div>
+            </button>
+            <button id="global-logout-button" class="btn btn-danger" aria-label="Log out from all devices globally">
+              <span id="global-logout-text">Log out from all devices</span>
+              <div id="global-logout-spinner" class="spinner hidden" aria-hidden="true"></div>
+            </button>
+          </div>
+
+          <!-- Global Logout Confirmation Section -->
+          <div id="global-confirm-panel" class="confirm-panel hidden" role="dialog" aria-modal="true" aria-labelledby="confirm-heading">
+            <p id="confirm-heading" style="margin-bottom: 12px; font-weight: 500;">Are you sure you want to log out from all devices?</p>
+            <div class="confirm-actions">
+              <button id="confirm-global-button" class="btn btn-danger" aria-label="Confirm global logout">Yes, log out all</button>
+              <button id="cancel-global-button" class="btn btn-secondary" aria-label="Cancel global logout">Cancel</button>
+            </div>
+          </div>
+
+          <div id="logout-success-message" class="logout-success hidden" role="alert" aria-live="polite">
+            <p>You have successfully logged out.</p>
+          </div>
         </div>
 
         <!-- Login Form -->
@@ -70,6 +94,7 @@
       </div>
     </div>
 
+    <script src="/auth-actions.js"></script>
     <script src="/login.js"></script>
   </body>
 </html>

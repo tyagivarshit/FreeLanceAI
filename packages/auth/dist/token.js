@@ -9,9 +9,13 @@ export class AuthError extends Error {
 }
 export class InvalidTokenError extends AuthError {
     code;
-    constructor(message, code) {
+    userId;
+    sessionId;
+    constructor(message, code, userId, sessionId) {
         super(message);
         this.code = code;
+        this.userId = userId;
+        this.sessionId = sessionId;
         this.name = "InvalidTokenError";
     }
 }

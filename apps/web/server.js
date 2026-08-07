@@ -8,6 +8,8 @@ import {
   mapAuthError,
   parseUserAgent,
   issueSessionCookie,
+  logoutUser,
+  issueClearSessionCookie,
 } from "@freelanceos/auth";
 import { runtimeConfig } from "@freelanceos/config";
 import { logger } from "@freelanceos/logger";
@@ -23,6 +25,20 @@ const MIME_TYPES = {
   ".js": "application/javascript",
   ".json": "application/json",
 };
+
+function getCookie(cookieHeader, name) {
+  if (!cookieHeader) {
+    return undefined;
+  }
+  const cookies = cookieHeader.split(";");
+  for (const cookie of cookies) {
+    const [key, val] = cookie.trim().split("=");
+    if (key === name) {
+      return val;
+    }
+  }
+  return undefined;
+}
 
 const server = http.createServer(async (req, res) => {
   res.setHeader("Access-Control-Allow-Origin", "*");
@@ -124,6 +140,59 @@ const server = http.createServer(async (req, res) => {
       } catch (err) {
         logger.error({
           message: "Login API request failed",
+          error: err instanceof Error ? err : new Error(String(err)),
+        });
+
+        const httpResponse = mapAuthError(err);
+        res.writeHead(httpResponse.statusCode, { "Content-Type": "application/json" });
+        res.end(JSON.stringify(httpResponse.body));
+      }
+    });
+    return;
+  }
+
+  // 1C. Hook the Logout use case to POST /api/logout
+  if (req.url === "/api/logout" && req.method === "POST") {
+    let body = "";
+    req.on("data", (chunk) => {
+      body += chunk;
+    });
+
+    req.on("end", async () => {
+      try {
+        const payload = body ? JSON.parse(body) : {};
+        const { global = false } = payload;
+
+        // Extract credentials from cookies and headers
+        const cookieHeader = req.headers.cookie || "";
+        const cookieName = runtimeConfig.SESSION_COOKIE_NAME;
+        const refreshToken = getCookie(cookieHeader, cookieName);
+
+        const authHeader = req.headers["authorization"] || "";
+        const accessToken = authHeader.startsWith("Bearer ") ? authHeader.substring(7) : undefined;
+        const ipAddress = req.socket.remoteAddress || "127.0.0.1";
+
+        const result = await logoutUser({
+          accessToken,
+          refreshToken,
+          global,
+          ipAddress,
+        });
+
+        // If directive is set, clear the secure refresh token cookie
+        if (result.clearCredentialDirective) {
+          res.setHeader("Set-Cookie", issueClearSessionCookie());
+        }
+
+        res.writeHead(200, { "Content-Type": "application/json" });
+        res.end(
+          JSON.stringify({
+            success: true,
+          }),
+        );
+      } catch (err) {
+        logger.error({
+          message: "Logout API request failed",
           error: err instanceof Error ? err : new Error(String(err)),
         });
 

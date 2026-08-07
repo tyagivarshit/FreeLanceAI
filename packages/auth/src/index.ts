@@ -103,3 +103,12 @@ export { deviceRecognitionService, parseUserAgent } from "./device-recognition-s
 export type { DeviceTelemetryInput, ParsedDeviceMetadata } from "./device-recognition-service.js";
 
 export { sessionService, SessionService } from "./session-service.js";
+
+export { logoutUser } from "./logout.js";
+export type { LogoutInput, LogoutResult } from "./logout.js";
+
+export { authenticateRequest } from "./middleware.js";
+export type { AuthenticateRequestInput, AuthenticationResult } from "./middleware.js";
+
+export { identityStore, DbIdentityStore } from "./identity-store.js";
+export type { IdentityStore, UserIdentity } from "./identity-store.js";

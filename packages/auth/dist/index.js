@@ -44,4 +44,7 @@ export { eventDispatcher, backgroundTaskDispatcher } from "./dispatcher.js";
 export { mapAuthError } from "./errors.js";
 export { deviceRecognitionService, parseUserAgent } from "./device-recognition-service.js";
 export { sessionService, SessionService } from "./session-service.js";
+export { logoutUser } from "./logout.js";
+export { authenticateRequest } from "./middleware.js";
+export { identityStore, DbIdentityStore } from "./identity-store.js";
 //# sourceMappingURL=index.js.map

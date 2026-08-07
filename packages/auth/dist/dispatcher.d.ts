@@ -32,6 +32,38 @@ export interface NewDeviceDetectedPayload {
     browser: string;
     platform: string;
 }
+export interface SessionRevokedPayload {
+    sessionId: string;
+    userId: string;
+    revokedAt: string;
+}
+export interface UserLoggedOutPayload {
+    userId: string;
+    ipAddress: string;
+    reason: "user_triggered" | "session_expired";
+}
+export interface GlobalLogoutCompletedPayload {
+    userId: string;
+    revokedSessionCount: number;
+    revokedAt: string;
+}
+export interface AuthenticationSucceededPayload {
+    userId: string;
+    sessionId: string;
+    authenticatedAt: string;
+}
+export interface AuthenticationFailedPayload {
+    ipAddress: string;
+    reason: string;
+}
+export interface SessionInvalidPayload {
+    sessionId: string;
+    reason: "revoked" | "expired";
+}
+export interface IdentityInvalidatedPayload {
+    userId: string;
+    sessionId: string;
+}
 export interface EventDispatcher {
     publish(eventName: "IDENTITY_REGISTERED", payload: IdentityRegisteredPayload): Promise<void>;
     publish(eventName: "REGISTRATION_ATTEMPT_ON_EXISTING_EMAIL", payload: RegistrationAttemptExistingEmailPayload): Promise<void>;
@@ -39,6 +71,13 @@ export interface EventDispatcher {
     publish(eventName: "LOGIN_FAILED", payload: LoginFailedPayload): Promise<void>;
     publish(eventName: "ACCOUNT_LOCKED", payload: AccountLockedPayload): Promise<void>;
     publish(eventName: "NEW_DEVICE_DETECTED", payload: NewDeviceDetectedPayload): Promise<void>;
+    publish(eventName: "SESSION_REVOKED", payload: SessionRevokedPayload): Promise<void>;
+    publish(eventName: "USER_LOGGED_OUT", payload: UserLoggedOutPayload): Promise<void>;
+    publish(eventName: "GLOBAL_LOGOUT_COMPLETED", payload: GlobalLogoutCompletedPayload): Promise<void>;
+    publish(eventName: "AUTHENTICATION_SUCCEEDED", payload: AuthenticationSucceededPayload): Promise<void>;
+    publish(eventName: "AUTHENTICATION_FAILED", payload: AuthenticationFailedPayload): Promise<void>;
+    publish(eventName: "SESSION_INVALID", payload: SessionInvalidPayload): Promise<void>;
+    publish(eventName: "IDENTITY_INVALIDATED", payload: IdentityInvalidatedPayload): Promise<void>;
 }
 export interface BackgroundTaskDispatcher {
     dispatch(taskName: "SEND_VERIFICATION_EMAIL", data: SendVerificationEmailPayload): Promise<void>;
