@@ -71,4 +71,5 @@ export { ProjectMetadata, ProjectVisibility, Project, PROJECT_CREATED, PROJECT_U
 export { AttachmentMetadata, AttachmentVisibility, Attachment, ATTACHMENT_CREATED, ATTACHMENT_UPDATED, ATTACHMENT_AVAILABLE, ATTACHMENT_ARCHIVED, ATTACHMENT_DELETED, } from "./attachment.js";
 export { RepositoryMetadata, RepositoryVisibility, Repository, REPOSITORY_REGISTERED, REPOSITORY_UPDATED, REPOSITORY_AVAILABLE, REPOSITORY_ARCHIVED, REPOSITORY_REMOVED, } from "./repository.js";
 export { AiRequestMetadata, AiRequest, AI_REQUEST_RECEIVED, AI_REQUEST_ACCEPTED, AI_REQUEST_ORCHESTRATING, AI_REQUEST_COMPLETED, AI_REQUEST_FAILED, } from "./ai-gateway.js";
+export { LogicalVisibilityClassification, PromptDefinition, PromptMetadata, PromptVersion, Prompt, PROMPT_REGISTERED, PROMPT_UPDATED, PROMPT_PUBLISHED, PROMPT_DEPRECATED, PROMPT_ARCHIVED, } from "./prompt-registry.js";
 //# sourceMappingURL=index.js.map

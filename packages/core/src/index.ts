@@ -228,3 +228,35 @@ export type {
   AiRequestFailedEvent,
   AiRequestDomainEvent,
 } from "./ai-gateway.js";
+
+export {
+  LogicalVisibilityClassification,
+  PromptDefinition,
+  PromptMetadata,
+  PromptVersion,
+  Prompt,
+  PROMPT_REGISTERED,
+  PROMPT_UPDATED,
+  PROMPT_PUBLISHED,
+  PROMPT_DEPRECATED,
+  PROMPT_ARCHIVED,
+} from "./prompt-registry.js";
+
+export type {
+  PromptLifecycleState,
+  PromptDefinitionProperties,
+  PromptMetadataProperties,
+  PromptVersionProperties,
+  PromptDomainEventName,
+  PromptRegisteredEvent,
+  PromptUpdatedEvent,
+  PromptPublishedEvent,
+  PromptDeprecatedEvent,
+  PromptArchivedEvent,
+  PromptDomainEvent,
+  PromptEventPublisher,
+  PromptQueryProjection,
+  PromptPersistenceContract,
+  PromptAggregateStore,
+  PromptProperties,
+} from "./prompt-registry.js";
