@@ -64,4 +64,6 @@
  *    - Factories:            [Future Responsibility - Not Implemented]
  */
 export { isValidEmailFormat, normalizeEmailAddress, validatePasswordStrength, } from "./validation.js";
+export { Client, CLIENT_CREATED, CLIENT_UPDATED, CLIENT_ARCHIVED, CLIENT_REACTIVATED, } from "./client.js";
+export { TimelineEntry, ClientTimeline, TIMELINE_ENTRY_APPENDED, TIMELINE_ARCHIVED, } from "./timeline.js";
 //# sourceMappingURL=index.js.map
