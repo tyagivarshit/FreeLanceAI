@@ -23,7 +23,7 @@
     "@freelanceos/config": "*",
     "@freelanceos/db": "*",
     "@freelanceos/logger": "*",
-    "drizzle-orm": "0.32.1",
+    "drizzle-orm": "0.45.2",
     "jsonwebtoken": "9.0.2"
   },
   "devDependencies": {
