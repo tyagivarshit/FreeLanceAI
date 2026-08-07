@@ -59,4 +59,16 @@ export function getSessionCookieClearConfig() {
         domain: runtimeConfig.SESSION_COOKIE_DOMAIN,
     };
 }
+/**
+ * Creates a pre-serialized session cookie header string using configured policy options.
+ */
+export function issueSessionCookie(token) {
+    return serializeCookie(getSessionCookieConfig(token));
+}
+/**
+ * Creates a pre-serialized session cookie header string to clear client cookies.
+ */
+export function issueClearSessionCookie() {
+    return serializeCookie(getSessionCookieClearConfig());
+}
 //# sourceMappingURL=cookie.js.map

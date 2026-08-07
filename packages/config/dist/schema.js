@@ -31,5 +31,11 @@ export const environmentSchema = z.object({
     CONFIG_SIGNUP_ANTI_ENUMERATION_ENABLED: z.coerce.boolean().default(false),
     CONFIG_REQUIRE_VERIFICATION_FOR_SESSION: z.coerce.boolean().default(false),
     CONFIG_EMAIL_VERIFICATION_LIFETIME_SEC: z.coerce.number().default(86400),
+    // Login Security and Lockout Policies
+    CONFIG_MAX_LOGIN_ATTEMPTS: z.coerce.number().default(5),
+    CONFIG_LOCKOUT_DURATION_SEC: z.coerce.number().default(900),
+    // Session Capacity Policies
+    CONFIG_MAX_CONCURRENT_SESSIONS: z.coerce.number().default(5),
+    CONFIG_CONCURRENT_SESSION_STRATEGY: z.enum(["revoke_oldest", "deny_access"]).default("revoke_oldest"),
 });
 //# sourceMappingURL=schema.js.map

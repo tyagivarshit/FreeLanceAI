@@ -22,6 +22,10 @@ export declare function loadRuntimeConfig(): Readonly<{
     CONFIG_SIGNUP_ANTI_ENUMERATION_ENABLED: boolean;
     CONFIG_REQUIRE_VERIFICATION_FOR_SESSION: boolean;
     CONFIG_EMAIL_VERIFICATION_LIFETIME_SEC: number;
+    CONFIG_MAX_LOGIN_ATTEMPTS: number;
+    CONFIG_LOCKOUT_DURATION_SEC: number;
+    CONFIG_MAX_CONCURRENT_SESSIONS: number;
+    CONFIG_CONCURRENT_SESSION_STRATEGY: "revoke_oldest" | "deny_access";
     SESSION_COOKIE_DOMAIN?: string | undefined;
 }>;
 export declare const runtimeConfig: Readonly<{
@@ -48,6 +52,10 @@ export declare const runtimeConfig: Readonly<{
     CONFIG_SIGNUP_ANTI_ENUMERATION_ENABLED: boolean;
     CONFIG_REQUIRE_VERIFICATION_FOR_SESSION: boolean;
     CONFIG_EMAIL_VERIFICATION_LIFETIME_SEC: number;
+    CONFIG_MAX_LOGIN_ATTEMPTS: number;
+    CONFIG_LOCKOUT_DURATION_SEC: number;
+    CONFIG_MAX_CONCURRENT_SESSIONS: number;
+    CONFIG_CONCURRENT_SESSION_STRATEGY: "revoke_oldest" | "deny_access";
     SESSION_COOKIE_DOMAIN?: string | undefined;
 }>;
 //# sourceMappingURL=config.d.ts.map

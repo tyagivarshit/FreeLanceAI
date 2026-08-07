@@ -24,6 +24,10 @@ export declare const environmentSchema: z.ZodObject<{
     CONFIG_SIGNUP_ANTI_ENUMERATION_ENABLED: z.ZodDefault<z.ZodBoolean>;
     CONFIG_REQUIRE_VERIFICATION_FOR_SESSION: z.ZodDefault<z.ZodBoolean>;
     CONFIG_EMAIL_VERIFICATION_LIFETIME_SEC: z.ZodDefault<z.ZodNumber>;
+    CONFIG_MAX_LOGIN_ATTEMPTS: z.ZodDefault<z.ZodNumber>;
+    CONFIG_LOCKOUT_DURATION_SEC: z.ZodDefault<z.ZodNumber>;
+    CONFIG_MAX_CONCURRENT_SESSIONS: z.ZodDefault<z.ZodNumber>;
+    CONFIG_CONCURRENT_SESSION_STRATEGY: z.ZodDefault<z.ZodEnum<["revoke_oldest", "deny_access"]>>;
 }, "strip", z.ZodTypeAny, {
     NODE_ENV: "development" | "production" | "test";
     API_PORT: number;
@@ -48,6 +52,10 @@ export declare const environmentSchema: z.ZodObject<{
     CONFIG_SIGNUP_ANTI_ENUMERATION_ENABLED: boolean;
     CONFIG_REQUIRE_VERIFICATION_FOR_SESSION: boolean;
     CONFIG_EMAIL_VERIFICATION_LIFETIME_SEC: number;
+    CONFIG_MAX_LOGIN_ATTEMPTS: number;
+    CONFIG_LOCKOUT_DURATION_SEC: number;
+    CONFIG_MAX_CONCURRENT_SESSIONS: number;
+    CONFIG_CONCURRENT_SESSION_STRATEGY: "revoke_oldest" | "deny_access";
     SESSION_COOKIE_DOMAIN?: string | undefined;
 }, {
     DATABASE_URL: string;
@@ -74,6 +82,10 @@ export declare const environmentSchema: z.ZodObject<{
     CONFIG_SIGNUP_ANTI_ENUMERATION_ENABLED?: boolean | undefined;
     CONFIG_REQUIRE_VERIFICATION_FOR_SESSION?: boolean | undefined;
     CONFIG_EMAIL_VERIFICATION_LIFETIME_SEC?: number | undefined;
+    CONFIG_MAX_LOGIN_ATTEMPTS?: number | undefined;
+    CONFIG_LOCKOUT_DURATION_SEC?: number | undefined;
+    CONFIG_MAX_CONCURRENT_SESSIONS?: number | undefined;
+    CONFIG_CONCURRENT_SESSION_STRATEGY?: "revoke_oldest" | "deny_access" | undefined;
 }>;
 export type Environment = z.infer<typeof environmentSchema>;
 //# sourceMappingURL=schema.d.ts.map

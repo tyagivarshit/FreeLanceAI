@@ -7,74 +7,74 @@ TAP version 13
     # Subtest: should trim and lowercase standard emails
     ok 1 - should trim and lowercase standard emails
       ---
-      duration_ms: 2.029
+      duration_ms: 3.4796
       type: 'test'
       ...
     # Subtest: should strip sub-addresses for gmail domain by default
     ok 2 - should strip sub-addresses for gmail domain by default
       ---
-      duration_ms: 0.2473
+      duration_ms: 0.4787
       type: 'test'
       ...
     # Subtest: should strip dots for gmail domain by default
     ok 3 - should strip dots for gmail domain by default
       ---
-      duration_ms: 0.1666
+      duration_ms: 0.5377
       type: 'test'
       ...
     # Subtest: should not strip sub-addresses or dots for non-gmail domains
     ok 4 - should not strip sub-addresses or dots for non-gmail domains
       ---
-      duration_ms: 0.1958
+      duration_ms: 0.4544
       type: 'test'
       ...
     1..4
 ok 1 - Email Normalization
   ---
-  duration_ms: 3.7861
+  duration_ms: 7.7395
   type: 'suite'
   ...
 # Subtest: Password Strength Validation
     # Subtest: should pass a valid complex password
     ok 1 - should pass a valid complex password
       ---
-      duration_ms: 0.3686
+      duration_ms: 0.8018
       type: 'test'
       ...
     # Subtest: should fail on short passwords
     ok 2 - should fail on short passwords
       ---
-      duration_ms: 0.5628
+      duration_ms: 0.7803
       type: 'test'
       ...
     # Subtest: should fail on missing uppercase letters
     ok 3 - should fail on missing uppercase letters
       ---
-      duration_ms: 0.2171
+      duration_ms: 0.3031
       type: 'test'
       ...
     # Subtest: should fail on missing lowercase letters
     ok 4 - should fail on missing lowercase letters
       ---
-      duration_ms: 0.2764
+      duration_ms: 0.3353
       type: 'test'
       ...
     # Subtest: should fail on missing numbers
     ok 5 - should fail on missing numbers
       ---
-      duration_ms: 0.249
+      duration_ms: 0.4371
       type: 'test'
       ...
     # Subtest: should fail on missing special characters
     ok 6 - should fail on missing special characters
       ---
-      duration_ms: 0.2869
+      duration_ms: 0.5089
       type: 'test'
       ...
     1..6
 ok 2 - Password Strength Validation
   ---
-  duration_ms: 2.3673
+  duration_ms: 3.8209
   type: 'suite'
   ...
 1..2
@@ -85,4 +85,4 @@ ok 2 - Password Strength Validation
 # cancelled 0
 # skipped 0
 # todo 0
-# duration_ms 144.051
+# duration_ms 262.5797

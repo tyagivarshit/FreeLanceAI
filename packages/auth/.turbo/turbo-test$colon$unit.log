@@ -3,57 +3,117 @@
 > node --env-file=../../.env.test --test dist/*.test.js
 
 TAP version 13
-# {"level":"info","time":"2026-08-07T05:24:40.752Z","pid":25024,"hostname":"Tyagi","msg":"Anti-enumeration triggered for email: existing@example.com. Simulating successful signup."}
+# {"level":"info","time":"2026-08-07T05:53:02.825Z","pid":49080,"hostname":"Tyagi","payload":{"userId":"mock-user-uuid","ipAddress":"127.0.0.1","deviceName":"unknown"},"msg":"[Event Dispatcher] Emitted event: LOGIN_SUCCEEDED"}
+# Subtest: Login Use Case & Flow Security Tests
+    # Subtest: should authenticate successfully with correct credentials and active status
+    ok 1 - should authenticate successfully with correct credentials and active status
+      ---
+      duration_ms: 24.3711
+      type: 'test'
+      ...
+    # Subtest: should fail with AuthenticationFailureError for unregistered emails (Timing Protection Path)
+    ok 2 - should fail with AuthenticationFailureError for unregistered emails (Timing Protection Path)
+      ---
+      duration_ms: 89.779
+      type: 'test'
+      ...
+    # Subtest: should fail with AccountSuspendedError if user status is suspended
+    ok 3 - should fail with AccountSuspendedError if user status is suspended
+      ---
+      duration_ms: 74.116
+      type: 'test'
+      ...
+    # Subtest: should fail with AccountDisabledError if user status is disabled
+    ok 4 - should fail with AccountDisabledError if user status is disabled
+      ---
+      duration_ms: 70.2496
+      type: 'test'
+      ...
+    # Subtest: should fail with PendingVerificationError if user status is pending and verification is required
+    ok 5 - should fail with PendingVerificationError if user status is pending and verification is required
+      ---
+      duration_ms: 59.6329
+      type: 'test'
+      ...
+    # Subtest: should track failed attempts and lock account upon hitting attempts threshold
+    ok 6 - should track failed attempts and lock account upon hitting attempts threshold
+      ---
+      duration_ms: 70.0922
+      type: 'test'
+      ...
+    # Subtest: should revoke oldest active sessions if max sessions limit is exceeded
+    ok 7 - should revoke oldest active sessions if max sessions limit is exceeded
+      ---
+      duration_ms: 8.2645
+      type: 'test'
+      ...
+    1..7
+ok 1 - Login Use Case & Flow Security Tests
+  ---
+  duration_ms: 397.9165
+  type: 'suite'
+  ...
+# {"level":"info","time":"2026-08-07T05:53:02.915Z","pid":49080,"hostname":"Tyagi","payload":{"email":"unknown@gmail.com","reason":"USER_NOT_FOUND","ipAddress":"127.0.0.1"},"msg":"[Event Dispatcher] Emitted event: LOGIN_FAILED"}
+# {"level":"info","time":"2026-08-07T05:53:02.989Z","pid":49080,"hostname":"Tyagi","payload":{"email":"suspended@gmail.com","reason":"ACCOUNT_SUSPENDED","ipAddress":"127.0.0.1"},"msg":"[Event Dispatcher] Emitted event: LOGIN_FAILED"}
+# {"level":"info","time":"2026-08-07T05:53:03.060Z","pid":49080,"hostname":"Tyagi","payload":{"email":"disabled@gmail.com","reason":"ACCOUNT_DISABLED","ipAddress":"127.0.0.1"},"msg":"[Event Dispatcher] Emitted event: LOGIN_FAILED"}
+# {"level":"info","time":"2026-08-07T05:53:03.120Z","pid":49080,"hostname":"Tyagi","payload":{"email":"pending@gmail.com","reason":"PENDING_VERIFICATION","ipAddress":"127.0.0.1"},"msg":"[Event Dispatcher] Emitted event: LOGIN_FAILED"}
+# {"level":"info","time":"2026-08-07T05:53:03.128Z","pid":49080,"hostname":"Tyagi","payload":{"email":"bruteforce@gmail.com","reason":"INVALID_CREDENTIALS","ipAddress":"127.0.0.1"},"msg":"[Event Dispatcher] Emitted event: LOGIN_FAILED"}
+# {"level":"info","time":"2026-08-07T05:53:03.133Z","pid":49080,"hostname":"Tyagi","payload":{"email":"bruteforce@gmail.com","reason":"INVALID_CREDENTIALS","ipAddress":"127.0.0.1"},"msg":"[Event Dispatcher] Emitted event: LOGIN_FAILED"}
+# {"level":"info","time":"2026-08-07T05:53:03.137Z","pid":49080,"hostname":"Tyagi","payload":{"userId":"mock-user-uuid","email":"bruteforce@gmail.com"},"msg":"[Event Dispatcher] Emitted event: ACCOUNT_LOCKED"}
+# {"level":"info","time":"2026-08-07T05:53:03.137Z","pid":49080,"hostname":"Tyagi","payload":{"email":"bruteforce@gmail.com","reason":"INVALID_CREDENTIALS","ipAddress":"127.0.0.1"},"msg":"[Event Dispatcher] Emitted event: LOGIN_FAILED"}
+# {"level":"info","time":"2026-08-07T05:53:03.198Z","pid":49080,"hostname":"Tyagi","payload":{"userId":"mock-user-uuid","ipAddress":"127.0.0.1","browser":"unknown","platform":"unknown"},"msg":"[Event Dispatcher] Emitted event: NEW_DEVICE_DETECTED"}
+# {"level":"info","time":"2026-08-07T05:53:03.199Z","pid":49080,"hostname":"Tyagi","payload":{"userId":"mock-user-uuid","ipAddress":"127.0.0.1","deviceName":"unknown"},"msg":"[Event Dispatcher] Emitted event: LOGIN_SUCCEEDED"}
+# {"level":"info","time":"2026-08-07T05:53:02.805Z","pid":40560,"hostname":"Tyagi","msg":"Anti-enumeration triggered for email: existing@example.com. Simulating successful signup."}
 # Subtest: Signup Use Case Validation & Mock Flow Tests
     # Subtest: should throw ValidationError if password is too short
     ok 1 - should throw ValidationError if password is too short
       ---
-      duration_ms: 1.9512
+      duration_ms: 2.0936
       type: 'test'
       ...
     # Subtest: should throw DuplicateEmailError if user exists and anti-enumeration is disabled
     ok 2 - should throw DuplicateEmailError if user exists and anti-enumeration is disabled
       ---
-      duration_ms: 0.6814
+      duration_ms: 0.7781
       type: 'test'
       ...
     # Subtest: should return success and not write to DB if user exists and anti-enumeration is enabled
     ok 3 - should return success and not write to DB if user exists and anti-enumeration is enabled
       ---
-      duration_ms: 1.7861
+      duration_ms: 2.094
       type: 'test'
       ...
     # Subtest: should execute transaction and insert records on successful new registration
     ok 4 - should execute transaction and insert records on successful new registration
       ---
-      duration_ms: 12.9032
+      duration_ms: 5.8806
       type: 'test'
       ...
     # Subtest: should execute transaction and return signedAccessToken if auto-login is active
     ok 5 - should execute transaction and return signedAccessToken if auto-login is active
       ---
-      duration_ms: 17.1799
+      duration_ms: 12.5971
       type: 'test'
       ...
     1..5
-ok 1 - Signup Use Case Validation & Mock Flow Tests
+ok 2 - Signup Use Case Validation & Mock Flow Tests
   ---
-  duration_ms: 35.7955
+  duration_ms: 24.8644
   type: 'suite'
   ...
-# {"level":"info","time":"2026-08-07T05:24:40.753Z","pid":25024,"hostname":"Tyagi","payload":{"email":"existing@example.com","userId":"existing-uuid"},"msg":"[Event Dispatcher] Emitted event: REGISTRATION_ATTEMPT_ON_EXISTING_EMAIL"}
-# {"level":"info","time":"2026-08-07T05:24:40.765Z","pid":25024,"hostname":"Tyagi","payload":{"userId":"mock-user-uuid","normalizedEmail":"newuser@gmail.com","registeredAt":"2026-08-07T05:24:40.765Z"},"msg":"[Event Dispatcher] Emitted event: IDENTITY_REGISTERED"}
-# {"level":"info","time":"2026-08-07T05:24:40.766Z","pid":25024,"hostname":"Tyagi","data":{"userId":"mock-user-uuid","email":"newuser@gmail.com","token":"70e209dcf844e9ca41e978e6b22921dbc0b35b8704f1bbe08e54f70f5b5b70fd"},"msg":"[Background Task Dispatcher] Dispatching task: SEND_VERIFICATION_EMAIL"}
-# {"level":"info","time":"2026-08-07T05:24:40.783Z","pid":25024,"hostname":"Tyagi","payload":{"userId":"mock-user-uuid","normalizedEmail":"autosession@gmail.com","registeredAt":"2026-08-07T05:24:40.770Z"},"msg":"[Event Dispatcher] Emitted event: IDENTITY_REGISTERED"}
-# {"level":"info","time":"2026-08-07T05:24:40.783Z","pid":25024,"hostname":"Tyagi","data":{"userId":"mock-user-uuid","email":"autosession@gmail.com","token":"4ad980f34258fe086cdb27c408a4fe77eb939433231c8d8b542464a5caa45f54"},"msg":"[Background Task Dispatcher] Dispatching task: SEND_VERIFICATION_EMAIL"}
-# {"level":"info","time":"2026-08-07T05:24:40.789Z","pid":25024,"hostname":"Tyagi","data":{"userId":"mock-user-uuid","email":"newuser@gmail.com","token":"70e209dcf844e9ca41e978e6b22921dbc0b35b8704f1bbe08e54f70f5b5b70fd"},"msg":"[Background Task Execution] Executed task: SEND_VERIFICATION_EMAIL"}
-# {"level":"info","time":"2026-08-07T05:24:40.789Z","pid":25024,"hostname":"Tyagi","data":{"userId":"mock-user-uuid","email":"autosession@gmail.com","token":"4ad980f34258fe086cdb27c408a4fe77eb939433231c8d8b542464a5caa45f54"},"msg":"[Background Task Execution] Executed task: SEND_VERIFICATION_EMAIL"}
-1..1
-# tests 5
-# suites 1
-# pass 5
+# {"level":"info","time":"2026-08-07T05:53:02.806Z","pid":40560,"hostname":"Tyagi","payload":{"email":"existing@example.com","userId":"existing-uuid"},"msg":"[Event Dispatcher] Emitted event: REGISTRATION_ATTEMPT_ON_EXISTING_EMAIL"}
+# {"level":"info","time":"2026-08-07T05:53:02.812Z","pid":40560,"hostname":"Tyagi","payload":{"userId":"mock-user-uuid","normalizedEmail":"newuser@gmail.com","registeredAt":"2026-08-07T05:53:02.812Z"},"msg":"[Event Dispatcher] Emitted event: IDENTITY_REGISTERED"}
+# {"level":"info","time":"2026-08-07T05:53:02.812Z","pid":40560,"hostname":"Tyagi","data":{"userId":"mock-user-uuid","email":"newuser@gmail.com","token":"cfe0cb23f25fdb6de00d337efce58ce1d7f2c9ea344807b518fbaf89884a02f9"},"msg":"[Background Task Dispatcher] Dispatching task: SEND_VERIFICATION_EMAIL"}
+# {"level":"info","time":"2026-08-07T05:53:02.824Z","pid":40560,"hostname":"Tyagi","payload":{"userId":"mock-user-uuid","normalizedEmail":"autosession@gmail.com","registeredAt":"2026-08-07T05:53:02.816Z"},"msg":"[Event Dispatcher] Emitted event: IDENTITY_REGISTERED"}
+# {"level":"info","time":"2026-08-07T05:53:02.825Z","pid":40560,"hostname":"Tyagi","data":{"userId":"mock-user-uuid","email":"autosession@gmail.com","token":"8b026336c15868502eab42c5278704c9d1986cc4742769f5264671479b5fa833"},"msg":"[Background Task Dispatcher] Dispatching task: SEND_VERIFICATION_EMAIL"}
+# {"level":"info","time":"2026-08-07T05:53:02.836Z","pid":40560,"hostname":"Tyagi","data":{"userId":"mock-user-uuid","email":"newuser@gmail.com","token":"cfe0cb23f25fdb6de00d337efce58ce1d7f2c9ea344807b518fbaf89884a02f9"},"msg":"[Background Task Execution] Executed task: SEND_VERIFICATION_EMAIL"}
+# {"level":"info","time":"2026-08-07T05:53:02.837Z","pid":40560,"hostname":"Tyagi","data":{"userId":"mock-user-uuid","email":"autosession@gmail.com","token":"8b026336c15868502eab42c5278704c9d1986cc4742769f5264671479b5fa833"},"msg":"[Background Task Execution] Executed task: SEND_VERIFICATION_EMAIL"}
+1..2
+# tests 12
+# suites 2
+# pass 12
 # fail 0
 # cancelled 0
 # skipped 0
 # todo 0
-# duration_ms 1291.6837
+# duration_ms 1607.0135
