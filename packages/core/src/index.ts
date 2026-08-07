@@ -321,3 +321,37 @@ export type {
   MemoryAggregateStore,
   MemoryProperties,
 } from "./memory.js";
+
+export {
+  RepresentationFingerprint,
+  EmbeddingMetadata,
+  EmbeddingGenerationPolicy,
+  EmbeddingSnapshot,
+  Embedding,
+  EMBEDDING_REGISTERED,
+  EMBEDDING_GENERATED,
+  EMBEDDING_VALIDATED,
+  EMBEDDING_PUBLISHED,
+  EMBEDDING_ARCHIVED,
+} from "./embedding.js";
+
+export type {
+  EmbeddingLifecycleState,
+  RepresentationFingerprintProperties,
+  EmbeddingMetadataProperties,
+  EmbeddingGenerationPolicyProperties,
+  EmbeddingSnapshotProperties,
+  EmbeddingClassification,
+  EmbeddingDomainEventName,
+  EmbeddingRegisteredEvent,
+  EmbeddingGeneratedEvent,
+  EmbeddingValidatedEvent,
+  EmbeddingPublishedEvent,
+  EmbeddingArchivedEvent,
+  EmbeddingDomainEvent,
+  EmbeddingEventPublisher,
+  EmbeddingQueryProjection,
+  EmbeddingPersistenceContract,
+  EmbeddingAggregateStore,
+  EmbeddingProperties,
+} from "./embedding.js";

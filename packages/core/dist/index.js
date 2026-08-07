@@ -74,4 +74,5 @@ export { AiRequestMetadata, AiRequest, AI_REQUEST_RECEIVED, AI_REQUEST_ACCEPTED,
 export { LogicalVisibilityClassification, PromptDefinition, PromptMetadata, PromptVersion, Prompt, PROMPT_REGISTERED, PROMPT_UPDATED, PROMPT_PUBLISHED, PROMPT_DEPRECATED, PROMPT_ARCHIVED, } from "./prompt-registry.js";
 export { ContextBlueprint, ContextMetadata, ContextAssemblyRule, ContextSourceReference, Context, CONTEXT_REGISTERED, CONTEXT_VALIDATED, CONTEXT_PUBLISHED, CONTEXT_ARCHIVED, } from "./context-builder.js";
 export { MemoryMetadata, MemoryRetentionRule, MemoryEntry, MemorySnapshot, Memory, MEMORY_VALIDATED, MEMORY_PUBLISHED, MEMORY_ARCHIVED, } from "./memory.js";
+export { RepresentationFingerprint, EmbeddingMetadata, EmbeddingGenerationPolicy, EmbeddingSnapshot, Embedding, EMBEDDING_REGISTERED, EMBEDDING_GENERATED, EMBEDDING_VALIDATED, EMBEDDING_PUBLISHED, EMBEDDING_ARCHIVED, } from "./embedding.js";
 //# sourceMappingURL=index.js.map
