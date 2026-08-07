@@ -157,3 +157,25 @@ export type {
   ProjectAggregateStore,
   ProjectQueryProjection,
 } from "./project.js";
+
+export {
+  AttachmentMetadata,
+  AttachmentVisibility,
+  Attachment,
+  ATTACHMENT_CREATED,
+  ATTACHMENT_UPDATED,
+  ATTACHMENT_AVAILABLE,
+  ATTACHMENT_ARCHIVED,
+  ATTACHMENT_DELETED,
+} from "./attachment.js";
+
+export type {
+  AttachmentState,
+  AttachmentDomainEventName,
+  AttachmentEventPublisher,
+  AttachmentMetadataProperties,
+  AttachmentProperties,
+  AttachmentPersistenceContract,
+  AttachmentAggregateStore,
+  AttachmentQueryProjection,
+} from "./attachment.js";

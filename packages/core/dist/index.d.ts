@@ -7,4 +7,6 @@ export { Money, Payment, PAYMENT_CREATED, PAYMENT_AUTHORIZED, PAYMENT_CAPTURED, 
 export type { PaymentState, PaymentDomainEventName, PaymentEventPublisher, MonetaryPolicy, PaymentProperties, PaymentPersistenceContract, PaymentAggregateStore, PaymentQueryProjection, } from "./payment.js";
 export { ProjectMetadata, ProjectVisibility, Project, PROJECT_CREATED, PROJECT_UPDATED, PROJECT_STARTED, PROJECT_PAUSED, PROJECT_COMPLETED, PROJECT_CANCELLED, PROJECT_ARCHIVED, } from "./project.js";
 export type { ProjectState, ProjectDomainEventName, ProjectEventPublisher, ProjectMetadataProperties, ProjectProperties, ProjectPersistenceContract, ProjectAggregateStore, ProjectQueryProjection, } from "./project.js";
+export { AttachmentMetadata, AttachmentVisibility, Attachment, ATTACHMENT_CREATED, ATTACHMENT_UPDATED, ATTACHMENT_AVAILABLE, ATTACHMENT_ARCHIVED, ATTACHMENT_DELETED, } from "./attachment.js";
+export type { AttachmentState, AttachmentDomainEventName, AttachmentEventPublisher, AttachmentMetadataProperties, AttachmentProperties, AttachmentPersistenceContract, AttachmentAggregateStore, AttachmentQueryProjection, } from "./attachment.js";
 //# sourceMappingURL=index.d.ts.map
