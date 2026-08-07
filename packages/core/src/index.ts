@@ -179,3 +179,52 @@ export type {
   AttachmentAggregateStore,
   AttachmentQueryProjection,
 } from "./attachment.js";
+
+export {
+  RepositoryMetadata,
+  RepositoryVisibility,
+  Repository,
+  REPOSITORY_REGISTERED,
+  REPOSITORY_UPDATED,
+  REPOSITORY_AVAILABLE,
+  REPOSITORY_ARCHIVED,
+  REPOSITORY_REMOVED,
+} from "./repository.js";
+
+export type {
+  RepositoryState,
+  RepositoryDomainEventName,
+  RepositoryEventPublisher,
+  RepositoryMetadataProperties,
+  RepositoryProperties,
+  RepositoryPersistenceContract,
+  RepositoryAggregateStore,
+  RepositoryQueryProjection,
+} from "./repository.js";
+
+export {
+  AiRequestMetadata,
+  AiRequest,
+  AI_REQUEST_RECEIVED,
+  AI_REQUEST_ACCEPTED,
+  AI_REQUEST_ORCHESTRATING,
+  AI_REQUEST_COMPLETED,
+  AI_REQUEST_FAILED,
+} from "./ai-gateway.js";
+
+export type {
+  AiRequestState,
+  AiRequestDomainEventName,
+  AiRequestEventPublisher,
+  AiRequestMetadataProperties,
+  AiRequestProperties,
+  AiRequestPersistenceContract,
+  AiRequestAggregateStore,
+  AiRequestQueryProjection,
+  AiRequestReceivedEvent,
+  AiRequestAcceptedEvent,
+  AiRequestOrchestratingEvent,
+  AiRequestCompletedEvent,
+  AiRequestFailedEvent,
+  AiRequestDomainEvent,
+} from "./ai-gateway.js";

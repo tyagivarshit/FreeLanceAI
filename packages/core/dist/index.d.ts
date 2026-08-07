@@ -9,4 +9,8 @@ export { ProjectMetadata, ProjectVisibility, Project, PROJECT_CREATED, PROJECT_U
 export type { ProjectState, ProjectDomainEventName, ProjectEventPublisher, ProjectMetadataProperties, ProjectProperties, ProjectPersistenceContract, ProjectAggregateStore, ProjectQueryProjection, } from "./project.js";
 export { AttachmentMetadata, AttachmentVisibility, Attachment, ATTACHMENT_CREATED, ATTACHMENT_UPDATED, ATTACHMENT_AVAILABLE, ATTACHMENT_ARCHIVED, ATTACHMENT_DELETED, } from "./attachment.js";
 export type { AttachmentState, AttachmentDomainEventName, AttachmentEventPublisher, AttachmentMetadataProperties, AttachmentProperties, AttachmentPersistenceContract, AttachmentAggregateStore, AttachmentQueryProjection, } from "./attachment.js";
+export { RepositoryMetadata, RepositoryVisibility, Repository, REPOSITORY_REGISTERED, REPOSITORY_UPDATED, REPOSITORY_AVAILABLE, REPOSITORY_ARCHIVED, REPOSITORY_REMOVED, } from "./repository.js";
+export type { RepositoryState, RepositoryDomainEventName, RepositoryEventPublisher, RepositoryMetadataProperties, RepositoryProperties, RepositoryPersistenceContract, RepositoryAggregateStore, RepositoryQueryProjection, } from "./repository.js";
+export { AiRequestMetadata, AiRequest, AI_REQUEST_RECEIVED, AI_REQUEST_ACCEPTED, AI_REQUEST_ORCHESTRATING, AI_REQUEST_COMPLETED, AI_REQUEST_FAILED, } from "./ai-gateway.js";
+export type { AiRequestState, AiRequestDomainEventName, AiRequestEventPublisher, AiRequestMetadataProperties, AiRequestProperties, AiRequestPersistenceContract, AiRequestAggregateStore, AiRequestQueryProjection, AiRequestReceivedEvent, AiRequestAcceptedEvent, AiRequestOrchestratingEvent, AiRequestCompletedEvent, AiRequestFailedEvent, AiRequestDomainEvent, } from "./ai-gateway.js";
 //# sourceMappingURL=index.d.ts.map
