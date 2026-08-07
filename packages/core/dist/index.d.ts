@@ -5,4 +5,6 @@ export { TimelineEntry, ClientTimeline, TIMELINE_ENTRY_APPENDED, TIMELINE_ARCHIV
 export type { TimelineStatus, TimelineEventCategory, VisibilityClassification, TimelineDomainEventName, TimelineEventPublisher, TimelineEntryProperties, ClientTimelineProperties, TimelineAggregateStore, } from "./timeline.js";
 export { Money, Payment, PAYMENT_CREATED, PAYMENT_AUTHORIZED, PAYMENT_CAPTURED, PAYMENT_COMPLETED, PAYMENT_FAILED, PAYMENT_CANCELLED, } from "./payment.js";
 export type { PaymentState, PaymentDomainEventName, PaymentEventPublisher, MonetaryPolicy, PaymentProperties, PaymentPersistenceContract, PaymentAggregateStore, PaymentQueryProjection, } from "./payment.js";
+export { ProjectMetadata, ProjectVisibility, Project, PROJECT_CREATED, PROJECT_UPDATED, PROJECT_STARTED, PROJECT_PAUSED, PROJECT_COMPLETED, PROJECT_CANCELLED, PROJECT_ARCHIVED, } from "./project.js";
+export type { ProjectState, ProjectDomainEventName, ProjectEventPublisher, ProjectMetadataProperties, ProjectProperties, ProjectPersistenceContract, ProjectAggregateStore, ProjectQueryProjection, } from "./project.js";
 //# sourceMappingURL=index.d.ts.map

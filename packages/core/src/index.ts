@@ -133,3 +133,27 @@ export type {
   PaymentAggregateStore,
   PaymentQueryProjection,
 } from "./payment.js";
+
+export {
+  ProjectMetadata,
+  ProjectVisibility,
+  Project,
+  PROJECT_CREATED,
+  PROJECT_UPDATED,
+  PROJECT_STARTED,
+  PROJECT_PAUSED,
+  PROJECT_COMPLETED,
+  PROJECT_CANCELLED,
+  PROJECT_ARCHIVED,
+} from "./project.js";
+
+export type {
+  ProjectState,
+  ProjectDomainEventName,
+  ProjectEventPublisher,
+  ProjectMetadataProperties,
+  ProjectProperties,
+  ProjectPersistenceContract,
+  ProjectAggregateStore,
+  ProjectQueryProjection,
+} from "./project.js";
