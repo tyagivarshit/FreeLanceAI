@@ -1,436 +1,390 @@
 import { test, describe } from "node:test";
 import assert from "node:assert";
 import {
-  Embedding,
-  EmbeddingMetadata,
-  EmbeddingGenerationPolicy,
-  RepresentationFingerprint,
-  EmbeddingSnapshot,
-  EmbeddingClassification,
   EmbeddingReference,
+  EmbeddingSourceReference,
+  EmbeddingVector,
+  EmbeddingSpace,
+  EmbeddingFingerprint,
+  EmbeddingSnapshot,
+  Embedding,
   EMBEDDING_REGISTERED,
-  EMBEDDING_GENERATED,
   EMBEDDING_VALIDATED,
-  EMBEDDING_PUBLISHED,
+  EMBEDDING_AVAILABLE,
   EMBEDDING_ARCHIVED,
 } from "./embedding.js";
 import type {
-  EmbeddingAggregateStore,
   EmbeddingPersistenceContract,
+  EmbeddingAggregateStore,
   EmbeddingQueryProjection,
-  EmbeddingDomainEvent,
 } from "./embedding.js";
 
-describe("Embedding Aggregate Root and Value Objects Domain Tests", () => {
-  const defaultMetadata = new EmbeddingMetadata({
-    displayName: "Client Profile Embedding",
-    description: "Represents client profiles logical model.",
-    purpose: "Describe contextual proximity.",
-    classificationSummary: "Client",
-  });
+describe("Embedding Aggregate & Invariants Domain Tests", () => {
+  const defaultRef = new EmbeddingReference("embedding.reference-001");
+  const alternativeRef = new EmbeddingReference("embedding.reference-002");
 
-  const alternativeMetadata = new EmbeddingMetadata({
-    displayName: "Client Profile Embedding Updated",
-    description: "Represents client profiles updated logic.",
-    purpose: "Describe contextual proximity.",
-    classificationSummary: "ClientUpdated",
-  });
+  const defaultSourceRef = new EmbeddingSourceReference("conversation-import-123");
+  const alternativeSourceRef = new EmbeddingSourceReference("conversation-import-456");
 
-  const defaultPolicy = new EmbeddingGenerationPolicy({
-    generationStrategyReference: "SemanticMatchOnly",
-    compatibilityClassification: "v1.compat",
-    logicalRefreshClassification: "OnProfileUpdate",
-  });
+  const defaultVector = new EmbeddingVector([0.1, -0.2, 0.35]);
+  const alternativeVector = new EmbeddingVector([0.9, -0.8, 0.77]);
 
-  const defaultFingerprint = new RepresentationFingerprint({
-    fingerprintIdentifier: "fp-abc-123",
-    fingerprintStrategyReference: "MurmurHash3",
-  });
+  const defaultSpace = new EmbeddingSpace("semantic.space-abc");
+  const alternativeSpace = new EmbeddingSpace("semantic.space-xyz");
 
-  const alternativeFingerprint = new RepresentationFingerprint({
-    fingerprintIdentifier: "fp-xyz-999",
-    fingerprintStrategyReference: "MurmurHash3",
-  });
+  const defaultFingerprint = new EmbeddingFingerprint("logical-fingerprint-v1");
+  const alternativeFingerprint = new EmbeddingFingerprint("logical-fingerprint-v2");
 
-  const defaultClassification = new EmbeddingClassification({
-    classificationTag: "client.profile",
-  });
-
-  test("Embedding creation success: state Draft, snapshots initialized, registered event emitted", () => {
+  test("Aggregate creation: status Draft, snapshot version 1, properties matched", () => {
     const embedding = Embedding.create(
-      "emb-1",
-      "client.profile.embedding",
-      "owner-123",
-      defaultMetadata,
-      defaultPolicy,
-      defaultClassification,
-      "snap-1",
+      "emb-123",
+      defaultRef,
+      defaultSourceRef,
+      defaultVector,
+      defaultSpace,
       defaultFingerprint,
+      "snap-1",
     );
 
-    assert.strictEqual(embedding.id, "emb-1");
-    assert.strictEqual(embedding.reference, "client.profile.embedding");
-    assert.strictEqual(embedding.ownerId, "owner-123");
-    assert.strictEqual(embedding.status, "Draft");
-    assert.strictEqual(embedding.metadata.displayName, "Client Profile Embedding");
+    assert.strictEqual(embedding.id, "emb-123");
+    assert.ok(embedding.embeddingReference.equals(defaultRef));
+    assert.ok(embedding.sourceReference.equals(defaultSourceRef));
+    assert.ok(embedding.vector.equals(defaultVector));
+    assert.strictEqual(embedding.dimension, 3);
+    assert.ok(embedding.space.equals(defaultSpace));
+    assert.ok(embedding.fingerprint.equals(defaultFingerprint));
+    assert.strictEqual(embedding.lifecycle, "Draft");
 
-    // Snapshot completeness checks
+    // Snapshot checking
     assert.strictEqual(embedding.snapshots.length, 1);
-    assert.strictEqual(embedding.snapshots[0]!.snapshotId, "snap-1");
-    assert.strictEqual(
-      embedding.snapshots[0]!.representationFingerprint.fingerprintIdentifier,
-      "fp-abc-123",
-    );
-    assert.strictEqual(
-      embedding.snapshots[0]!.metadataSnapshot.displayName,
-      "Client Profile Embedding",
-    );
-    assert.strictEqual(
-      embedding.snapshots[0]!.generationPolicySnapshot.generationStrategyReference,
-      "SemanticMatchOnly",
-    );
-    assert.strictEqual(
-      embedding.snapshots[0]!.classificationSnapshot.classificationTag,
-      "client.profile",
-    );
+    const snap = embedding.snapshots[0]!;
+    assert.strictEqual(snap.version, 1);
+    assert.strictEqual(snap.lifecycle, "Draft");
+    assert.ok(snap.embeddingReference.equals(defaultRef));
+    assert.ok(snap.sourceReference.equals(defaultSourceRef));
+    assert.ok(snap.vector.equals(defaultVector));
+    assert.strictEqual(snap.dimension, 3);
+    assert.ok(snap.space.equals(defaultSpace));
+    assert.ok(snap.fingerprint.equals(defaultFingerprint));
+    assert.strictEqual(snap.snapshotId, "snap-1");
+    assert.ok(snap.createdAt instanceof Date);
 
-    // Events validation
-    assert.strictEqual(embedding.domainEvents.length, 1);
-    const event = embedding.domainEvents[0] as EmbeddingDomainEvent;
-    assert.strictEqual(event.eventType, EMBEDDING_REGISTERED);
-    assert.strictEqual(event.embeddingId, "emb-1");
-    assert.strictEqual(event.reference, "client.profile.embedding");
-    assert.strictEqual(event.snapshotId, "snap-1");
-    assert.strictEqual(event.ownerId, "owner-123");
+    assert.strictEqual(embedding.domainEvents.length, 0);
   });
 
-  test("Embedding reference format validation rejects invalid keys", () => {
+  test("EmbeddingVector constraints validation", () => {
+    // 1. Vector is present / non-empty
     assert.throws(() => {
-      Embedding.create(
-        "emb-1",
-        "client..embedding",
-        "owner-123",
-        defaultMetadata,
-        defaultPolicy,
-        defaultClassification,
-        "snap-1",
-        defaultFingerprint,
-      );
+      new EmbeddingVector([]);
+    }, /Vector array must not be empty\./);
+
+    // 2. Reject non-numeric elements
+    assert.throws(() => {
+      new EmbeddingVector([1, 2, "three" as unknown as number]);
+    }, /Every element in the vector must be numeric\./);
+
+    // 3. Reject NaN
+    assert.throws(() => {
+      new EmbeddingVector([1, 2, NaN]);
+    }, /Every element in the vector must be a finite number\./);
+
+    // 4. Reject Infinity
+    assert.throws(() => {
+      new EmbeddingVector([1, 2, Infinity]);
+    }, /Every element in the vector must be a finite number\./);
+
+    // 5. Reject negative Infinity
+    assert.throws(() => {
+      new EmbeddingVector([1, 2, -Infinity]);
+    }, /Every element in the vector must be a finite number\./);
+  });
+
+  test("EmbeddingVector immutability check", () => {
+    const rawArray = [0.1, 0.2, 0.3];
+    const vector = new EmbeddingVector(rawArray);
+
+    // Caller mutating original raw array shouldn't modify Vector values
+    rawArray[0] = 9.9;
+    assert.strictEqual(vector.values[0], 0.1);
+
+    // Getter return array is copy-protected
+    const retrieved = vector.values;
+    retrieved[0] = 8.8;
+    assert.strictEqual(vector.values[0], 0.1);
+
+    // Internal values array is frozen
+    assert.throws(() => {
+      (vector as unknown as { _values: number[] })._values[0] = 5.5;
+    }, TypeError);
+  });
+
+  test("Dimension mismatches and validations", () => {
+    const vector = new EmbeddingVector([0.1, 0.2]);
+
+    // Derived correctly
+    assert.strictEqual(vector.length, 2);
+
+    // Dimension mismatch in Snapshot throws error
+    assert.throws(() => {
+      new EmbeddingSnapshot({
+        version: 1,
+        createdAt: new Date(),
+        embeddingReference: defaultRef,
+        sourceReference: defaultSourceRef,
+        vector,
+        dimension: 3, // vector is dimension 2
+        space: defaultSpace,
+        fingerprint: defaultFingerprint,
+        lifecycle: "Draft",
+        snapshotId: "snap-1",
+      });
+    }, /Vector dimension mismatch\./);
+  });
+
+  test("Value Object Invariants: format check and immutability", () => {
+    // Reference pattern validations
+    assert.ok(new EmbeddingReference("emb.v1"));
+    assert.throws(() => {
+      new EmbeddingReference("Emb..1");
     }, /Invalid embedding reference format/);
 
+    assert.ok(new EmbeddingSourceReference("source.v1"));
     assert.throws(() => {
-      Embedding.create(
-        "emb-1",
-        "Client.embedding",
-        "owner-123",
-        defaultMetadata,
-        defaultPolicy,
-        defaultClassification,
-        "snap-1",
-        defaultFingerprint,
-      );
-    }, /Invalid embedding reference format/);
+      new EmbeddingSourceReference("Source..1");
+    }, /Invalid source reference format/);
+
+    assert.ok(new EmbeddingSpace("space.sem.001"));
+    assert.throws(() => {
+      new EmbeddingSpace("Space..1");
+    }, /Invalid embedding space format/);
+
+    // Value Objects immutability
+    const ref = new EmbeddingReference("emb.v1");
+    assert.throws(() => {
+      (ref as unknown as Record<string, string>).value = "mutated";
+    }, TypeError);
+
+    const spaceObj = new EmbeddingSpace("space.sem");
+    assert.throws(() => {
+      (spaceObj as unknown as Record<string, string>).value = "mutated";
+    }, TypeError);
+
+    const fp = new EmbeddingFingerprint("logical-fp");
+    assert.throws(() => {
+      (fp as unknown as Record<string, string>).value = "mutated";
+    }, TypeError);
   });
 
-  test("EmbeddingReference validation and format checks", () => {
-    assert.throws(() => {
-      new EmbeddingReference("");
-    }, /Embedding Reference is required/);
+  test("Date immutability: defensive copy on constructors and getters", () => {
+    const originalDate = new Date("2026-08-08T12:00:00Z");
+    const embedding = new Embedding({
+      id: "emb-123",
+      embeddingReference: defaultRef,
+      sourceReference: defaultSourceRef,
+      vector: defaultVector,
+      dimension: 3,
+      space: defaultSpace,
+      fingerprint: defaultFingerprint,
+      lifecycle: "Draft",
+      snapshots: [],
+      createdAt: originalDate,
+      updatedAt: originalDate,
+    });
 
-    assert.throws(() => {
-      new EmbeddingReference("Client.embedding");
-    }, /Invalid embedding reference format/);
+    // 1. Modifying original Date must not mutate aggregate state
+    originalDate.setTime(0);
+    assert.notStrictEqual(embedding.createdAt.getTime(), 0);
+    assert.notStrictEqual(embedding.updatedAt.getTime(), 0);
 
-    const ref = new EmbeddingReference("client.profile.embedding");
-    assert.strictEqual(ref.value, "client.profile.embedding");
+    // 2. Modifying returned Date must not mutate aggregate state
+    const retrievedCreated = embedding.createdAt;
+    retrievedCreated.setTime(9999);
+    assert.notStrictEqual(embedding.createdAt.getTime(), 9999);
+
+    const retrievedUpdated = embedding.updatedAt;
+    retrievedUpdated.setTime(7777);
+    assert.notStrictEqual(embedding.updatedAt.getTime(), 7777);
   });
 
-  test("Ownership validation blocks unauthorized owners", () => {
+  test("EmbeddingSnapshot Date immutability", () => {
+    const originalDate = new Date("2026-08-08T12:00:00Z");
+    const snap = new EmbeddingSnapshot({
+      version: 1,
+      createdAt: originalDate,
+      embeddingReference: defaultRef,
+      sourceReference: defaultSourceRef,
+      vector: defaultVector,
+      dimension: 3,
+      space: defaultSpace,
+      fingerprint: defaultFingerprint,
+      lifecycle: "Draft",
+      snapshotId: "snap-1",
+    });
+
+    originalDate.setTime(0);
+    assert.notStrictEqual(snap.createdAt.getTime(), 0);
+
+    const retrieved = snap.createdAt;
+    retrieved.setTime(8888);
+    assert.notStrictEqual(snap.createdAt.getTime(), 8888);
+  });
+
+  test("Snapshot history append-only and immutability", () => {
     const embedding = Embedding.create(
-      "emb-1",
-      "client.profile.embedding",
-      "owner-123",
-      defaultMetadata,
-      defaultPolicy,
-      defaultClassification,
-      "snap-1",
+      "emb-123",
+      defaultRef,
+      defaultSourceRef,
+      defaultVector,
+      defaultSpace,
       defaultFingerprint,
+      "snap-1",
     );
 
-    assert.throws(() => {
-      embedding.replaceMetadata("unauthorized-owner", alternativeMetadata);
-    }, /Ownership validation failed: unauthorized owner context/);
-
-    assert.throws(() => {
-      embedding.generateRepresentation("unauthorized-owner", "snap-2", alternativeFingerprint);
-    }, /Ownership validation failed: unauthorized owner context/);
-
-    assert.throws(() => {
-      embedding.validate("unauthorized-owner");
-    }, /Ownership validation failed: unauthorized owner context/);
-  });
-
-  test("Missing owner throws error", () => {
-    const embedding = Embedding.create(
-      "emb-1",
-      "client.profile.embedding",
-      "owner-123",
-      defaultMetadata,
-      defaultPolicy,
-      defaultClassification,
-      "snap-1",
-      defaultFingerprint,
-    );
-
-    assert.throws(() => {
-      embedding.replaceMetadata("", alternativeMetadata);
-    }, /Missing owner identity in caller context/);
-  });
-
-  test("Metadata replacement is allowed in Draft but rejected in non-Draft states", () => {
-    const embedding = Embedding.create(
-      "emb-1",
-      "client.profile.embedding",
-      "owner-123",
-      defaultMetadata,
-      defaultPolicy,
-      defaultClassification,
-      "snap-1",
-      defaultFingerprint,
-    );
-
-    // 1. Success in Draft
-    embedding.replaceMetadata("owner-123", alternativeMetadata);
-    assert.strictEqual(embedding.metadata.equals(alternativeMetadata), true);
-
-    // 2. Reject in Generated
-    embedding.generateRepresentation("owner-123", "snap-2", alternativeFingerprint);
-    assert.strictEqual(embedding.status, "Generated");
-
-    assert.throws(() => {
-      embedding.replaceMetadata("owner-123", defaultMetadata);
-    }, /Cannot replace metadata when in status: Generated/);
-  });
-
-  test("Append snapshot to history is append-only and previous snapshots are immutable", () => {
-    const embedding = Embedding.create(
-      "emb-1",
-      "client.profile.embedding",
-      "owner-123",
-      defaultMetadata,
-      defaultPolicy,
-      defaultClassification,
-      "snap-1",
-      defaultFingerprint,
-    );
-
-    embedding.generateRepresentation("owner-123", "snap-2", alternativeFingerprint);
+    embedding.update(alternativeVector, alternativeSpace, alternativeFingerprint, "snap-2");
 
     assert.strictEqual(embedding.snapshots.length, 2);
-    assert.strictEqual(embedding.snapshots[0]!.snapshotId, "snap-1");
-    assert.strictEqual(embedding.snapshots[1]!.snapshotId, "snap-2");
-    assert.strictEqual(
-      embedding.snapshots[1]!.representationFingerprint.equals(alternativeFingerprint),
-      true,
-    );
-    assert.strictEqual(
-      embedding.snapshots[1]!.classificationSnapshot.equals(defaultClassification),
-      true,
+    const snap1 = embedding.snapshots[0]!;
+    const snap2 = embedding.snapshots[1]!;
+
+    assert.strictEqual(snap1.version, 1);
+    assert.strictEqual(snap2.version, 2);
+
+    // Try modifying snapshots array
+    assert.throws(() => {
+      (embedding.snapshots as unknown as unknown[]).push({});
+    }, TypeError);
+
+    // Try modifying snapshot property
+    assert.throws(() => {
+      (snap1 as unknown as Record<string, unknown>).version = 99;
+    }, TypeError);
+  });
+
+  test("Lifecycle transitions: valid flows and domain events", () => {
+    const embedding = Embedding.create(
+      "emb-123",
+      defaultRef,
+      defaultSourceRef,
+      defaultVector,
+      defaultSpace,
+      defaultFingerprint,
+      "snap-1",
     );
 
-    // Verify snapshots array immutability from outside
-    const outsideSnapshots = embedding.snapshots;
-    assert.throws(() => {
-      (outsideSnapshots as unknown as EmbeddingSnapshot[]).push(
-        new EmbeddingSnapshot({
-          snapshotId: "snap-hack",
-          representationFingerprint: defaultFingerprint,
-          metadataSnapshot: defaultMetadata,
-          generationPolicySnapshot: defaultPolicy,
-          classificationSnapshot: defaultClassification,
-          lifecycleStateSnapshot: "Draft",
-          capturedAt: new Date(),
-        }),
-      );
-    });
+    assert.strictEqual(embedding.lifecycle, "Draft");
+
+    // Transition: Draft -> Registered
+    embedding.register("snap-2");
+    assert.strictEqual(embedding.lifecycle, "Registered");
     assert.strictEqual(embedding.snapshots.length, 2);
+    assert.strictEqual(embedding.domainEvents.length, 1);
+    assert.strictEqual(embedding.domainEvents[0]!.eventType, EMBEDDING_REGISTERED);
+    // Payload Purity check: only identifiers, no vector exposed!
+    assert.deepStrictEqual(embedding.domainEvents[0], {
+      eventType: EMBEDDING_REGISTERED,
+      embeddingId: "emb-123",
+      embeddingReference: defaultRef.value,
+      sourceReference: defaultSourceRef.value,
+      snapshotId: "snap-2",
+    });
+
+    // Transition: Registered -> Validated
+    embedding.validate("snap-3");
+    assert.strictEqual(embedding.lifecycle, "Validated");
+    assert.strictEqual(embedding.snapshots.length, 3);
+    assert.strictEqual(embedding.domainEvents.length, 2);
+    assert.strictEqual(embedding.domainEvents[1]!.eventType, EMBEDDING_VALIDATED);
+
+    // Transition: Validated -> Available
+    embedding.makeAvailable("snap-4");
+    assert.strictEqual(embedding.lifecycle, "Available");
+    assert.strictEqual(embedding.snapshots.length, 4);
+    assert.strictEqual(embedding.domainEvents.length, 3);
+    assert.strictEqual(embedding.domainEvents[2]!.eventType, EMBEDDING_AVAILABLE);
+
+    // Transition: Available -> Archived
+    embedding.archive("snap-5");
+    assert.strictEqual(embedding.lifecycle, "Archived");
+    assert.strictEqual(embedding.snapshots.length, 5);
+    assert.strictEqual(embedding.domainEvents.length, 4);
+    assert.strictEqual(embedding.domainEvents[3]!.eventType, EMBEDDING_ARCHIVED);
   });
 
-  test("Lifecycle flow: Draft -> Generated -> Validated -> Published -> Archived", () => {
+  test("Lifecycle transitions: invalid paths", () => {
     const embedding = Embedding.create(
-      "emb-1",
-      "client.profile.embedding",
-      "owner-123",
-      defaultMetadata,
-      defaultPolicy,
-      defaultClassification,
-      "snap-1",
+      "emb-123",
+      defaultRef,
+      defaultSourceRef,
+      defaultVector,
+      defaultSpace,
       defaultFingerprint,
+      "snap-1",
     );
 
-    // 1. Draft -> Generated (via representation generation)
-    embedding.clearDomainEvents();
-    embedding.generateRepresentation("owner-123", "snap-2", alternativeFingerprint);
-    assert.strictEqual(embedding.status, "Generated");
-    assert.strictEqual(embedding.domainEvents.length, 1);
-    const genEvent = embedding.domainEvents[0] as EmbeddingDomainEvent;
-    assert.strictEqual(genEvent.eventType, EMBEDDING_GENERATED);
-    assert.strictEqual(genEvent.embeddingId, "emb-1");
-    assert.strictEqual(genEvent.snapshotId, "snap-2");
-
-    // 2. Generated -> Validated
-    embedding.clearDomainEvents();
-    embedding.validate("owner-123");
-    assert.strictEqual(embedding.status, "Validated");
-    assert.strictEqual(embedding.domainEvents.length, 1);
-    const valEvent = embedding.domainEvents[0] as EmbeddingDomainEvent;
-    assert.strictEqual(valEvent.eventType, EMBEDDING_VALIDATED);
-    assert.strictEqual(valEvent.embeddingId, "emb-1");
-    assert.strictEqual(valEvent.snapshotId, "snap-2");
-
-    // Cannot validate again
+    // Cannot validate or make available directly from Draft
     assert.throws(() => {
-      embedding.validate("owner-123");
-    }, /Cannot validate embedding when in status: Validated/);
-
-    // 3. Validated -> Published
-    embedding.clearDomainEvents();
-    embedding.publish("owner-123");
-    assert.strictEqual(embedding.status, "Published");
-    assert.strictEqual(embedding.domainEvents.length, 1);
-    const pubEvent = embedding.domainEvents[0] as EmbeddingDomainEvent;
-    assert.strictEqual(pubEvent.eventType, EMBEDDING_PUBLISHED);
-    assert.strictEqual(pubEvent.embeddingId, "emb-1");
-    assert.strictEqual(pubEvent.snapshotId, "snap-2");
-
-    // Cannot publish again
-    assert.throws(() => {
-      embedding.publish("owner-123");
-    }, /Cannot publish embedding when in status: Published/);
-
-    // 4. Published -> Archived
-    embedding.clearDomainEvents();
-    embedding.archive("owner-123");
-    assert.strictEqual(embedding.status, "Archived");
-    assert.strictEqual(embedding.domainEvents.length, 1);
-    const archEvent = embedding.domainEvents[0] as EmbeddingDomainEvent;
-    assert.strictEqual(archEvent.eventType, EMBEDDING_ARCHIVED);
-    assert.strictEqual(archEvent.embeddingId, "emb-1");
-    assert.strictEqual(archEvent.snapshotId, "snap-2");
-
-    // Already archived blocks mutation
-    assert.throws(() => {
-      embedding.archive("owner-123");
-    }, /Embedding is already archived/);
+      embedding.validate("snap-2");
+    }, /Cannot validate/);
 
     assert.throws(() => {
-      embedding.generateRepresentation("owner-123", "snap-3", defaultFingerprint);
-    }, /Cannot generate representation when in status: Archived/);
+      embedding.makeAvailable("snap-2");
+    }, /Cannot make embedding available/);
+
+    // Cannot update once Archived
+    embedding.archive("snap-archive");
+    assert.throws(() => {
+      embedding.update(alternativeVector, alternativeSpace, alternativeFingerprint, "snap-3");
+    }, /Cannot update archived embedding\./);
   });
 
-  test("Invalid lifecycle transition: cannot validate or publish directly from Draft", () => {
-    const embedding = Embedding.create(
-      "emb-1",
-      "client.profile.embedding",
-      "owner-123",
-      defaultMetadata,
-      defaultPolicy,
-      defaultClassification,
-      "snap-1",
-      defaultFingerprint,
-    );
-
+  test("Aggregate invariant enforcement on properties", () => {
+    // Missing ID throws
     assert.throws(() => {
-      embedding.validate("owner-123");
-    }, /Cannot validate embedding when in status: Draft/);
-
-    assert.throws(() => {
-      embedding.publish("owner-123");
-    }, /Cannot publish embedding when in status: Draft/);
-  });
-
-  test("RepresentationFingerprint value object validations and comparison checks", () => {
-    assert.throws(() => {
-      new RepresentationFingerprint({
-        fingerprintIdentifier: "",
-        fingerprintStrategyReference: "hash",
+      new Embedding({
+        id: "",
+        embeddingReference: defaultRef,
+        sourceReference: defaultSourceRef,
+        vector: defaultVector,
+        dimension: 3,
+        space: defaultSpace,
+        fingerprint: defaultFingerprint,
+        lifecycle: "Draft",
+        snapshots: [],
+        createdAt: new Date(),
+        updatedAt: new Date(),
       });
-    }, /Fingerprint identifier is required/);
-
-    assert.throws(() => {
-      new RepresentationFingerprint({
-        fingerprintIdentifier: "hash",
-        fingerprintStrategyReference: "",
-      });
-    }, /Fingerprint strategy reference is required/);
-
-    const fp1 = new RepresentationFingerprint({
-      fingerprintIdentifier: "hash-1",
-      fingerprintStrategyReference: "algo-1",
-    });
-    const fp2 = new RepresentationFingerprint({
-      fingerprintIdentifier: "hash-1",
-      fingerprintStrategyReference: "algo-1",
-    });
-    const fp3 = new RepresentationFingerprint({
-      fingerprintIdentifier: "hash-2",
-      fingerprintStrategyReference: "algo-1",
-    });
-
-    assert.strictEqual(fp1.equals(fp2), true);
-    assert.strictEqual(fp1.equals(fp3), false);
-  });
-
-  test("EmbeddingClassification value object validations and comparison checks", () => {
-    assert.throws(() => {
-      new EmbeddingClassification({ classificationTag: "" });
-    }, /Classification tag is required/);
-
-    const cl1 = new EmbeddingClassification({ classificationTag: "tag-1" });
-    const cl2 = new EmbeddingClassification({ classificationTag: "tag-1" });
-    const cl3 = new EmbeddingClassification({ classificationTag: "tag-2" });
-
-    assert.strictEqual(cl1.equals(cl2), true);
-    assert.strictEqual(cl1.equals(cl3), false);
+    }, /Embedding Identity is required/);
   });
 
   test("Mock store interface compliance check", async () => {
     const mockStore: EmbeddingAggregateStore = {
-      save: async (embedding: Embedding) => {
-        assert.ok(embedding.id);
+      save: async (embObj: Embedding) => {
+        assert.ok(embObj.id);
       },
-      findById: async (id: string, ownerId: string) => {
+      findById: async (id: string) => {
         assert.ok(id);
-        assert.ok(ownerId);
         return null;
       },
-      findByReference: async (reference: string, ownerId: string) => {
+      findByReference: async (reference: string) => {
         assert.ok(reference);
-        assert.ok(ownerId);
         return null;
       },
     };
 
-    const embedding = Embedding.create(
-      "emb-1",
-      "client.profile.embedding",
-      "owner-123",
-      defaultMetadata,
-      defaultPolicy,
-      defaultClassification,
-      "snap-1",
+    const embObj = Embedding.create(
+      "emb-123",
+      defaultRef,
+      defaultSourceRef,
+      defaultVector,
+      defaultSpace,
       defaultFingerprint,
+      "snap-1",
     );
 
-    await mockStore.save(embedding);
+    await mockStore.save(embObj);
 
-    const mockPersistence: EmbeddingPersistenceContract = {
-      checkUniqueReference: async (
-        ownerId: string,
-        reference: string,
-        excludeEmbeddingId?: string,
-      ) => {
-        assert.ok(ownerId);
+    const mockPersist: EmbeddingPersistenceContract = {
+      checkUniqueReference: async (reference: string, excludeEmbeddingId?: string) => {
         assert.ok(reference);
         if (excludeEmbeddingId) {
           assert.ok(excludeEmbeddingId);
@@ -439,21 +393,58 @@ describe("Embedding Aggregate Root and Value Objects Domain Tests", () => {
       },
     };
 
-    const isUnique = await mockPersistence.checkUniqueReference(
-      "owner-123",
-      "client.profile.embedding",
-    );
-    assert.strictEqual(isUnique, true);
+    const unique = await mockPersist.checkUniqueReference("embedding.reference-001");
+    assert.strictEqual(unique, true);
 
     const projection: EmbeddingQueryProjection = {
-      id: "emb-1",
-      reference: "client.profile.embedding",
-      ownerId: "owner-123",
-      displayName: "Summary View",
-      status: "Published",
+      id: "emb-123",
+      embeddingReference: "embedding.reference-001",
+      sourceReference: "conversation-import-123",
+      dimension: 3,
+      space: "semantic.space-abc",
+      lifecycle: "Draft",
+      versionCount: 1,
       updatedAt: new Date(),
     };
 
-    assert.strictEqual(projection.status, "Published");
+    assert.strictEqual(projection.id, "emb-123");
+    assert.strictEqual(projection.space, "semantic.space-abc");
+  });
+
+  test("Embedding aggregate properties immutability checks", () => {
+    const embedding = Embedding.create(
+      "emb-123",
+      defaultRef,
+      defaultSourceRef,
+      defaultVector,
+      defaultSpace,
+      defaultFingerprint,
+      "snap-1",
+    );
+
+    // Assert that attempting to write to properties throws TypeError
+    assert.throws(() => {
+      (embedding as unknown as Record<string, unknown>).id = "mutated-id";
+    }, TypeError);
+
+    assert.throws(() => {
+      (embedding as unknown as Record<string, unknown>).embeddingReference = alternativeRef;
+    }, TypeError);
+
+    assert.throws(() => {
+      (embedding as unknown as Record<string, unknown>).sourceReference = alternativeSourceRef;
+    }, TypeError);
+
+    assert.throws(() => {
+      (embedding as unknown as Record<string, unknown>).vector = alternativeVector;
+    }, TypeError);
+
+    assert.throws(() => {
+      (embedding as unknown as Record<string, unknown>).space = alternativeSpace;
+    }, TypeError);
+
+    assert.throws(() => {
+      (embedding as unknown as Record<string, unknown>).fingerprint = alternativeFingerprint;
+    }, TypeError);
   });
 });

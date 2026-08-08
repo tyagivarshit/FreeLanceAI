@@ -1,28 +1,19 @@
-// 1. Lifecycle State
-export type EmbeddingLifecycleState =
-  | "Draft"
-  | "Generated"
-  | "Validated"
-  | "Published"
-  | "Archived";
+// 1. Value Objects
 
-// 2. Value Objects
-
-/**
- * Encapsulates validation and representation of the dots-separated, lower-case Embedding Reference.
- */
 export class EmbeddingReference {
   private readonly _value: string;
 
   constructor(value: string) {
     if (!value || value.trim() === "") {
-      throw new Error("Embedding Reference is required.");
+      throw new Error("Embedding reference is required.");
     }
-    const referencePattern = /^[a-z0-9]+(\.[a-z0-9]+)*$/;
-    if (!referencePattern.test(value)) {
-      throw new Error("Invalid embedding reference format. Must be lower-case dot-separated key.");
+    const cleanValue = value.trim();
+    const pattern = /^[a-z0-9]+([.-][a-z0-9]+)*$/;
+    if (!pattern.test(cleanValue)) {
+      throw new Error("Invalid embedding reference format.");
     }
-    this._value = value.trim();
+    this._value = cleanValue;
+    Object.freeze(this);
   }
 
   get value(): string {
@@ -30,372 +21,337 @@ export class EmbeddingReference {
   }
 
   public equals(other: EmbeddingReference): boolean {
+    if (!other) {
+      return false;
+    }
     return this._value === other.value;
   }
 }
 
-/**
- * Represents an immutable classification tagging system.
- */
-export interface EmbeddingClassificationProperties {
-  classificationTag: string;
-}
+export class EmbeddingSourceReference {
+  private readonly _value: string;
 
-export class EmbeddingClassification {
-  private readonly _classificationTag: string;
-
-  constructor(properties: EmbeddingClassificationProperties) {
-    if (!properties.classificationTag || properties.classificationTag.trim() === "") {
-      throw new Error("Classification tag is required.");
+  constructor(value: string) {
+    if (!value || value.trim() === "") {
+      throw new Error("Source reference is required.");
     }
-    this._classificationTag = properties.classificationTag.trim();
-  }
-
-  get classificationTag(): string {
-    return this._classificationTag;
-  }
-
-  public equals(other: EmbeddingClassification): boolean {
-    return this._classificationTag === other.classificationTag;
-  }
-}
-
-export interface RepresentationFingerprintProperties {
-  fingerprintIdentifier: string;
-  fingerprintStrategyReference: string;
-}
-
-export class RepresentationFingerprint {
-  private readonly _fingerprintIdentifier: string;
-  private readonly _fingerprintStrategyReference: string;
-
-  constructor(properties: RepresentationFingerprintProperties) {
-    if (!properties.fingerprintIdentifier || properties.fingerprintIdentifier.trim() === "") {
-      throw new Error("Fingerprint identifier is required.");
+    const cleanValue = value.trim();
+    const pattern = /^[a-z0-9]+([.-][a-z0-9]+)*$/;
+    if (!pattern.test(cleanValue)) {
+      throw new Error("Invalid source reference format.");
     }
-    if (
-      !properties.fingerprintStrategyReference ||
-      properties.fingerprintStrategyReference.trim() === ""
-    ) {
-      throw new Error("Fingerprint strategy reference is required.");
+    this._value = cleanValue;
+    Object.freeze(this);
+  }
+
+  get value(): string {
+    return this._value;
+  }
+
+  public equals(other: EmbeddingSourceReference): boolean {
+    if (!other) {
+      return false;
     }
-
-    this._fingerprintIdentifier = properties.fingerprintIdentifier.trim();
-    this._fingerprintStrategyReference = properties.fingerprintStrategyReference.trim();
-  }
-
-  get fingerprintIdentifier(): string {
-    return this._fingerprintIdentifier;
-  }
-
-  get fingerprintStrategyReference(): string {
-    return this._fingerprintStrategyReference;
-  }
-
-  public equals(other: RepresentationFingerprint): boolean {
-    return (
-      this._fingerprintIdentifier === other.fingerprintIdentifier &&
-      this._fingerprintStrategyReference === other.fingerprintStrategyReference
-    );
+    return this._value === other.value;
   }
 }
 
-export interface EmbeddingMetadataProperties {
-  displayName: string;
-  description: string;
-  purpose: string;
-  classificationSummary: string;
-}
+export class EmbeddingVector {
+  private readonly _values: number[];
 
-export class EmbeddingMetadata {
-  private readonly _displayName: string;
-  private readonly _description: string;
-  private readonly _purpose: string;
-  private readonly _classificationSummary: string;
-
-  constructor(properties: EmbeddingMetadataProperties) {
-    if (!properties.displayName || properties.displayName.trim() === "") {
-      throw new Error("Display Name is required.");
+  constructor(values: number[]) {
+    if (!values) {
+      throw new Error("Vector array is required.");
     }
-    if (!properties.description || properties.description.trim() === "") {
-      throw new Error("Description is required.");
-    }
-    if (!properties.purpose || properties.purpose.trim() === "") {
-      throw new Error("Purpose is required.");
-    }
-    if (!properties.classificationSummary || properties.classificationSummary.trim() === "") {
-      throw new Error("Classification summary is required.");
+    if (values.length === 0) {
+      throw new Error("Vector array must not be empty.");
     }
 
-    this._displayName = properties.displayName.trim();
-    this._description = properties.description.trim();
-    this._purpose = properties.purpose.trim();
-    this._classificationSummary = properties.classificationSummary.trim();
+    for (const val of values) {
+      if (typeof val !== "number") {
+        throw new Error("Every element in the vector must be numeric.");
+      }
+      if (!Number.isFinite(val) || Number.isNaN(val)) {
+        throw new Error("Every element in the vector must be a finite number.");
+      }
+    }
+
+    this._values = [...values];
+    Object.freeze(this._values);
+    Object.freeze(this);
   }
 
-  get displayName(): string {
-    return this._displayName;
+  get values(): number[] {
+    return [...this._values];
   }
 
-  get description(): string {
-    return this._description;
+  get length(): number {
+    return this._values.length;
   }
 
-  get purpose(): string {
-    return this._purpose;
-  }
-
-  get classificationSummary(): string {
-    return this._classificationSummary;
-  }
-
-  public equals(other: EmbeddingMetadata): boolean {
-    return (
-      this._displayName === other.displayName &&
-      this._description === other.description &&
-      this._purpose === other.purpose &&
-      this._classificationSummary === other.classificationSummary
-    );
+  public equals(other: EmbeddingVector): boolean {
+    if (!other) {
+      return false;
+    }
+    if (this._values.length !== other.length) {
+      return false;
+    }
+    return this._values.every((val, index) => val === other.values[index]);
   }
 }
 
-export interface EmbeddingGenerationPolicyProperties {
-  generationStrategyReference: string;
-  compatibilityClassification: string;
-  logicalRefreshClassification: string;
-}
+export class EmbeddingSpace {
+  private readonly _value: string;
 
-export class EmbeddingGenerationPolicy {
-  private readonly _generationStrategyReference: string;
-  private readonly _compatibilityClassification: string;
-  private readonly _logicalRefreshClassification: string;
-
-  constructor(properties: EmbeddingGenerationPolicyProperties) {
-    if (
-      !properties.generationStrategyReference ||
-      properties.generationStrategyReference.trim() === ""
-    ) {
-      throw new Error("Generation strategy reference is required.");
+  constructor(value: string) {
+    if (!value || value.trim() === "") {
+      throw new Error("Embedding space value is required.");
     }
-    if (
-      !properties.compatibilityClassification ||
-      properties.compatibilityClassification.trim() === ""
-    ) {
-      throw new Error("Compatibility classification is required.");
+    const cleanValue = value.trim();
+    const pattern = /^[a-z0-9]+([.-][a-z0-9]+)*$/;
+    if (!pattern.test(cleanValue)) {
+      throw new Error("Invalid embedding space format.");
     }
-    if (
-      !properties.logicalRefreshClassification ||
-      properties.logicalRefreshClassification.trim() === ""
-    ) {
-      throw new Error("Logical refresh classification is required.");
+    this._value = cleanValue;
+    Object.freeze(this);
+  }
+
+  get value(): string {
+    return this._value;
+  }
+
+  public equals(other: EmbeddingSpace): boolean {
+    if (!other) {
+      return false;
     }
-
-    this._generationStrategyReference = properties.generationStrategyReference.trim();
-    this._compatibilityClassification = properties.compatibilityClassification.trim();
-    this._logicalRefreshClassification = properties.logicalRefreshClassification.trim();
-  }
-
-  get generationStrategyReference(): string {
-    return this._generationStrategyReference;
-  }
-
-  get compatibilityClassification(): string {
-    return this._compatibilityClassification;
-  }
-
-  get logicalRefreshClassification(): string {
-    return this._logicalRefreshClassification;
-  }
-
-  public equals(other: EmbeddingGenerationPolicy): boolean {
-    return (
-      this._generationStrategyReference === other.generationStrategyReference &&
-      this._compatibilityClassification === other.compatibilityClassification &&
-      this._logicalRefreshClassification === other.logicalRefreshClassification
-    );
+    return this._value === other.value;
   }
 }
 
+export class EmbeddingFingerprint {
+  private readonly _value: string;
+
+  constructor(value: string) {
+    if (!value || value.trim() === "") {
+      throw new Error("Fingerprint value is required.");
+    }
+    this._value = value.trim();
+    Object.freeze(this);
+  }
+
+  get value(): string {
+    return this._value;
+  }
+
+  public equals(other: EmbeddingFingerprint): boolean {
+    if (!other) {
+      return false;
+    }
+    return this._value === other.value;
+  }
+}
+
+// 2. Lifecycle State
+export type EmbeddingLifecycle = "Draft" | "Registered" | "Validated" | "Available" | "Archived";
+
+// 3. Snapshot
 export interface EmbeddingSnapshotProperties {
+  version: number;
+  createdAt: Date;
+  embeddingReference: EmbeddingReference;
+  sourceReference: EmbeddingSourceReference;
+  vector: EmbeddingVector;
+  dimension: number;
+  space: EmbeddingSpace;
+  fingerprint: EmbeddingFingerprint;
+  lifecycle: EmbeddingLifecycle;
   snapshotId: string;
-  representationFingerprint: RepresentationFingerprint;
-  metadataSnapshot: EmbeddingMetadata;
-  generationPolicySnapshot: EmbeddingGenerationPolicy;
-  classificationSnapshot: EmbeddingClassification;
-  lifecycleStateSnapshot: EmbeddingLifecycleState;
-  capturedAt: Date;
 }
 
 export class EmbeddingSnapshot {
+  private readonly _version: number;
+  private readonly _createdAt: Date;
+  private readonly _embeddingReference: EmbeddingReference;
+  private readonly _sourceReference: EmbeddingSourceReference;
+  private readonly _vector: EmbeddingVector;
+  private readonly _dimension: number;
+  private readonly _space: EmbeddingSpace;
+  private readonly _fingerprint: EmbeddingFingerprint;
+  private readonly _lifecycle: EmbeddingLifecycle;
   private readonly _snapshotId: string;
-  private readonly _representationFingerprint: RepresentationFingerprint;
-  private readonly _metadataSnapshot: EmbeddingMetadata;
-  private readonly _generationPolicySnapshot: EmbeddingGenerationPolicy;
-  private readonly _classificationSnapshot: EmbeddingClassification;
-  private readonly _lifecycleStateSnapshot: EmbeddingLifecycleState;
-  private readonly _capturedAt: Date;
 
   constructor(properties: EmbeddingSnapshotProperties) {
+    if (properties.version <= 0) {
+      throw new Error("Snapshot version must be greater than zero.");
+    }
+    if (!properties.createdAt) {
+      throw new Error("Snapshot creation date is required.");
+    }
+    if (!properties.embeddingReference) {
+      throw new Error("Embedding reference is required.");
+    }
+    if (!properties.sourceReference) {
+      throw new Error("Source reference is required.");
+    }
+    if (!properties.vector) {
+      throw new Error("Embedding vector is required.");
+    }
+    if (properties.dimension <= 0) {
+      throw new Error("Embedding dimension must be greater than zero.");
+    }
+    if (properties.vector.length !== properties.dimension) {
+      throw new Error("Vector dimension mismatch.");
+    }
+    if (!properties.space) {
+      throw new Error("Embedding space is required.");
+    }
+    if (!properties.fingerprint) {
+      throw new Error("Embedding fingerprint is required.");
+    }
+    if (!properties.lifecycle) {
+      throw new Error("Lifecycle state is required.");
+    }
     if (!properties.snapshotId || properties.snapshotId.trim() === "") {
-      throw new Error("Snapshot ID is required.");
-    }
-    if (!properties.representationFingerprint) {
-      throw new Error("Representation fingerprint snapshot is required.");
-    }
-    if (!properties.metadataSnapshot) {
-      throw new Error("Metadata snapshot is required.");
-    }
-    if (!properties.generationPolicySnapshot) {
-      throw new Error("Generation policy snapshot is required.");
-    }
-    if (!properties.classificationSnapshot) {
-      throw new Error("Classification snapshot is required.");
-    }
-    if (!properties.lifecycleStateSnapshot) {
-      throw new Error("Lifecycle state snapshot is required.");
-    }
-    if (!properties.capturedAt) {
-      throw new Error("Captured date is required.");
+      throw new Error("Snapshot identity is required.");
     }
 
+    this._version = properties.version;
+    this._createdAt = new Date(properties.createdAt.getTime());
+    this._embeddingReference = properties.embeddingReference;
+    this._sourceReference = properties.sourceReference;
+    this._vector = properties.vector;
+    this._dimension = properties.dimension;
+    this._space = properties.space;
+    this._fingerprint = properties.fingerprint;
+    this._lifecycle = properties.lifecycle;
     this._snapshotId = properties.snapshotId.trim();
-    this._representationFingerprint = properties.representationFingerprint;
-    this._metadataSnapshot = properties.metadataSnapshot;
-    this._generationPolicySnapshot = properties.generationPolicySnapshot;
-    this._classificationSnapshot = properties.classificationSnapshot;
-    this._lifecycleStateSnapshot = properties.lifecycleStateSnapshot;
-    this._capturedAt = properties.capturedAt;
+    Object.freeze(this);
+  }
+
+  get version(): number {
+    return this._version;
+  }
+
+  get createdAt(): Date {
+    return new Date(this._createdAt.getTime());
+  }
+
+  get embeddingReference(): EmbeddingReference {
+    return this._embeddingReference;
+  }
+
+  get sourceReference(): EmbeddingSourceReference {
+    return this._sourceReference;
+  }
+
+  get vector(): EmbeddingVector {
+    return this._vector;
+  }
+
+  get dimension(): number {
+    return this._dimension;
+  }
+
+  get space(): EmbeddingSpace {
+    return this._space;
+  }
+
+  get fingerprint(): EmbeddingFingerprint {
+    return this._fingerprint;
+  }
+
+  get lifecycle(): EmbeddingLifecycle {
+    return this._lifecycle;
   }
 
   get snapshotId(): string {
     return this._snapshotId;
   }
-
-  get representationFingerprint(): RepresentationFingerprint {
-    return this._representationFingerprint;
-  }
-
-  get metadataSnapshot(): EmbeddingMetadata {
-    return this._metadataSnapshot;
-  }
-
-  get generationPolicySnapshot(): EmbeddingGenerationPolicy {
-    return this._generationPolicySnapshot;
-  }
-
-  get classificationSnapshot(): EmbeddingClassification {
-    return this._classificationSnapshot;
-  }
-
-  get lifecycleStateSnapshot(): EmbeddingLifecycleState {
-    return this._lifecycleStateSnapshot;
-  }
-
-  get capturedAt(): Date {
-    return this._capturedAt;
-  }
 }
 
-// 3. Domain Events
+// 4. Domain Events
 export const EMBEDDING_REGISTERED = "EMBEDDING_REGISTERED";
-export const EMBEDDING_GENERATED = "EMBEDDING_GENERATED";
 export const EMBEDDING_VALIDATED = "EMBEDDING_VALIDATED";
-export const EMBEDDING_PUBLISHED = "EMBEDDING_PUBLISHED";
+export const EMBEDDING_AVAILABLE = "EMBEDDING_AVAILABLE";
 export const EMBEDDING_ARCHIVED = "EMBEDDING_ARCHIVED";
 
 export type EmbeddingDomainEventName =
   | typeof EMBEDDING_REGISTERED
-  | typeof EMBEDDING_GENERATED
   | typeof EMBEDDING_VALIDATED
-  | typeof EMBEDDING_PUBLISHED
+  | typeof EMBEDDING_AVAILABLE
   | typeof EMBEDDING_ARCHIVED;
 
 export interface EmbeddingRegisteredEvent {
   readonly eventType: typeof EMBEDDING_REGISTERED;
   readonly embeddingId: string;
-  readonly reference: string;
+  readonly embeddingReference: string;
+  readonly sourceReference: string;
   readonly snapshotId: string;
-  readonly ownerId: string;
-}
-
-export interface EmbeddingGeneratedEvent {
-  readonly eventType: typeof EMBEDDING_GENERATED;
-  readonly embeddingId: string;
-  readonly reference: string;
-  readonly snapshotId: string;
-  readonly ownerId: string;
 }
 
 export interface EmbeddingValidatedEvent {
   readonly eventType: typeof EMBEDDING_VALIDATED;
   readonly embeddingId: string;
-  readonly reference: string;
+  readonly embeddingReference: string;
+  readonly sourceReference: string;
   readonly snapshotId: string;
-  readonly ownerId: string;
 }
 
-export interface EmbeddingPublishedEvent {
-  readonly eventType: typeof EMBEDDING_PUBLISHED;
+export interface EmbeddingAvailableEvent {
+  readonly eventType: typeof EMBEDDING_AVAILABLE;
   readonly embeddingId: string;
-  readonly reference: string;
+  readonly embeddingReference: string;
+  readonly sourceReference: string;
   readonly snapshotId: string;
-  readonly ownerId: string;
 }
 
 export interface EmbeddingArchivedEvent {
   readonly eventType: typeof EMBEDDING_ARCHIVED;
   readonly embeddingId: string;
-  readonly reference: string;
+  readonly embeddingReference: string;
+  readonly sourceReference: string;
   readonly snapshotId: string;
-  readonly ownerId: string;
 }
 
 export type EmbeddingDomainEvent =
   | EmbeddingRegisteredEvent
-  | EmbeddingGeneratedEvent
   | EmbeddingValidatedEvent
-  | EmbeddingPublishedEvent
+  | EmbeddingAvailableEvent
   | EmbeddingArchivedEvent;
 
-export interface EmbeddingEventPublisher {
-  publish(event: EmbeddingDomainEvent): Promise<void>;
-}
-
-// 4. Query-Side Projection
+// 5. Persistence & Query Contracts
 export interface EmbeddingQueryProjection {
   readonly id: string;
-  readonly reference: string;
-  readonly ownerId: string;
-  readonly displayName: string;
-  readonly status: EmbeddingLifecycleState;
+  readonly embeddingReference: string;
+  readonly sourceReference: string;
+  readonly dimension: number;
+  readonly space: string;
+  readonly lifecycle: EmbeddingLifecycle;
+  readonly versionCount: number;
   readonly updatedAt: Date;
 }
 
-// 5. Persistence Interfaces
 export interface EmbeddingPersistenceContract {
-  checkUniqueReference(
-    ownerId: string,
-    reference: string,
-    excludeEmbeddingId?: string,
-  ): Promise<boolean>;
+  checkUniqueReference(reference: string, excludeEmbeddingId?: string): Promise<boolean>;
 }
 
 export interface EmbeddingAggregateStore {
   save(embedding: Embedding): Promise<void>;
-  findById(id: string, ownerId: string): Promise<Embedding | null>;
-  findByReference(reference: string, ownerId: string): Promise<Embedding | null>;
+  findById(id: string): Promise<Embedding | null>;
+  findByReference(reference: string): Promise<Embedding | null>;
 }
 
-// 6. Embedding Properties
+// 6. Embedding Aggregate Properties
 export interface EmbeddingProperties {
   id: string;
-  reference: EmbeddingReference;
-  ownerId: string;
-  metadata: EmbeddingMetadata;
-  generationPolicy: EmbeddingGenerationPolicy;
-  classification: EmbeddingClassification;
+  embeddingReference: EmbeddingReference;
+  sourceReference: EmbeddingSourceReference;
+  vector: EmbeddingVector;
+  dimension: number;
+  space: EmbeddingSpace;
+  fingerprint: EmbeddingFingerprint;
+  lifecycle: EmbeddingLifecycle;
   snapshots: EmbeddingSnapshot[];
-  status: EmbeddingLifecycleState;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -403,54 +359,35 @@ export interface EmbeddingProperties {
 // 7. Embedding Aggregate Root
 export class Embedding {
   private readonly _id: string;
-  private readonly _reference: EmbeddingReference;
-  private readonly _ownerId: string;
-  private _metadata: EmbeddingMetadata;
-  private readonly _generationPolicy: EmbeddingGenerationPolicy;
-  private readonly _classification: EmbeddingClassification;
-  private _snapshots: EmbeddingSnapshot[] = [];
-  private _status: EmbeddingLifecycleState;
+  private readonly _embeddingReference: EmbeddingReference;
+  private readonly _sourceReference: EmbeddingSourceReference;
+  private _vector: EmbeddingVector;
+  private _dimension: number;
+  private _space: EmbeddingSpace;
+  private _fingerprint: EmbeddingFingerprint;
+  private _lifecycle: EmbeddingLifecycle;
+  private readonly _snapshots: EmbeddingSnapshot[] = [];
   private readonly _createdAt: Date;
   private _updatedAt: Date;
   private _domainEvents: EmbeddingDomainEvent[] = [];
 
   constructor(properties: EmbeddingProperties) {
-    if (!properties.id || properties.id.trim() === "") {
-      throw new Error("Embedding Identity is required.");
-    }
-    if (!properties.reference) {
-      throw new Error("Embedding Reference is required.");
-    }
-    if (!properties.ownerId || properties.ownerId.trim() === "") {
-      throw new Error("Owner Reference is required.");
-    }
-    if (!properties.metadata) {
-      throw new Error("Embedding Metadata is required.");
-    }
-    if (!properties.generationPolicy) {
-      throw new Error("Embedding Generation Policy is required.");
-    }
-    if (!properties.classification) {
-      throw new Error("Embedding Classification is required.");
-    }
-    if (!properties.snapshots || properties.snapshots.length === 0) {
-      throw new Error("Embedding Snapshots collection must not be empty.");
-    }
-    if (!properties.status) {
-      throw new Error("Embedding Lifecycle State is required.");
-    }
-
     this._id = properties.id;
-    this._reference = properties.reference;
-    this._ownerId = properties.ownerId;
-    this._metadata = properties.metadata;
-    this._generationPolicy = properties.generationPolicy;
-    this._classification = properties.classification;
-    this._status = properties.status;
-    this._createdAt = properties.createdAt;
-    this._updatedAt = properties.updatedAt;
+    this._embeddingReference = properties.embeddingReference;
+    this._sourceReference = properties.sourceReference;
+    this._vector = properties.vector;
+    this._dimension = properties.dimension;
+    this._space = properties.space;
+    this._fingerprint = properties.fingerprint;
+    this._lifecycle = properties.lifecycle;
+    this._createdAt = new Date(properties.createdAt.getTime());
+    this._updatedAt = new Date(properties.updatedAt.getTime());
 
-    this._snapshots = [...properties.snapshots];
+    if (properties.snapshots && properties.snapshots.length > 0) {
+      this._snapshots = [...properties.snapshots];
+    }
+
+    this.validateInvariants();
   }
 
   // Getters
@@ -458,54 +395,48 @@ export class Embedding {
     return this._id;
   }
 
-  get reference(): string {
-    return this._reference.value;
+  get embeddingReference(): EmbeddingReference {
+    return this._embeddingReference;
   }
 
-  get ownerId(): string {
-    return this._ownerId;
+  get sourceReference(): EmbeddingSourceReference {
+    return this._sourceReference;
   }
 
-  get metadata(): EmbeddingMetadata {
-    return this._metadata;
+  get vector(): EmbeddingVector {
+    return this._vector;
   }
 
-  get generationPolicy(): EmbeddingGenerationPolicy {
-    return this._generationPolicy;
+  get dimension(): number {
+    return this._dimension;
   }
 
-  get classification(): EmbeddingClassification {
-    return this._classification;
+  get space(): EmbeddingSpace {
+    return this._space;
+  }
+
+  get fingerprint(): EmbeddingFingerprint {
+    return this._fingerprint;
+  }
+
+  get lifecycle(): EmbeddingLifecycle {
+    return this._lifecycle;
   }
 
   get snapshots(): ReadonlyArray<EmbeddingSnapshot> {
     return Object.freeze([...this._snapshots]);
   }
 
-  get status(): EmbeddingLifecycleState {
-    return this._status;
-  }
-
   get createdAt(): Date {
-    return this._createdAt;
+    return new Date(this._createdAt.getTime());
   }
 
   get updatedAt(): Date {
-    return this._updatedAt;
+    return new Date(this._updatedAt.getTime());
   }
 
   get domainEvents(): ReadonlyArray<EmbeddingDomainEvent> {
     return this._domainEvents;
-  }
-
-  /**
-   * Dedicated helper abstraction to retrieve the latest snapshot from history.
-   */
-  get latestSnapshot(): EmbeddingSnapshot {
-    if (this._snapshots.length === 0) {
-      throw new Error("Invalid aggregate state: snapshots history is empty.");
-    }
-    return this._snapshots[this._snapshots.length - 1]!;
   }
 
   public clearDomainEvents(): void {
@@ -516,171 +447,181 @@ export class Embedding {
     this._domainEvents.push(event);
   }
 
-  private verifyOwnership(actorOwnerId: string): void {
-    if (!actorOwnerId || actorOwnerId.trim() === "") {
-      throw new Error("Missing owner identity in caller context.");
+  private validateInvariants(): void {
+    if (!this._id || this._id.trim() === "") {
+      throw new Error("Embedding Identity is required.");
     }
-    if (actorOwnerId !== this._ownerId) {
-      throw new Error("Ownership validation failed: unauthorized owner context.");
+    if (!this._embeddingReference) {
+      throw new Error("Embedding Reference is required.");
+    }
+    if (!this._sourceReference) {
+      throw new Error("Source Reference is required.");
+    }
+    if (!this._vector) {
+      throw new Error("Embedding Vector is required.");
+    }
+    if (this._dimension <= 0) {
+      throw new Error("Embedding dimension must be greater than zero.");
+    }
+    if (this._vector.length !== this._dimension) {
+      throw new Error("Vector dimension mismatch.");
+    }
+    if (!this._space) {
+      throw new Error("Embedding Space is required.");
+    }
+    if (!this._fingerprint) {
+      throw new Error("Embedding Fingerprint is required.");
+    }
+    if (!this._lifecycle) {
+      throw new Error("Lifecycle state is required.");
+    }
+
+    if (this._snapshots.length > 0) {
+      let previousVersion = 0;
+      for (const snap of this._snapshots) {
+        if (snap.version <= previousVersion) {
+          throw new Error("Snapshot history must be sequential and strictly increasing.");
+        }
+        previousVersion = snap.version;
+      }
     }
   }
 
-  // Domain Factory
+  private appendSnapshot(snapshotId: string): void {
+    const nextVersion = this._snapshots.length + 1;
+    const newSnapshot = new EmbeddingSnapshot({
+      version: nextVersion,
+      createdAt: new Date(),
+      embeddingReference: this._embeddingReference,
+      sourceReference: this._sourceReference,
+      vector: this._vector,
+      dimension: this._dimension,
+      space: this._space,
+      fingerprint: this._fingerprint,
+      lifecycle: this._lifecycle,
+      snapshotId,
+    });
+    this._snapshots.push(newSnapshot);
+  }
+
+  // Factory Creation Method
   public static create(
     id: string,
-    referenceValue: string,
-    ownerId: string,
-    metadata: EmbeddingMetadata,
-    generationPolicy: EmbeddingGenerationPolicy,
-    classification: EmbeddingClassification,
-    initialSnapshotId: string,
-    initialFingerprint: RepresentationFingerprint,
+    embeddingReference: EmbeddingReference,
+    sourceReference: EmbeddingSourceReference,
+    vector: EmbeddingVector,
+    space: EmbeddingSpace,
+    fingerprint: EmbeddingFingerprint,
+    snapshotId: string,
   ): Embedding {
-    const reference = new EmbeddingReference(referenceValue);
     const now = new Date();
-    const initialSnapshot = new EmbeddingSnapshot({
-      snapshotId: initialSnapshotId,
-      representationFingerprint: initialFingerprint,
-      metadataSnapshot: metadata,
-      generationPolicySnapshot: generationPolicy,
-      classificationSnapshot: classification,
-      lifecycleStateSnapshot: "Draft",
-      capturedAt: now,
-    });
-
+    const dimension = vector.length;
     const embedding = new Embedding({
       id,
-      reference,
-      ownerId,
-      metadata,
-      generationPolicy,
-      classification,
-      snapshots: [initialSnapshot],
-      status: "Draft",
+      embeddingReference,
+      sourceReference,
+      vector,
+      dimension,
+      space,
+      fingerprint,
+      lifecycle: "Draft",
+      snapshots: [],
       createdAt: now,
       updatedAt: now,
     });
 
-    embedding.addDomainEvent({
-      eventType: EMBEDDING_REGISTERED,
-      embeddingId: embedding.id,
-      reference: embedding.reference,
-      snapshotId: initialSnapshotId,
-      ownerId: embedding.ownerId,
-    });
-
+    embedding.appendSnapshot(snapshotId);
     return embedding;
   }
 
   // Domain Operations
-  /**
-   * Replaces the metadata of the aggregate.
-   *
-   * Mutation Rules:
-   * - Must verify caller ownership.
-   * - Operation is restricted strictly to the "Draft" lifecycle state.
-   */
-  public replaceMetadata(actorOwnerId: string, metadata: EmbeddingMetadata): void {
-    this.verifyOwnership(actorOwnerId);
-    if (this._status !== "Draft") {
-      throw new Error(`Cannot replace metadata when in status: ${this._status}`);
-    }
-    this._metadata = metadata;
-    this._updatedAt = new Date();
-  }
-
-  /**
-   * Generates a new snapshot representational fingerprint.
-   *
-   * Mutation Rules:
-   * - Must verify caller ownership.
-   * - Operation is restricted strictly to the "Draft" or "Generated" lifecycle states.
-   */
-  public generateRepresentation(
-    actorOwnerId: string,
-    newSnapshotId: string,
-    newFingerprint: RepresentationFingerprint,
-  ): void {
-    this.verifyOwnership(actorOwnerId);
-    if (this._status !== "Draft" && this._status !== "Generated") {
-      throw new Error(`Cannot generate representation when in status: ${this._status}`);
+  public register(snapshotId: string): void {
+    if (this._lifecycle !== "Draft") {
+      throw new Error(`Cannot register embedding when in status: ${this._lifecycle}`);
     }
 
-    this._status = "Generated";
+    this._lifecycle = "Registered";
     this._updatedAt = new Date();
-
-    const newSnapshot = new EmbeddingSnapshot({
-      snapshotId: newSnapshotId,
-      representationFingerprint: newFingerprint,
-      metadataSnapshot: this._metadata,
-      generationPolicySnapshot: this._generationPolicy,
-      classificationSnapshot: this._classification,
-      lifecycleStateSnapshot: "Generated",
-      capturedAt: new Date(),
-    });
-
-    this._snapshots.push(newSnapshot);
+    this.appendSnapshot(snapshotId);
 
     this.addDomainEvent({
-      eventType: EMBEDDING_GENERATED,
+      eventType: EMBEDDING_REGISTERED,
       embeddingId: this._id,
-      reference: this._reference.value,
-      snapshotId: newSnapshotId,
-      ownerId: this._ownerId,
+      embeddingReference: this._embeddingReference.value,
+      sourceReference: this._sourceReference.value,
+      snapshotId,
     });
   }
 
-  public validate(actorOwnerId: string): void {
-    this.verifyOwnership(actorOwnerId);
-    if (this._status !== "Generated") {
-      throw new Error(`Cannot validate embedding when in status: ${this._status}`);
+  public validate(snapshotId: string): void {
+    if (this._lifecycle !== "Registered") {
+      throw new Error(`Cannot validate embedding when in status: ${this._lifecycle}`);
     }
 
-    this._status = "Validated";
+    this._lifecycle = "Validated";
     this._updatedAt = new Date();
+    this.appendSnapshot(snapshotId);
 
     this.addDomainEvent({
       eventType: EMBEDDING_VALIDATED,
       embeddingId: this._id,
-      reference: this._reference.value,
-      snapshotId: this.latestSnapshot.snapshotId,
-      ownerId: this._ownerId,
+      embeddingReference: this._embeddingReference.value,
+      sourceReference: this._sourceReference.value,
+      snapshotId,
     });
   }
 
-  public publish(actorOwnerId: string): void {
-    this.verifyOwnership(actorOwnerId);
-    if (this._status !== "Validated") {
-      throw new Error(`Cannot publish embedding when in status: ${this._status}`);
+  public makeAvailable(snapshotId: string): void {
+    if (this._lifecycle !== "Validated") {
+      throw new Error(`Cannot make embedding available when in status: ${this._lifecycle}`);
     }
 
-    this._status = "Published";
+    this._lifecycle = "Available";
     this._updatedAt = new Date();
+    this.appendSnapshot(snapshotId);
 
     this.addDomainEvent({
-      eventType: EMBEDDING_PUBLISHED,
+      eventType: EMBEDDING_AVAILABLE,
       embeddingId: this._id,
-      reference: this._reference.value,
-      snapshotId: this.latestSnapshot.snapshotId,
-      ownerId: this._ownerId,
+      embeddingReference: this._embeddingReference.value,
+      sourceReference: this._sourceReference.value,
+      snapshotId,
     });
   }
 
-  public archive(actorOwnerId: string): void {
-    this.verifyOwnership(actorOwnerId);
-    if (this._status === "Archived") {
+  public archive(snapshotId: string): void {
+    if (this._lifecycle === "Archived") {
       throw new Error("Embedding is already archived.");
     }
 
-    this._status = "Archived";
+    this._lifecycle = "Archived";
     this._updatedAt = new Date();
+    this.appendSnapshot(snapshotId);
 
     this.addDomainEvent({
       eventType: EMBEDDING_ARCHIVED,
       embeddingId: this._id,
-      reference: this._reference.value,
-      snapshotId: this.latestSnapshot.snapshotId,
-      ownerId: this._ownerId,
+      embeddingReference: this._embeddingReference.value,
+      sourceReference: this._sourceReference.value,
+      snapshotId,
     });
+  }
+
+  public update(
+    vector: EmbeddingVector,
+    space: EmbeddingSpace,
+    fingerprint: EmbeddingFingerprint,
+    snapshotId: string,
+  ): void {
+    if (this._lifecycle === "Archived") {
+      throw new Error("Cannot update archived embedding.");
+    }
+
+    this._vector = vector;
+    this._dimension = vector.length;
+    this._space = space;
+    this._fingerprint = fingerprint;
+    this._updatedAt = new Date();
+    this.appendSnapshot(snapshotId);
   }
 }
