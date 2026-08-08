@@ -613,3 +613,21 @@ export type {
   LexicalSearchContract,
   HybridSearchProvider,
 } from "./hybrid-search.js";
+
+export {
+  RankingCriteria,
+  RankingPolicy,
+  RankingScore,
+  RankingCandidate,
+  RankedItem,
+  RankingResult,
+  RankingRequest,
+  RankingService,
+} from "./ranking.js";
+
+export type {
+  RankingCriteriaValue,
+  RankingCandidateProperties,
+  RankedItemProperties,
+  RankingRequestProperties,
+} from "./ranking.js";

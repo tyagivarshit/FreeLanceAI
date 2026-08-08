@@ -37,4 +37,6 @@ export { QueryEmbedding, SearchScope, SearchFilter, SimilarityMetric, Similarity
 export type { SearchScopeProperties, SimilarityMetricValue, SearchCandidateProperties, VectorSearchRequestProperties, VectorSearchContract, VectorSearchProvider, VectorSearchRepository, } from "./vector-search.js";
 export { FusionStrategy, FusionWeight, FusionScore, LexicalCandidate, HybridSearchCandidate, HybridSearchResult, HybridSearchRequest, } from "./hybrid-search.js";
 export type { FusionStrategyValue, LexicalCandidateProperties, HybridSearchCandidateProperties, HybridSearchRequestProperties, HybridSearchContract, LexicalSearchContract, HybridSearchProvider, } from "./hybrid-search.js";
+export { RankingCriteria, RankingPolicy, RankingScore, RankingCandidate, RankedItem, RankingResult, RankingRequest, RankingService, } from "./ranking.js";
+export type { RankingCriteriaValue, RankingCandidateProperties, RankedItemProperties, RankingRequestProperties, } from "./ranking.js";
 //# sourceMappingURL=index.d.ts.map

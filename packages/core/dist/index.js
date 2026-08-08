@@ -83,4 +83,5 @@ export { InsightContent, InsightClassification, InsightConfidence, InsightSource
 export { MemoryUpdateReference, TargetMemoryReference, MemoryUpdateSpecification, MemoryUpdateClassification, MemoryUpdateSourceReference, MemoryUpdatePriority, MemoryUpdateFingerprint, ClientMemoryUpdateSnapshot, ClientMemoryUpdate, CLIENT_MEMORY_UPDATE_PROPOSED, CLIENT_MEMORY_UPDATE_VALIDATED, CLIENT_MEMORY_UPDATE_APPROVED, CLIENT_MEMORY_UPDATE_APPLIED, CLIENT_MEMORY_UPDATE_REJECTED, CLIENT_MEMORY_UPDATE_ARCHIVED, } from "./client-memory-update.js";
 export { QueryEmbedding, SearchScope, SearchFilter, SimilarityMetric, SimilarityScore, SearchLimit, SearchCandidate, VectorSearchResult, VectorSearchRequest, } from "./vector-search.js";
 export { FusionStrategy, FusionWeight, FusionScore, LexicalCandidate, HybridSearchCandidate, HybridSearchResult, HybridSearchRequest, } from "./hybrid-search.js";
+export { RankingCriteria, RankingPolicy, RankingScore, RankingCandidate, RankedItem, RankingResult, RankingRequest, RankingService, } from "./ranking.js";
 //# sourceMappingURL=index.js.map
