@@ -23,30 +23,30 @@ import type {
 describe("Conversation Import Domain Aggregate & Value Objects Tests", () => {
   const createDefaultMetadata = () =>
     new ImportMetadata({
-      displayName: "Slack Alignment Import",
+      displayName: "Logical Alignment Import",
       description: "Importing conversation history for client onboard notes.",
       purpose: "Client Context Setup",
-      importScopeSummary: "Slack onboarding channel history",
+      importScopeSummary: "Logical onboarding history",
     });
 
   const createAlternativeMetadata = () =>
     new ImportMetadata({
-      displayName: "Slack Support Update",
+      displayName: "Logical Support Update",
       description: "Importing recent support transcripts.",
       purpose: "Issue Resolution",
-      importScopeSummary: "Slack q3-support channel notes",
+      importScopeSummary: "Logical support notes",
     });
 
   const defaultScope = new ImportScope("FullConversation");
   const alternativeScope = new ImportScope("PartialConversation");
 
-  const defaultFingerprint = new ImportFingerprint("logical-slack-import-v1");
-  const alternativeFingerprint = new ImportFingerprint("logical-slack-import-v2");
+  const defaultFingerprint = new ImportFingerprint("logical-import-v1");
+  const alternativeFingerprint = new ImportFingerprint("logical-import-v2");
 
   const defaultSource = new SourceClassification("Slack");
 
-  const defaultImportRef = new ImportReference("import.slack.abc-123");
-  const defaultConvRef = new ConversationReference("conv.slack.general");
+  const defaultImportRef = new ImportReference("import.reference.abc-123");
+  const defaultConvRef = new ConversationReference("conversation.general");
 
   test("Aggregate creation success: initial status Draft, version 1 snapshot", () => {
     const metadata = createDefaultMetadata();
@@ -90,40 +90,69 @@ describe("Conversation Import Domain Aggregate & Value Objects Tests", () => {
     assert.strictEqual(importObj.domainEvents.length, 0);
   });
 
-  test("ImportFingerprint rejects cryptographic hashes and provider keywords", () => {
-    // Rejects MD5
-    assert.throws(() => {
-      new ImportFingerprint("5d41402abc4b2a76b9719d911017c592");
-    }, /Fingerprint cannot be a cryptographic hash\./);
+  test("ImportFingerprint provider neutrality, format flexibility, and immutability", () => {
+    // 1. Provider-neutral logical identifiers are accepted
+    const fp1 = new ImportFingerprint("logical-import-v1");
+    assert.strictEqual(fp1.value, "logical-import-v1");
 
-    // Rejects SHA-256
-    assert.throws(() => {
-      new ImportFingerprint("e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855");
-    }, /Fingerprint cannot be a cryptographic hash\./);
+    // 2. Hash-like values are accepted
+    const fpHash = new ImportFingerprint(
+      "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    );
+    assert.strictEqual(
+      fpHash.value,
+      "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    );
 
-    // Rejects Provider identifiers
-    assert.throws(() => {
-      new ImportFingerprint("openai-sync-123");
-    }, /Fingerprint cannot contain provider identifiers\./);
+    // 3. Hexadecimal values are accepted
+    const fpHex = new ImportFingerprint("5d41402abc4b2a76b9719d911017c592");
+    assert.strictEqual(fpHex.value, "5d41402abc4b2a76b9719d911017c592");
 
+    // 4. Values containing words resembling provider names are NOT rejected
+    const fpProviderLike = new ImportFingerprint("openai-sync-123");
+    assert.strictEqual(fpProviderLike.value, "openai-sync-123");
+
+    const fpGeminiLike = new ImportFingerprint("gemini-transcript");
+    assert.strictEqual(fpGeminiLike.value, "gemini-transcript");
+
+    // 6. ImportFingerprint remains immutable
     assert.throws(() => {
-      new ImportFingerprint("gemini-transcript-import");
-    }, /Fingerprint cannot contain provider identifiers\./);
+      (fp1 as unknown as Record<string, unknown>).value = "mutated";
+    }, TypeError);
   });
 
   test("References format validation", () => {
     // Valid patterns
-    assert.ok(new ImportReference("slack.chat.channel-1"));
+    assert.ok(new ImportReference("reference.channel-1"));
     assert.ok(new ConversationReference("conv-ref-v2"));
 
     // Invalid patterns throw
     assert.throws(() => {
-      new ImportReference("Slack..channel");
+      new ImportReference("Import..channel");
     }, /Invalid import reference format/);
 
     assert.throws(() => {
       new ConversationReference("conv..general");
     }, /Invalid conversation reference format/);
+  });
+
+  test("ConversationReference provider neutrality validation", () => {
+    // Valid provider-neutral reference values
+    assert.ok(new ConversationReference("conversation.general"));
+    assert.ok(new ConversationReference("conversation.client.reference"));
+
+    // Invalid formats or provider-specific names throw errors
+    assert.throws(() => {
+      new ConversationReference("conv.slack.general");
+    }, /Conversation reference must not contain provider-specific semantics\./);
+
+    assert.throws(() => {
+      new ConversationReference("conversation.whatsapp.chat");
+    }, /Conversation reference must not contain provider-specific semantics\./);
+
+    assert.throws(() => {
+      new ConversationReference("gmail.inbox");
+    }, /Conversation reference must not contain provider-specific semantics\./);
   });
 
   test("SourceClassification validates valid providers case-insensitively", () => {
@@ -393,14 +422,14 @@ describe("Conversation Import Domain Aggregate & Value Objects Tests", () => {
       },
     };
 
-    const unique = await mockPersist.checkUniqueReference("owner-456", "import.slack.abc-123");
+    const unique = await mockPersist.checkUniqueReference("owner-456", "import.reference.abc-123");
     assert.strictEqual(unique, true);
   });
 
   test("Mock projection values compliance check", () => {
     const projection: ConversationImportQueryProjection = {
       id: "import-1",
-      importReference: "import.slack.abc-123",
+      importReference: "import.reference.abc-123",
       clientId: "client-123",
       ownerId: "owner-456",
       lifecycle: "Completed",
@@ -435,7 +464,7 @@ describe("Conversation Import Domain Aggregate & Value Objects Tests", () => {
     // Import Reference immutability
     assert.throws(() => {
       (importObj as unknown as Record<string, unknown>).importReference = new ImportReference(
-        "import.slack.new",
+        "import.reference.new",
       );
     }, TypeError);
 
@@ -452,7 +481,7 @@ describe("Conversation Import Domain Aggregate & Value Objects Tests", () => {
     // Conversation Reference immutability
     assert.throws(() => {
       (importObj as unknown as Record<string, unknown>).conversationReference =
-        new ConversationReference("conv.slack.mutated");
+        new ConversationReference("conversation.mutated");
     }, TypeError);
 
     // Source Classification immutability

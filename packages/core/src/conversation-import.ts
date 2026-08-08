@@ -117,26 +117,7 @@ export class ImportFingerprint {
     if (!value || value.trim() === "") {
       throw new Error("Fingerprint value is required.");
     }
-    const cleanValue = value.trim();
-    // Validate: No cryptographic hashes allowed (such as 32-128 hex chars)
-    if (/^[a-f0-9]{32,128}$/i.test(cleanValue)) {
-      throw new Error("Fingerprint cannot be a cryptographic hash.");
-    }
-    // Validate: No provider identifiers allowed
-    const providers = [
-      "openai",
-      "anthropic",
-      "gemini",
-      "ollama",
-      "cohere",
-      "google",
-      "aws",
-      "azure",
-    ];
-    if (providers.some((p) => cleanValue.toLowerCase().includes(p))) {
-      throw new Error("Fingerprint cannot contain provider identifiers.");
-    }
-    this._value = cleanValue;
+    this._value = value.trim();
     Object.freeze(this);
   }
 
@@ -195,6 +176,11 @@ export class ConversationReference {
       throw new Error(
         "Invalid conversation reference format. Must be lower-case dot/hyphen-separated key.",
       );
+    }
+    // Reject provider-specific keywords to ensure provider neutrality
+    const providers = ["slack", "whatsapp", "gmail", "discord", "telegram", "intercom"];
+    if (providers.some((p) => cleanValue.toLowerCase().includes(p))) {
+      throw new Error("Conversation reference must not contain provider-specific semantics.");
     }
     this._value = cleanValue;
     Object.freeze(this);

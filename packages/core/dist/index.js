@@ -78,5 +78,5 @@ export { RepresentationFingerprint, EmbeddingMetadata, EmbeddingGenerationPolicy
 export { PromptCompositionReference, PromptDefinitionReference, ContextSpecificationReference, MemoryReference, EmbeddingReference, CompositionStrategyReference, PromptComposition, CompositionMetadata, CompositionStrategy, CompositionFingerprint, CompositionSnapshot, PromptBuilder, PROMPT_COMPOSITION_REGISTERED, PROMPT_COMPOSED, PROMPT_COMPOSITION_VALIDATED, PROMPT_COMPOSITION_PUBLISHED, PROMPT_COMPOSITION_ARCHIVED, } from "./prompt-builder.js";
 export { PolicyReference, PolicyDefinition, PolicyMetadata, PolicyRuleSet, PolicyEvaluationResult, DecisionFingerprint, PolicySnapshot, Policy, POLICY_REGISTERED, POLICY_VALIDATED, POLICY_PUBLISHED, POLICY_ARCHIVED, POLICY_EVALUATED, } from "./policy.js";
 export { SummaryContent, SummaryScope, SummaryMetadata, SummaryClassification, SummaryFingerprint, SummaryReference, SummarySnapshot, ClientSummary, CLIENT_SUMMARY_REGISTERED, CLIENT_SUMMARY_GENERATED, CLIENT_SUMMARY_VALIDATED, CLIENT_SUMMARY_PUBLISHED, CLIENT_SUMMARY_ARCHIVED, } from "./client-summary.js";
-export { ImportMetadata, ImportScope, } from "./conversation-import.js";
+export { ImportMetadata, ImportScope } from "./conversation-import.js";
 //# sourceMappingURL=index.js.map
