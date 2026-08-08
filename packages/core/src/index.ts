@@ -571,3 +571,25 @@ export type {
   ClientMemoryUpdateAggregateStore,
   ClientMemoryUpdateProperties,
 } from "./client-memory-update.js";
+
+export {
+  QueryEmbedding,
+  SearchScope,
+  SearchFilter,
+  SimilarityMetric,
+  SimilarityScore,
+  SearchLimit,
+  SearchCandidate,
+  VectorSearchResult,
+  VectorSearchRequest,
+} from "./vector-search.js";
+
+export type {
+  SearchScopeProperties,
+  SimilarityMetricValue,
+  SearchCandidateProperties,
+  VectorSearchRequestProperties,
+  VectorSearchContract,
+  VectorSearchProvider,
+  VectorSearchRepository,
+} from "./vector-search.js";
