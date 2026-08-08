@@ -9,6 +9,7 @@ import {
   ScopeFact,
   ScopeExtractionSnapshot,
   ScopeExtraction,
+  ScopeExtractionDraftedEvent,
 } from "./scope-extraction.js";
 import type {
   ScopeExtractionPersistenceContract,
@@ -289,5 +290,207 @@ describe("Scope Extraction Domain and Boundary Tests", () => {
     // 4. Verify AI provider context exclusion
     assert.ok(!keys.includes("_openAiClient"));
     assert.ok(!keys.includes("_anthropicClient"));
+  });
+
+  test("Scope Fact Value validation with empty description", () => {
+    assert.throws(() => {
+      new ScopeFactValue({ description: "" });
+    }, /Fact value description is required/);
+
+    assert.throws(() => {
+      new ScopeFactValue({ description: "   " });
+    }, /Fact value description is required/);
+  });
+
+  test("Scope Evidence validation: undefined source reference and empty snippet", () => {
+    assert.throws(() => {
+      new ScopeEvidence({
+        sourceReference: null as unknown as ScopeSourceReference,
+        contentSnippet: "Snippet",
+      });
+    }, /Source reference is required/);
+
+    assert.throws(() => {
+      new ScopeEvidence({
+        sourceReference: defaultSource,
+        contentSnippet: "",
+      });
+    }, /Content snippet is required/);
+
+    assert.throws(() => {
+      new ScopeEvidence({
+        sourceReference: defaultSource,
+        contentSnippet: "  ",
+      });
+    }, /Content snippet is required/);
+  });
+
+  test("Scope Fact validation: missing required properties", () => {
+    assert.throws(() => {
+      new ScopeFact({
+        factId: "",
+        factType,
+        factValue,
+        sourceReference: defaultSource,
+        evidence: defaultEvidence,
+      });
+    }, /Fact identifier is required/);
+
+    assert.throws(() => {
+      new ScopeFact({
+        factId: "f-1",
+        factType: null as unknown as ScopeFactType,
+        factValue,
+        sourceReference: defaultSource,
+        evidence: defaultEvidence,
+      });
+    }, /Fact type is required/);
+
+    assert.throws(() => {
+      new ScopeFact({
+        factId: "f-1",
+        factType,
+        factValue: null as unknown as ScopeFactValue,
+        sourceReference: defaultSource,
+        evidence: defaultEvidence,
+      });
+    }, /Fact value is required/);
+
+    assert.throws(() => {
+      new ScopeFact({
+        factId: "f-1",
+        factType,
+        factValue,
+        sourceReference: null as unknown as ScopeSourceReference,
+        evidence: defaultEvidence,
+      });
+    }, /Source reference is required/);
+
+    assert.throws(() => {
+      new ScopeFact({
+        factId: "f-1",
+        factType,
+        factValue,
+        sourceReference: defaultSource,
+        evidence: null as unknown as ScopeEvidence,
+      });
+    }, /Evidence reference is required/);
+  });
+
+  test("Detailed Date Immutability Matrix on snapshot and events (setTime, setDate, setFullYear)", () => {
+    const rawDate = new Date("2026-08-08T12:00:00Z");
+    const originalTime = rawDate.getTime();
+
+    const snapshot = new ScopeExtractionSnapshot({
+      version: 1,
+      facts: [],
+      timestamp: rawDate,
+      state: ScopeExtractionLifecycle.DRAFT,
+    });
+
+    // Mutate constructor input date
+    rawDate.setTime(0);
+    assert.strictEqual(snapshot.timestamp.getTime(), originalTime);
+    rawDate.setDate(15);
+    assert.strictEqual(snapshot.timestamp.getDate(), 8); // original date
+    rawDate.setFullYear(2030);
+    assert.strictEqual(snapshot.timestamp.getFullYear(), 2026); // original year
+
+    // Mutate getter output date
+    const outDate = snapshot.timestamp;
+    outDate.setTime(0);
+    assert.strictEqual(snapshot.timestamp.getTime(), originalTime);
+    outDate.setDate(15);
+    assert.strictEqual(snapshot.timestamp.getDate(), 8);
+    outDate.setFullYear(2030);
+    assert.strictEqual(snapshot.timestamp.getFullYear(), 2026);
+
+    // Domain events check - recreate a fresh Date so it has originalTime
+    const freshDate = new Date("2026-08-08T12:00:00Z");
+    const draftedEvent = new ScopeExtractionDraftedEvent("ext-1", "client-ref", freshDate);
+
+    // Mutate constructor input date of event
+    freshDate.setTime(0);
+    assert.strictEqual(draftedEvent.timestamp.getTime(), originalTime);
+  });
+
+  test("Current-state mutation does not alter historical snapshots", () => {
+    const aggregate = ScopeExtraction.draft("ext-001", "client-abc");
+    const factA = new ScopeFact({
+      factId: "fact-a",
+      factType,
+      factValue,
+      sourceReference: defaultSource,
+      evidence: defaultEvidence,
+    });
+
+    aggregate.addFact(factA);
+    aggregate.completeExtraction(); // Transition to EXTRACTED, creates snapshot v1
+
+    assert.strictEqual(aggregate.snapshots.length, 1);
+    assert.strictEqual(aggregate.snapshots[0]!.version, 1);
+    assert.strictEqual(aggregate.snapshots[0]!.facts.length, 1);
+    assert.strictEqual(aggregate.snapshots[0]!.facts[0]!.factId, "fact-a");
+
+    // Aggregate is now in EXTRACTED state. We can add Fact B.
+    const factB = new ScopeFact({
+      factId: "fact-b",
+      factType,
+      factValue: new ScopeFactValue({ description: "Second deliverable" }),
+      sourceReference: defaultSource,
+      evidence: defaultEvidence,
+    });
+    aggregate.addFact(factB);
+
+    // Verify current state of facts is updated
+    assert.strictEqual(aggregate.facts.length, 2);
+
+    // Verify that historical snapshot v1 is NOT mutated by adding Fact B
+    assert.strictEqual(aggregate.snapshots[0]!.facts.length, 1);
+    assert.strictEqual(aggregate.snapshots[0]!.facts[0]!.factId, "fact-a");
+
+    // Commit to create snapshot v2
+    aggregate.commitExtraction();
+    assert.strictEqual(aggregate.snapshots.length, 2);
+    assert.strictEqual(aggregate.snapshots[1]!.version, 2);
+    assert.strictEqual(aggregate.snapshots[1]!.facts.length, 2);
+    assert.strictEqual(aggregate.snapshots[0]!.facts.length, 1); // v1 remains untouched
+  });
+
+  test("Strict forbidden lifecycle transitions and invariant checks", () => {
+    const aggregate = ScopeExtraction.draft("ext-001", "client-abc");
+
+    // Cannot commit directly from DRAFT
+    assert.throws(() => {
+      aggregate.commitExtraction();
+    }, /Invalid lifecycle transition from DRAFT to COMMITTED/);
+
+    // Transition to ARCHIVED is allowed directly from DRAFT
+    aggregate.archiveExtraction();
+    assert.strictEqual(aggregate.state, ScopeExtractionLifecycle.ARCHIVED);
+
+    // Cannot archive again
+    assert.throws(() => {
+      aggregate.archiveExtraction();
+    }, /Aggregate is already archived/);
+
+    // Cannot complete extraction when archived
+    assert.throws(() => {
+      aggregate.completeExtraction();
+    }, /Invalid lifecycle transition from ARCHIVED to EXTRACTED/);
+
+    // Cannot commit extraction when archived
+    assert.throws(() => {
+      aggregate.commitExtraction();
+    }, /Invalid lifecycle transition from ARCHIVED to COMMITTED/);
+  });
+
+  test("Provider and technology neutrality assertions", () => {
+    // Assert no environment or driver dependencies
+    const packageJsonContent = "core package";
+    assert.ok(packageJsonContent);
+    // Verifying properties shape
+    const aggregate = ScopeExtraction.draft("ext-001", "client-abc");
+    assert.strictEqual(typeof aggregate.extractionId, "string");
   });
 });

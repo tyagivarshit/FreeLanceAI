@@ -199,4 +199,203 @@ describe("Confidence Domain and Boundary Tests", () => {
     assert.ok(!keys.includes("_aiProviderClient"));
     assert.ok(!keys.includes("_databaseConnection"));
   });
+
+  test("Confidence assessment validations: empty properties", () => {
+    const score = new ConfidenceScore(0.9);
+    const level = new ConfidenceLevel("High");
+
+    assert.throws(() => {
+      new ConfidenceAssessment({
+        assessmentId: "",
+        evaluationId: "eval-1",
+        extractionId: "ext-1",
+        score,
+        level,
+        reasons: [],
+        evidenceList: [],
+        assessedAt: new Date(),
+      });
+    }, /Assessment identifier is required/);
+
+    assert.throws(() => {
+      new ConfidenceAssessment({
+        assessmentId: "assess-1",
+        evaluationId: "",
+        extractionId: "ext-1",
+        score,
+        level,
+        reasons: [],
+        evidenceList: [],
+        assessedAt: new Date(),
+      });
+    }, /Evaluation identifier is required/);
+
+    assert.throws(() => {
+      new ConfidenceAssessment({
+        assessmentId: "assess-1",
+        evaluationId: "eval-1",
+        extractionId: "",
+        score,
+        level,
+        reasons: [],
+        evidenceList: [],
+        assessedAt: new Date(),
+      });
+    }, /Extraction identifier is required/);
+
+    assert.throws(() => {
+      new ConfidenceAssessment({
+        assessmentId: "assess-1",
+        evaluationId: "eval-1",
+        extractionId: "ext-1",
+        score: null as unknown as ConfidenceScore,
+        level,
+        reasons: [],
+        evidenceList: [],
+        assessedAt: new Date(),
+      });
+    }, /Confidence score is required/);
+
+    assert.throws(() => {
+      new ConfidenceAssessment({
+        assessmentId: "assess-1",
+        evaluationId: "eval-1",
+        extractionId: "ext-1",
+        score,
+        level: null as unknown as ConfidenceLevel,
+        reasons: [],
+        evidenceList: [],
+        assessedAt: new Date(),
+      });
+    }, /Confidence level is required/);
+
+    assert.throws(() => {
+      new ConfidenceAssessment({
+        assessmentId: "assess-1",
+        evaluationId: "eval-1",
+        extractionId: "ext-1",
+        score,
+        level,
+        reasons: null as unknown as ConfidenceReason[],
+        evidenceList: [],
+        assessedAt: new Date(),
+      });
+    }, /Reasons collection is required/);
+
+    assert.throws(() => {
+      new ConfidenceAssessment({
+        assessmentId: "assess-1",
+        evaluationId: "eval-1",
+        extractionId: "ext-1",
+        score,
+        level,
+        reasons: [],
+        evidenceList: null as unknown as ConfidenceEvidence[],
+        assessedAt: new Date(),
+      });
+    }, /Evidence collection is required/);
+
+    assert.throws(() => {
+      new ConfidenceAssessment({
+        assessmentId: "assess-1",
+        evaluationId: "eval-1",
+        extractionId: "ext-1",
+        score,
+        level,
+        reasons: [],
+        evidenceList: [],
+        assessedAt: null as unknown as Date,
+      });
+    }, /Assessment timestamp is required/);
+  });
+
+  test("Detailed Date Immutability Matrix for Confidence (setTime, setDate, setFullYear)", () => {
+    const rawDate = new Date("2026-08-08T12:00:00Z");
+    const originalTime = rawDate.getTime();
+    const score = new ConfidenceScore(0.9);
+    const level = new ConfidenceLevel("High");
+
+    const assessment = new ConfidenceAssessment({
+      assessmentId: "assess-1",
+      evaluationId: "eval-1",
+      extractionId: "ext-1",
+      score,
+      level,
+      reasons: [],
+      evidenceList: [],
+      assessedAt: rawDate,
+    });
+
+    // Mutate constructor input date
+    rawDate.setTime(0);
+    assert.strictEqual(assessment.assessedAt.getTime(), originalTime);
+    rawDate.setDate(15);
+    assert.strictEqual(assessment.assessedAt.getDate(), 8); // original date
+    rawDate.setFullYear(2030);
+    assert.strictEqual(assessment.assessedAt.getFullYear(), 2026); // original year
+
+    // Mutate getter output date
+    const outDate = assessment.assessedAt;
+    outDate.setTime(0);
+    assert.strictEqual(assessment.assessedAt.getTime(), originalTime);
+    outDate.setDate(15);
+    assert.strictEqual(assessment.assessedAt.getDate(), 8);
+    outDate.setFullYear(2030);
+    assert.strictEqual(assessment.assessedAt.getFullYear(), 2026);
+
+    // Event Date check
+    const freshDate = new Date("2026-08-08T12:00:00Z");
+    const event = new ConfidenceAssessedEvent("assess-1", 0.9, "HIGH", freshDate);
+
+    // Mutate constructor input date of event
+    freshDate.setTime(0);
+    assert.strictEqual(event.timestamp.getTime(), originalTime);
+  });
+
+  test("Confidence representation preserves 6B decision linkage", () => {
+    const evaluationId = "eval-link-123";
+    const score = new ConfidenceScore(0.85);
+    const level = new ConfidenceLevel("High");
+
+    const assessment = new ConfidenceAssessment({
+      assessmentId: "assess-1",
+      evaluationId,
+      extractionId: "ext-1",
+      score,
+      level,
+      reasons: [new ConfidenceReason("STRONG_EVIDENCE")],
+      evidenceList: [new ConfidenceEvidence({ sourceId: "source-abc", evaluationId })],
+      assessedAt: new Date(),
+    });
+
+    assert.strictEqual(assessment.evaluationId, evaluationId);
+    assert.strictEqual(assessment.evidenceList[0]!.evaluationId, evaluationId);
+  });
+
+  test("Confidence determinism: identical properties yield identical assessments", () => {
+    const rawDate = new Date();
+    const score = new ConfidenceScore(0.85);
+    const level = new ConfidenceLevel("High");
+
+    const makeAssess = () =>
+      new ConfidenceAssessment({
+        assessmentId: "assess-1",
+        evaluationId: "eval-1",
+        extractionId: "ext-1",
+        score,
+        level,
+        reasons: [new ConfidenceReason("STRONG_EVIDENCE")],
+        evidenceList: [new ConfidenceEvidence({ sourceId: "source-abc" })],
+        assessedAt: rawDate,
+      });
+
+    const ass1 = makeAssess();
+    const ass2 = makeAssess();
+
+    assert.strictEqual(ass1.assessmentId, ass2.assessmentId);
+    assert.strictEqual(ass1.score.value, ass2.score.value);
+    assert.strictEqual(ass1.level.value, ass2.level.value);
+    assert.strictEqual(ass1.reasons[0]!.value, ass2.reasons[0]!.value);
+    assert.strictEqual(ass1.evidenceList[0]!.sourceId, ass2.evidenceList[0]!.sourceId);
+  });
 });

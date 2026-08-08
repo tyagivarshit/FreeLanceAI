@@ -47,4 +47,6 @@ export { ConfidenceScore, ConfidenceLevel, ConfidenceReason, ConfidenceEvidence,
 export type { ConfidenceLevelValue, ConfidenceReasonValue, ConfidenceEvidenceProperties, ConfidenceAssessmentProperties, ConfidenceDomainEvent, ConfidencePersistenceContract, ConfidenceAggregateStore, ConfidenceQueryProjection, } from "./confidence.js";
 export { PricingAmount, PricingCurrency, PricingComponent, PricingBreakdown, PricingAssessment, } from "./pricing.js";
 export type { PricingComponentProperties, PricingBreakdownProperties, PricingAssessmentProperties, } from "./pricing.js";
+export { GenerationReference, GenerationConstraint, GenerationMetadata, GenerationContent, GenerationRequest, GenerationResult, ReplyGenerationSnapshot, ReplyGeneration, REPLY_GENERATION_DRAFTED, REPLY_GENERATION_REQUESTED, REPLY_GENERATION_COMPLETED, REPLY_GENERATION_ARCHIVED, } from "./reply-generation.js";
+export type { ReplyGenerationLifecycle, GenerationMetadataProperties, GenerationRequestProperties, GenerationResultProperties, ReplyGenerationSnapshotProperties, ReplyGenerationDomainEventName, ReplyGenerationDomainEvent, ReplyGenerationEventPublisher, ReplyGenerationQueryProjection, ReplyGenerationPersistenceContract, ReplyGenerationAggregateStore, ReplyGenerationProperties, } from "./reply-generation.js";
 //# sourceMappingURL=index.d.ts.map

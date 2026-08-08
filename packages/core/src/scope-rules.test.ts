@@ -354,4 +354,187 @@ describe("Scope Rules Domain and Boundary Tests", () => {
     assert.ok(!keys.includes("_aiProviderClient"));
     assert.ok(!keys.includes("_documentExtractor"));
   });
+
+  test("Scope Rule validation: missing required fields", () => {
+    const rType = new ScopeRuleType("requirement");
+
+    assert.throws(() => {
+      new ScopeRule({
+        ruleId: "",
+        ruleType: rType,
+        description: "Desc",
+        parameters: {},
+      });
+    }, /Rule identifier is required/);
+
+    assert.throws(() => {
+      new ScopeRule({
+        ruleId: "r-1",
+        ruleType: null as unknown as ScopeRuleType,
+        description: "Desc",
+        parameters: {},
+      });
+    }, /Rule type is required/);
+
+    assert.throws(() => {
+      new ScopeRule({
+        ruleId: "r-1",
+        ruleType: rType,
+        description: "",
+        parameters: {},
+      });
+    }, /Rule description is required/);
+
+    assert.throws(() => {
+      new ScopeRule({
+        ruleId: "r-1",
+        ruleType: rType,
+        description: "Desc",
+        parameters: null as unknown as Record<string, unknown>,
+      });
+    }, /Rule parameters is required/);
+  });
+
+  test("Scope Rule Violation validation: empty fields", () => {
+    assert.throws(() => {
+      new ScopeRuleViolation({
+        ruleId: "",
+        reasonCode: "CODE",
+        explanation: "Expl",
+      });
+    }, /Rule identifier is required/);
+
+    assert.throws(() => {
+      new ScopeRuleViolation({
+        ruleId: "r-1",
+        reasonCode: "",
+        explanation: "Expl",
+      });
+    }, /Reason code is required/);
+
+    assert.throws(() => {
+      new ScopeRuleViolation({
+        ruleId: "r-1",
+        reasonCode: "CODE",
+        explanation: "",
+      });
+    }, /Explanation is required/);
+  });
+
+  test("Detailed Date Immutability Matrix for evaluation (setTime, setDate, setFullYear)", () => {
+    const rawDate = new Date("2026-08-08T12:00:00Z");
+    const originalTime = rawDate.getTime();
+    const evaluation = new ScopeEvaluation({
+      evaluationId: "eval-001",
+      extractionId: "ext-001",
+      ruleSet: new ScopeRuleSet([]),
+      decision: new ScopeDecision("Accept"),
+      violations: [],
+      evaluatedAt: rawDate,
+    });
+
+    // Mutate constructor input date
+    rawDate.setTime(0);
+    assert.strictEqual(evaluation.evaluatedAt.getTime(), originalTime);
+    rawDate.setDate(15);
+    assert.strictEqual(evaluation.evaluatedAt.getDate(), 8); // original date
+    rawDate.setFullYear(2030);
+    assert.strictEqual(evaluation.evaluatedAt.getFullYear(), 2026); // original year
+
+    // Mutate getter output date
+    const outDate = evaluation.evaluatedAt;
+    outDate.setTime(0);
+    assert.strictEqual(evaluation.evaluatedAt.getTime(), originalTime);
+    outDate.setDate(15);
+    assert.strictEqual(evaluation.evaluatedAt.getDate(), 8);
+    outDate.setFullYear(2030);
+    assert.strictEqual(evaluation.evaluatedAt.getFullYear(), 2026);
+
+    // Event date check
+    const freshDate = new Date("2026-08-08T12:00:00Z");
+    const event = new ScopeEvaluationCompletedEvent("eval-001", "ACCEPT", 0, freshDate);
+
+    // Mutate constructor input date of event
+    freshDate.setTime(0);
+    assert.strictEqual(event.timestamp.getTime(), originalTime);
+  });
+
+  test("Rules Engine evaluation is strictly deterministic", () => {
+    const extraction = ScopeExtraction.draft("ext-001", "client-abc");
+    extraction.addFact(fact1);
+    extraction.addFact(fact2);
+
+    const rule = new ScopeRule({
+      ruleId: "rule-1",
+      ruleType: new ScopeRuleType("requirement"),
+      description: "Must contain deliverable.",
+      parameters: { requiredType: "DELIVERABLE" },
+    });
+    const ruleSet = new ScopeRuleSet([rule]);
+
+    const eval1 = ScopeRulesEngine.evaluate("eval-001", extraction, ruleSet);
+    const eval2 = ScopeRulesEngine.evaluate("eval-001", extraction, ruleSet);
+
+    assert.strictEqual(eval1.decision.value, eval2.decision.value);
+    assert.strictEqual(eval1.violations.length, eval2.violations.length);
+    assert.strictEqual(eval1.extractionId, eval2.extractionId);
+    assert.strictEqual(eval1.evaluationId, eval2.evaluationId);
+  });
+
+  test("Contradiction check requires case-insensitive and trimmed EXACT match", () => {
+    const extraction = ScopeExtraction.draft("ext-001", "client-abc");
+
+    const delFact = new ScopeFact({
+      factId: "fact-d",
+      factType: new ScopeFactType("deliverable"),
+      factValue: new ScopeFactValue({ description: "   Standard auth gateway   " }), // padded spaces
+      sourceReference: defaultSource,
+      evidence: defaultEvidence,
+    });
+
+    const exclFact = new ScopeFact({
+      factId: "fact-e",
+      factType: new ScopeFactType("exclusion"),
+      factValue: new ScopeFactValue({ description: "standard Auth Gateway" }), // different casing
+      sourceReference: defaultSource,
+      evidence: defaultEvidence,
+    });
+
+    extraction.addFact(delFact);
+    extraction.addFact(exclFact);
+
+    const rule = new ScopeRule({
+      ruleId: "contradiction-rule",
+      ruleType: new ScopeRuleType("contradiction"),
+      description: "No opposing terms allowed.",
+      parameters: {},
+    });
+
+    const ruleSet = new ScopeRuleSet([rule]);
+    const evaluation = ScopeRulesEngine.evaluate("eval-1", extraction, ruleSet);
+
+    // Exact matches should trigger contradiction
+    assert.strictEqual(evaluation.decision.value, ScopeDecisionValue.REQUIRES_REVIEW);
+    assert.strictEqual(evaluation.violations.length, 1);
+    assert.strictEqual(evaluation.violations[0]!.reasonCode, "CONTRADICTION_DETECTED");
+  });
+
+  test("Unimplemented/ignored rules types pass without violations", () => {
+    const extraction = ScopeExtraction.draft("ext-001", "client-abc");
+    extraction.addFact(fact1);
+
+    const boundaryRule = new ScopeRule({
+      ruleId: "r-boundary",
+      ruleType: new ScopeRuleType("boundary"),
+      description: "Testing non-evaluated rule types",
+      parameters: {},
+    });
+
+    const ruleSet = new ScopeRuleSet([boundaryRule]);
+    const evaluation = ScopeRulesEngine.evaluate("eval-1", extraction, ruleSet);
+
+    // Should simply ignore rules it does not know, passing with ACCEPT
+    assert.strictEqual(evaluation.decision.value, ScopeDecisionValue.ACCEPT);
+    assert.strictEqual(evaluation.violations.length, 0);
+  });
 });

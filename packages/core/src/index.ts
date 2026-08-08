@@ -717,3 +717,33 @@ export type {
   PricingBreakdownProperties,
   PricingAssessmentProperties,
 } from "./pricing.js";
+
+export {
+  GenerationReference,
+  GenerationConstraint,
+  GenerationMetadata,
+  GenerationContent,
+  GenerationRequest,
+  GenerationResult,
+  ReplyGenerationSnapshot,
+  ReplyGeneration,
+  REPLY_GENERATION_DRAFTED,
+  REPLY_GENERATION_REQUESTED,
+  REPLY_GENERATION_COMPLETED,
+  REPLY_GENERATION_ARCHIVED,
+} from "./reply-generation.js";
+
+export type {
+  ReplyGenerationLifecycle,
+  GenerationMetadataProperties,
+  GenerationRequestProperties,
+  GenerationResultProperties,
+  ReplyGenerationSnapshotProperties,
+  ReplyGenerationDomainEventName,
+  ReplyGenerationDomainEvent,
+  ReplyGenerationEventPublisher,
+  ReplyGenerationQueryProjection,
+  ReplyGenerationPersistenceContract,
+  ReplyGenerationAggregateStore,
+  ReplyGenerationProperties,
+} from "./reply-generation.js";
