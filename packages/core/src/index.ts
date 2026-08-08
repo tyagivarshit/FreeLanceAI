@@ -747,3 +747,29 @@ export type {
   ReplyGenerationAggregateStore,
   ReplyGenerationProperties,
 } from "./reply-generation.js";
+
+export {
+  RewriteInstruction,
+  RewriteRequest,
+  RewriteResult,
+  Revision,
+  ReplyRewriteSnapshot,
+  ReplyRewrite,
+  REPLY_REWRITE_DRAFTED,
+  REPLY_REWRITE_REQUESTED,
+  REPLY_REWRITE_COMPLETED,
+  REPLY_REWRITE_ARCHIVED,
+} from "./reply-rewrite.js";
+
+export type {
+  ReplyRewriteLifecycle,
+  RewriteRequestProperties,
+  RewriteResultProperties,
+  RevisionProperties,
+  ReplyRewriteSnapshotProperties,
+  ReplyRewriteDomainEventName,
+  ReplyRewriteDomainEvent,
+  ReplyRewritePersistenceContract,
+  ReplyRewriteAggregateStore,
+  ReplyRewriteProperties,
+} from "./reply-rewrite.js";

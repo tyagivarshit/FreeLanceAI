@@ -89,4 +89,5 @@ export { ScopeRuleType, ScopeRule, ScopeRuleSet, ScopeDecision, ScopeDecisionVal
 export { ConfidenceScore, ConfidenceLevel, ConfidenceReason, ConfidenceEvidence, ConfidenceAssessment, ConfidenceAssessedEvent, } from "./confidence.js";
 export { PricingAmount, PricingCurrency, PricingComponent, PricingBreakdown, PricingAssessment, } from "./pricing.js";
 export { GenerationReference, GenerationConstraint, GenerationMetadata, GenerationContent, GenerationRequest, GenerationResult, ReplyGenerationSnapshot, ReplyGeneration, REPLY_GENERATION_DRAFTED, REPLY_GENERATION_REQUESTED, REPLY_GENERATION_COMPLETED, REPLY_GENERATION_ARCHIVED, } from "./reply-generation.js";
+export { RewriteInstruction, RewriteRequest, RewriteResult, Revision, ReplyRewriteSnapshot, ReplyRewrite, REPLY_REWRITE_DRAFTED, REPLY_REWRITE_REQUESTED, REPLY_REWRITE_COMPLETED, REPLY_REWRITE_ARCHIVED, } from "./reply-rewrite.js";
 //# sourceMappingURL=index.js.map
