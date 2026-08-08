@@ -631,3 +631,32 @@ export type {
   RankedItemProperties,
   RankingRequestProperties,
 } from "./ranking.js";
+
+export {
+  ScopeExtractionLifecycle,
+  ScopeFactType,
+  ScopeFactValue,
+  ScopeSourceReference,
+  ScopeEvidence,
+  ScopeFact,
+  ScopeExtractionSnapshot,
+  ScopeExtraction,
+  ScopeExtractionDraftedEvent,
+  ScopeExtractionCompletedEvent,
+  ScopeExtractionCommittedEvent,
+  ScopeExtractionArchivedEvent,
+} from "./scope-extraction.js";
+
+export type {
+  ScopeFactTypeValue,
+  ScopeFactValueProperties,
+  ScopeSourceReferenceProperties,
+  ScopeEvidenceProperties,
+  ScopeFactProperties,
+  ScopeExtractionSnapshotProperties,
+  ScopeExtractionDomainEvent,
+  ScopeExtractionProperties,
+  ScopeExtractionPersistenceContract,
+  ScopeExtractionAggregateStore,
+  ScopeExtractionQueryProjection,
+} from "./scope-extraction.js";

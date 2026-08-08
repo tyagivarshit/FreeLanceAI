@@ -84,4 +84,5 @@ export { MemoryUpdateReference, TargetMemoryReference, MemoryUpdateSpecification
 export { QueryEmbedding, SearchScope, SearchFilter, SimilarityMetric, SimilarityScore, SearchLimit, SearchCandidate, VectorSearchResult, VectorSearchRequest, } from "./vector-search.js";
 export { FusionStrategy, FusionWeight, FusionScore, LexicalCandidate, HybridSearchCandidate, HybridSearchResult, HybridSearchRequest, } from "./hybrid-search.js";
 export { RankingCriteria, RankingPolicy, RankingScore, RankingCandidate, RankedItem, RankingResult, RankingRequest, RankingService, } from "./ranking.js";
+export { ScopeExtractionLifecycle, ScopeFactType, ScopeFactValue, ScopeSourceReference, ScopeEvidence, ScopeFact, ScopeExtractionSnapshot, ScopeExtraction, ScopeExtractionDraftedEvent, ScopeExtractionCompletedEvent, ScopeExtractionCommittedEvent, ScopeExtractionArchivedEvent, } from "./scope-extraction.js";
 //# sourceMappingURL=index.js.map
