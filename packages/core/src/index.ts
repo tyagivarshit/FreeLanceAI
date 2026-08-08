@@ -470,6 +470,109 @@ export type {
   ClientSummaryProperties,
 } from "./client-summary.js";
 
-export { ImportMetadata, ImportScope } from "./conversation-import.js";
+export {
+  ImportMetadata,
+  ImportScope,
+  ImportFingerprint,
+  ImportReference,
+  ConversationReference,
+  SourceClassification,
+  ConversationImportSnapshot,
+  ConversationImport,
+  CONVERSATION_IMPORT_REGISTERED,
+  CONVERSATION_IMPORT_VALIDATED,
+  CONVERSATION_IMPORT_COMPLETED,
+  CONVERSATION_IMPORT_ARCHIVED,
+} from "./conversation-import.js";
 
-export type { ImportMetadataProperties, ImportScopeValue } from "./conversation-import.js";
+export type {
+  ImportMetadataProperties,
+  ImportScopeValue,
+  ConversationImportLifecycle,
+  ConversationImportSnapshotProperties,
+  ConversationImportDomainEventName,
+  ConversationImportRegisteredEvent,
+  ConversationImportValidatedEvent,
+  ConversationImportCompletedEvent,
+  ConversationImportArchivedEvent,
+  ConversationImportDomainEvent,
+  ConversationImportEventPublisher,
+  ConversationImportQueryProjection,
+  ConversationImportPersistenceContract,
+  ConversationImportAggregateStore,
+  ConversationImportProperties,
+} from "./conversation-import.js";
+
+export {
+  InsightContent,
+  InsightClassification,
+  InsightConfidence,
+  InsightSourceReference,
+  InsightMetadata,
+  InsightFingerprint,
+  InsightReference,
+  ClientInsightSnapshot,
+  ClientInsight,
+  CLIENT_INSIGHT_IDENTIFIED,
+  CLIENT_INSIGHT_VALIDATED,
+  CLIENT_INSIGHT_PUBLISHED,
+  CLIENT_INSIGHT_ARCHIVED,
+} from "./client-insight.js";
+
+export type {
+  InsightContentProperties,
+  InsightClassificationValue,
+  InsightConfidenceValue,
+  InsightMetadataProperties,
+  ClientInsightLifecycle,
+  ClientInsightSnapshotProperties,
+  ClientInsightDomainEventName,
+  ClientInsightIdentifiedEvent,
+  ClientInsightValidatedEvent,
+  ClientInsightPublishedEvent,
+  ClientInsightArchivedEvent,
+  ClientInsightDomainEvent,
+  ClientInsightQueryProjection,
+  ClientInsightPersistenceContract,
+  ClientInsightAggregateStore,
+  ClientInsightProperties,
+} from "./client-insight.js";
+
+export {
+  MemoryUpdateReference,
+  TargetMemoryReference,
+  MemoryUpdateSpecification,
+  MemoryUpdateClassification,
+  MemoryUpdateSourceReference,
+  MemoryUpdatePriority,
+  MemoryUpdateFingerprint,
+  ClientMemoryUpdateSnapshot,
+  ClientMemoryUpdate,
+  CLIENT_MEMORY_UPDATE_PROPOSED,
+  CLIENT_MEMORY_UPDATE_VALIDATED,
+  CLIENT_MEMORY_UPDATE_APPROVED,
+  CLIENT_MEMORY_UPDATE_APPLIED,
+  CLIENT_MEMORY_UPDATE_REJECTED,
+  CLIENT_MEMORY_UPDATE_ARCHIVED,
+} from "./client-memory-update.js";
+
+export type {
+  MemoryUpdateOperation,
+  MemoryUpdateSpecificationProperties,
+  MemoryUpdateClassificationValue,
+  MemoryUpdatePriorityValue,
+  ClientMemoryUpdateLifecycle,
+  ClientMemoryUpdateSnapshotProperties,
+  ClientMemoryUpdateDomainEventName,
+  ClientMemoryUpdateProposedEvent,
+  ClientMemoryUpdateValidatedEvent,
+  ClientMemoryUpdateApprovedEvent,
+  ClientMemoryUpdateAppliedEvent,
+  ClientMemoryUpdateRejectedEvent,
+  ClientMemoryUpdateArchivedEvent,
+  ClientMemoryUpdateDomainEvent,
+  ClientMemoryUpdateQueryProjection,
+  ClientMemoryUpdatePersistenceContract,
+  ClientMemoryUpdateAggregateStore,
+  ClientMemoryUpdateProperties,
+} from "./client-memory-update.js";
