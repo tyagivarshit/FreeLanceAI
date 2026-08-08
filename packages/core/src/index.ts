@@ -593,3 +593,23 @@ export type {
   VectorSearchProvider,
   VectorSearchRepository,
 } from "./vector-search.js";
+
+export {
+  FusionStrategy,
+  FusionWeight,
+  FusionScore,
+  LexicalCandidate,
+  HybridSearchCandidate,
+  HybridSearchResult,
+  HybridSearchRequest,
+} from "./hybrid-search.js";
+
+export type {
+  FusionStrategyValue,
+  LexicalCandidateProperties,
+  HybridSearchCandidateProperties,
+  HybridSearchRequestProperties,
+  HybridSearchContract,
+  LexicalSearchContract,
+  HybridSearchProvider,
+} from "./hybrid-search.js";
