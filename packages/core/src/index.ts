@@ -683,3 +683,23 @@ export type {
   ScopeRuleAggregateStore,
   ScopeRuleQueryProjection,
 } from "./scope-rules.js";
+
+export {
+  ConfidenceScore,
+  ConfidenceLevel,
+  ConfidenceReason,
+  ConfidenceEvidence,
+  ConfidenceAssessment,
+  ConfidenceAssessedEvent,
+} from "./confidence.js";
+
+export type {
+  ConfidenceLevelValue,
+  ConfidenceReasonValue,
+  ConfidenceEvidenceProperties,
+  ConfidenceAssessmentProperties,
+  ConfidenceDomainEvent,
+  ConfidencePersistenceContract,
+  ConfidenceAggregateStore,
+  ConfidenceQueryProjection,
+} from "./confidence.js";

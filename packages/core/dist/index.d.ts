@@ -43,4 +43,6 @@ export { ScopeExtractionLifecycle, ScopeFactType, ScopeFactValue, ScopeSourceRef
 export type { ScopeFactTypeValue, ScopeFactValueProperties, ScopeSourceReferenceProperties, ScopeEvidenceProperties, ScopeFactProperties, ScopeExtractionSnapshotProperties, ScopeExtractionDomainEvent, ScopeExtractionProperties, ScopeExtractionPersistenceContract, ScopeExtractionAggregateStore, ScopeExtractionQueryProjection, } from "./scope-extraction.js";
 export { ScopeRuleType, ScopeRule, ScopeRuleSet, ScopeDecision, ScopeDecisionValue, ScopeRuleViolation, ScopeEvaluation, ScopeEvaluationCompletedEvent, ScopeRulesEngine, } from "./scope-rules.js";
 export type { ScopeRuleTypeValue, ScopeRuleProperties, ScopeRuleViolationProperties, ScopeEvaluationProperties, ScopeRulesDomainEvent, ScopeRulePersistenceContract, ScopeRuleAggregateStore, ScopeRuleQueryProjection, } from "./scope-rules.js";
+export { ConfidenceScore, ConfidenceLevel, ConfidenceReason, ConfidenceEvidence, ConfidenceAssessment, ConfidenceAssessedEvent, } from "./confidence.js";
+export type { ConfidenceLevelValue, ConfidenceReasonValue, ConfidenceEvidenceProperties, ConfidenceAssessmentProperties, ConfidenceDomainEvent, ConfidencePersistenceContract, ConfidenceAggregateStore, ConfidenceQueryProjection, } from "./confidence.js";
 //# sourceMappingURL=index.d.ts.map

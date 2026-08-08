@@ -86,4 +86,5 @@ export { FusionStrategy, FusionWeight, FusionScore, LexicalCandidate, HybridSear
 export { RankingCriteria, RankingPolicy, RankingScore, RankingCandidate, RankedItem, RankingResult, RankingRequest, RankingService, } from "./ranking.js";
 export { ScopeExtractionLifecycle, ScopeFactType, ScopeFactValue, ScopeSourceReference, ScopeEvidence, ScopeFact, ScopeExtractionSnapshot, ScopeExtraction, ScopeExtractionDraftedEvent, ScopeExtractionCompletedEvent, ScopeExtractionCommittedEvent, ScopeExtractionArchivedEvent, } from "./scope-extraction.js";
 export { ScopeRuleType, ScopeRule, ScopeRuleSet, ScopeDecision, ScopeDecisionValue, ScopeRuleViolation, ScopeEvaluation, ScopeEvaluationCompletedEvent, ScopeRulesEngine, } from "./scope-rules.js";
+export { ConfidenceScore, ConfidenceLevel, ConfidenceReason, ConfidenceEvidence, ConfidenceAssessment, ConfidenceAssessedEvent, } from "./confidence.js";
 //# sourceMappingURL=index.js.map
