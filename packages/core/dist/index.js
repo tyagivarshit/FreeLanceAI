@@ -90,4 +90,5 @@ export { ConfidenceScore, ConfidenceLevel, ConfidenceReason, ConfidenceEvidence,
 export { PricingAmount, PricingCurrency, PricingComponent, PricingBreakdown, PricingAssessment, } from "./pricing.js";
 export { GenerationReference, GenerationConstraint, GenerationMetadata, GenerationContent, GenerationRequest, GenerationResult, ReplyGenerationSnapshot, ReplyGeneration, REPLY_GENERATION_DRAFTED, REPLY_GENERATION_REQUESTED, REPLY_GENERATION_COMPLETED, REPLY_GENERATION_ARCHIVED, } from "./reply-generation.js";
 export { RewriteInstruction, RewriteRequest, RewriteResult, Revision, ReplyRewriteSnapshot, ReplyRewrite, REPLY_REWRITE_DRAFTED, REPLY_REWRITE_REQUESTED, REPLY_REWRITE_COMPLETED, REPLY_REWRITE_ARCHIVED, } from "./reply-rewrite.js";
+export { ToneProfile, ToneRequest, ToneResult, ReplyToneAdjustmentSnapshot, ReplyToneAdjustment, REPLY_TONE_DRAFTED, REPLY_TONE_REQUESTED, REPLY_TONE_ADJUSTED, REPLY_TONE_ARCHIVED, } from "./reply-tone.js";
 //# sourceMappingURL=index.js.map

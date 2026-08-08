@@ -773,3 +773,27 @@ export type {
   ReplyRewriteAggregateStore,
   ReplyRewriteProperties,
 } from "./reply-rewrite.js";
+
+export {
+  ToneProfile,
+  ToneRequest,
+  ToneResult,
+  ReplyToneAdjustmentSnapshot,
+  ReplyToneAdjustment,
+  REPLY_TONE_DRAFTED,
+  REPLY_TONE_REQUESTED,
+  REPLY_TONE_ADJUSTED,
+  REPLY_TONE_ARCHIVED,
+} from "./reply-tone.js";
+
+export type {
+  ReplyToneAdjustmentLifecycle,
+  ToneRequestProperties,
+  ToneResultProperties,
+  ReplyToneAdjustmentSnapshotProperties,
+  ReplyToneAdjustmentDomainEventName,
+  ReplyToneAdjustmentDomainEvent,
+  ReplyTonePersistenceContract,
+  ReplyToneAggregateStore,
+  ReplyToneAdjustmentProperties,
+} from "./reply-tone.js";
