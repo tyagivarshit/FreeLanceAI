@@ -434,3 +434,42 @@ export type {
   PolicyAggregateStore,
   PolicyProperties,
 } from "./policy.js";
+
+export {
+  SummaryContent,
+  SummaryScope,
+  SummaryMetadata,
+  SummaryClassification,
+  SummaryFingerprint,
+  SummaryReference,
+  SummarySnapshot,
+  ClientSummary,
+  CLIENT_SUMMARY_REGISTERED,
+  CLIENT_SUMMARY_GENERATED,
+  CLIENT_SUMMARY_VALIDATED,
+  CLIENT_SUMMARY_PUBLISHED,
+  CLIENT_SUMMARY_ARCHIVED,
+} from "./client-summary.js";
+
+export type {
+  SummaryLifecycle,
+  SummaryContentProperties,
+  SummaryMetadataProperties,
+  SummarySnapshotProperties,
+  ClientSummaryDomainEventName,
+  ClientSummaryRegisteredEvent,
+  ClientSummaryGeneratedEvent,
+  ClientSummaryValidatedEvent,
+  ClientSummaryPublishedEvent,
+  ClientSummaryArchivedEvent,
+  ClientSummaryDomainEvent,
+  ClientSummaryEventPublisher,
+  ClientSummaryQueryProjection,
+  ClientSummaryPersistenceContract,
+  ClientSummaryAggregateStore,
+  ClientSummaryProperties,
+} from "./client-summary.js";
+
+export { ImportMetadata, ImportScope } from "./conversation-import.js";
+
+export type { ImportMetadataProperties, ImportScopeValue } from "./conversation-import.js";
