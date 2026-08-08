@@ -41,4 +41,6 @@ export { RankingCriteria, RankingPolicy, RankingScore, RankingCandidate, RankedI
 export type { RankingCriteriaValue, RankingCandidateProperties, RankedItemProperties, RankingRequestProperties, } from "./ranking.js";
 export { ScopeExtractionLifecycle, ScopeFactType, ScopeFactValue, ScopeSourceReference, ScopeEvidence, ScopeFact, ScopeExtractionSnapshot, ScopeExtraction, ScopeExtractionDraftedEvent, ScopeExtractionCompletedEvent, ScopeExtractionCommittedEvent, ScopeExtractionArchivedEvent, } from "./scope-extraction.js";
 export type { ScopeFactTypeValue, ScopeFactValueProperties, ScopeSourceReferenceProperties, ScopeEvidenceProperties, ScopeFactProperties, ScopeExtractionSnapshotProperties, ScopeExtractionDomainEvent, ScopeExtractionProperties, ScopeExtractionPersistenceContract, ScopeExtractionAggregateStore, ScopeExtractionQueryProjection, } from "./scope-extraction.js";
+export { ScopeRuleType, ScopeRule, ScopeRuleSet, ScopeDecision, ScopeDecisionValue, ScopeRuleViolation, ScopeEvaluation, ScopeEvaluationCompletedEvent, ScopeRulesEngine, } from "./scope-rules.js";
+export type { ScopeRuleTypeValue, ScopeRuleProperties, ScopeRuleViolationProperties, ScopeEvaluationProperties, ScopeRulesDomainEvent, ScopeRulePersistenceContract, ScopeRuleAggregateStore, ScopeRuleQueryProjection, } from "./scope-rules.js";
 //# sourceMappingURL=index.d.ts.map

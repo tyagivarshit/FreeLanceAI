@@ -85,4 +85,5 @@ export { QueryEmbedding, SearchScope, SearchFilter, SimilarityMetric, Similarity
 export { FusionStrategy, FusionWeight, FusionScore, LexicalCandidate, HybridSearchCandidate, HybridSearchResult, HybridSearchRequest, } from "./hybrid-search.js";
 export { RankingCriteria, RankingPolicy, RankingScore, RankingCandidate, RankedItem, RankingResult, RankingRequest, RankingService, } from "./ranking.js";
 export { ScopeExtractionLifecycle, ScopeFactType, ScopeFactValue, ScopeSourceReference, ScopeEvidence, ScopeFact, ScopeExtractionSnapshot, ScopeExtraction, ScopeExtractionDraftedEvent, ScopeExtractionCompletedEvent, ScopeExtractionCommittedEvent, ScopeExtractionArchivedEvent, } from "./scope-extraction.js";
+export { ScopeRuleType, ScopeRule, ScopeRuleSet, ScopeDecision, ScopeDecisionValue, ScopeRuleViolation, ScopeEvaluation, ScopeEvaluationCompletedEvent, ScopeRulesEngine, } from "./scope-rules.js";
 //# sourceMappingURL=index.js.map

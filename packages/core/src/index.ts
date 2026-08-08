@@ -660,3 +660,26 @@ export type {
   ScopeExtractionAggregateStore,
   ScopeExtractionQueryProjection,
 } from "./scope-extraction.js";
+
+export {
+  ScopeRuleType,
+  ScopeRule,
+  ScopeRuleSet,
+  ScopeDecision,
+  ScopeDecisionValue,
+  ScopeRuleViolation,
+  ScopeEvaluation,
+  ScopeEvaluationCompletedEvent,
+  ScopeRulesEngine,
+} from "./scope-rules.js";
+
+export type {
+  ScopeRuleTypeValue,
+  ScopeRuleProperties,
+  ScopeRuleViolationProperties,
+  ScopeEvaluationProperties,
+  ScopeRulesDomainEvent,
+  ScopeRulePersistenceContract,
+  ScopeRuleAggregateStore,
+  ScopeRuleQueryProjection,
+} from "./scope-rules.js";
