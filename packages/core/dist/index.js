@@ -92,4 +92,5 @@ export { GenerationReference, GenerationConstraint, GenerationMetadata, Generati
 export { RewriteInstruction, RewriteRequest, RewriteResult, Revision, ReplyRewriteSnapshot, ReplyRewrite, REPLY_REWRITE_DRAFTED, REPLY_REWRITE_REQUESTED, REPLY_REWRITE_COMPLETED, REPLY_REWRITE_ARCHIVED, } from "./reply-rewrite.js";
 export { ToneProfile, ToneRequest, ToneResult, ReplyToneAdjustmentSnapshot, ReplyToneAdjustment, REPLY_TONE_DRAFTED, REPLY_TONE_REQUESTED, REPLY_TONE_ADJUSTED, REPLY_TONE_ARCHIVED, } from "./reply-tone.js";
 export { GrammarProfile, GrammarRequest, GrammarResult, ReplyGrammarCorrectionSnapshot, ReplyGrammarCorrection, REPLY_GRAMMAR_DRAFTED, REPLY_GRAMMAR_REQUESTED, REPLY_GRAMMAR_CORRECTED, REPLY_GRAMMAR_ARCHIVED, } from "./reply-grammar.js";
+export { JobSource, JobExternalIdentity, JobImportProvenance, JobRawPayload, JobImportFingerprint, JobImportSnapshot, JobImport, JOB_IMPORT_RECEIVED, JOB_IMPORTED, JOB_IMPORT_ARCHIVED, } from "./job-import.js";
 //# sourceMappingURL=index.js.map

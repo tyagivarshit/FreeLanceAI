@@ -821,3 +821,27 @@ export type {
   ReplyGrammarAggregateStore,
   ReplyGrammarCorrectionProperties,
 } from "./reply-grammar.js";
+
+export {
+  JobSource,
+  JobExternalIdentity,
+  JobImportProvenance,
+  JobRawPayload,
+  JobImportFingerprint,
+  JobImportSnapshot,
+  JobImport,
+  JOB_IMPORT_RECEIVED,
+  JOB_IMPORTED,
+  JOB_IMPORT_ARCHIVED,
+} from "./job-import.js";
+
+export type {
+  JobImportLifecycle,
+  JobImportProvenanceProperties,
+  JobImportSnapshotProperties,
+  JobImportDomainEventName,
+  JobImportDomainEvent,
+  JobImportPersistenceContract,
+  JobImportAggregateStore,
+  JobImportProperties,
+} from "./job-import.js";
