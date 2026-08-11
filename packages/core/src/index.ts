@@ -797,3 +797,27 @@ export type {
   ReplyToneAggregateStore,
   ReplyToneAdjustmentProperties,
 } from "./reply-tone.js";
+
+export {
+  GrammarProfile,
+  GrammarRequest,
+  GrammarResult,
+  ReplyGrammarCorrectionSnapshot,
+  ReplyGrammarCorrection,
+  REPLY_GRAMMAR_DRAFTED,
+  REPLY_GRAMMAR_REQUESTED,
+  REPLY_GRAMMAR_CORRECTED,
+  REPLY_GRAMMAR_ARCHIVED,
+} from "./reply-grammar.js";
+
+export type {
+  ReplyGrammarCorrectionLifecycle,
+  GrammarRequestProperties,
+  GrammarResultProperties,
+  ReplyGrammarCorrectionSnapshotProperties,
+  ReplyGrammarCorrectionDomainEventName,
+  ReplyGrammarCorrectionDomainEvent,
+  ReplyGrammarPersistenceContract,
+  ReplyGrammarAggregateStore,
+  ReplyGrammarCorrectionProperties,
+} from "./reply-grammar.js";

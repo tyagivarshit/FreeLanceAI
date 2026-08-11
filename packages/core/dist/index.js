@@ -91,4 +91,5 @@ export { PricingAmount, PricingCurrency, PricingComponent, PricingBreakdown, Pri
 export { GenerationReference, GenerationConstraint, GenerationMetadata, GenerationContent, GenerationRequest, GenerationResult, ReplyGenerationSnapshot, ReplyGeneration, REPLY_GENERATION_DRAFTED, REPLY_GENERATION_REQUESTED, REPLY_GENERATION_COMPLETED, REPLY_GENERATION_ARCHIVED, } from "./reply-generation.js";
 export { RewriteInstruction, RewriteRequest, RewriteResult, Revision, ReplyRewriteSnapshot, ReplyRewrite, REPLY_REWRITE_DRAFTED, REPLY_REWRITE_REQUESTED, REPLY_REWRITE_COMPLETED, REPLY_REWRITE_ARCHIVED, } from "./reply-rewrite.js";
 export { ToneProfile, ToneRequest, ToneResult, ReplyToneAdjustmentSnapshot, ReplyToneAdjustment, REPLY_TONE_DRAFTED, REPLY_TONE_REQUESTED, REPLY_TONE_ADJUSTED, REPLY_TONE_ARCHIVED, } from "./reply-tone.js";
+export { GrammarProfile, GrammarRequest, GrammarResult, ReplyGrammarCorrectionSnapshot, ReplyGrammarCorrection, REPLY_GRAMMAR_DRAFTED, REPLY_GRAMMAR_REQUESTED, REPLY_GRAMMAR_CORRECTED, REPLY_GRAMMAR_ARCHIVED, } from "./reply-grammar.js";
 //# sourceMappingURL=index.js.map
