@@ -845,3 +845,29 @@ export type {
   JobImportAggregateStore,
   JobImportProperties,
 } from "./job-import.js";
+
+export {
+  JobSourceReference,
+  CanonicalBudget,
+  CanonicalLocation,
+  CanonicalJob,
+  JobNormalizedFingerprint,
+  JobNormalizationSnapshot,
+  JobNormalization,
+  JOB_NORMALIZATION_CREATED,
+  JOB_NORMALIZED,
+  JOB_NORMALIZATION_ARCHIVED,
+} from "./job-normalization.js";
+
+export type {
+  JobNormalizationLifecycle,
+  CanonicalBudgetProperties,
+  CanonicalLocationProperties,
+  CanonicalJobProperties,
+  JobNormalizationSnapshotProperties,
+  JobNormalizationDomainEventName,
+  JobNormalizationDomainEvent,
+  JobNormalizationPersistenceContract,
+  JobNormalizationAggregateStore,
+  JobNormalizationProperties,
+} from "./job-normalization.js";
