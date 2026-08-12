@@ -2,3 +2,39 @@
 > @freelanceos/core@0.1.0 build
 > tsc
 
+src/job-match-work-item.test.ts(6,3): error TS6133: 'JobMatchWorkItemStatus' is declared but its value is never read.
+src/job-match-work-item.test.ts(8,3): error TS6133: 'PolicyVersions' is declared but its value is never read.
+src/job-match-work-item.test.ts(16,3): error TS6133: 'TenantError' is declared but its value is never read.
+src/job-match-work-item.test.ts(17,3): error TS6133: 'VersionError' is declared but its value is never read.
+src/job-match-work-item.test.ts(18,3): error TS6133: 'DomainError' is declared but its value is never read.
+src/job-match-work-item.test.ts(19,3): error TS6133: 'CancellationError' is declared but its value is never read.
+src/job-match-work-item.test.ts(21,3): error TS6133: 'PermanentInfrastructureError' is declared but its value is never read.
+src/job-match-work-item.test.ts(110,5): error TS6133: 'maxAttempts' is declared but its value is never read.
+src/job-match-work-item.test.ts(154,5): error TS6133: 'tenantId' is declared but its value is never read.
+src/job-match-work-item.test.ts(155,5): error TS6133: 'workerId' is declared but its value is never read.
+src/job-match-work-item.test.ts(156,5): error TS6133: 'leaseId' is declared but its value is never read.
+src/job-match-work-item.test.ts(157,5): error TS6133: 'fencingToken' is declared but its value is never read.
+src/job-match-work-item.test.ts(165,5): error TS6133: 'tenantId' is declared but its value is never read.
+src/job-match-work-item.test.ts(166,5): error TS6133: 'workerId' is declared but its value is never read.
+src/job-match-work-item.test.ts(167,5): error TS6133: 'leaseId' is declared but its value is never read.
+src/job-match-work-item.test.ts(168,5): error TS6133: 'fencingToken' is declared but its value is never read.
+src/job-match-work-item.test.ts(180,5): error TS6133: 'tenantId' is declared but its value is never read.
+src/job-match-work-item.test.ts(181,5): error TS6133: 'workerId' is declared but its value is never read.
+src/job-match-work-item.test.ts(182,5): error TS6133: 'leaseId' is declared but its value is never read.
+src/job-match-work-item.test.ts(183,5): error TS6133: 'fencingToken' is declared but its value is never read.
+src/job-match-work-item.test.ts(242,40): error TS6133: 'tenantId' is declared but its value is never read.
+src/job-match-work-item.test.ts(273,33): error TS6133: 'tenantId' is declared but its value is never read.
+src/job-match-work-item.test.ts(281,37): error TS6133: 'tenantId' is declared but its value is never read.
+src/job-match-work-item.test.ts(367,24): error TS2532: Object is possibly 'undefined'.
+src/job-match-work-item.test.ts(688,24): error TS2532: Object is possibly 'undefined'.
+src/job-match-work-item.test.ts(1043,17): error TS2554: Expected 6 arguments, but got 4.
+src/job-match-work-item.test.ts(1258,11): error TS6133: 'cacheContext' is declared but its value is never read.
+src/job-match-worker.ts(350,35): error TS2339: Property 'contributions' does not exist on type 'JobMatchScore'.
+src/job-match-worker.ts(350,54): error TS7006: Parameter 'c' implicitly has an 'any' type.
+npm error Lifecycle script `build` failed with error:
+npm error code 2
+npm error path D:\FreelanceAI\packages\core
+npm error workspace @freelanceos/core@0.1.0
+npm error location D:\FreelanceAI\packages\core
+npm error command failed
+npm error command C:\Windows\system32\cmd.exe /d /s /c tsc

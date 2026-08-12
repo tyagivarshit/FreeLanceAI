@@ -1020,3 +1020,35 @@ export type {
   JobMatchCacheConfig,
   JobMatchCacheContext,
 } from "./job-match-cache.js";
+
+export { JobMatchWorkItemSnapshot, JobMatchWorkItem } from "./job-match-work-item.js";
+
+export type {
+  JobMatchWorkItemStatus,
+  JobMatchContext,
+  PolicyVersions,
+  ResultReferences,
+  FailureMetadata,
+  JobMatchWorkItemProperties,
+  JobMatchWorkItemDomainEvent,
+  JobMatchWorkItemStore,
+} from "./job-match-work-item.js";
+
+export type { JobMatchQueue } from "./job-match-queue.js";
+
+export {
+  ValidationError,
+  TenantError,
+  VersionError,
+  DomainError,
+  CancellationError,
+  TransientInfrastructureError,
+  PermanentInfrastructureError,
+  JobMatchWorker,
+} from "./job-match-worker.js";
+
+export type {
+  WorkerConfig,
+  JobMatchPipelineResolver,
+  WorkerObservabilityHooks,
+} from "./job-match-worker.js";

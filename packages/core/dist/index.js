@@ -100,4 +100,6 @@ export { ScoreWeightProfile, ScoringConfiguration, SignalContribution, ScoreBrea
 export { JobMatchRankingPolicy, RankedMatch, RankingFingerprint, buildCandidateSetIdentity, JobMatchRankingSnapshot, JOB_MATCH_RANKING_CREATED, JOB_MATCH_RANKING_COMPLETED, JOB_MATCH_RANKING_ARCHIVED, JobMatchRanking, } from "./job-match-ranking.js";
 export { ExplanationPolicy, ExplanationFact, ExplanationModel, ExplanationFingerprint, buildEvidenceFactFingerprint, JobMatchExplanationSnapshot, JOB_MATCH_EXPLANATION_CREATED, JOB_MATCH_EXPLANATION_GENERATED, JOB_MATCH_EXPLANATION_ARCHIVED, JobMatchExplanation, } from "./job-match-explanation.js";
 export { MemoryCacheStore, CacheKeyBuilder, JobMatchCacheManager } from "./job-match-cache.js";
+export { JobMatchWorkItemSnapshot, JobMatchWorkItem, } from "./job-match-work-item.js";
+export { ValidationError, TenantError, VersionError, DomainError, CancellationError, TransientInfrastructureError, PermanentInfrastructureError, JobMatchWorker, } from "./job-match-worker.js";
 //# sourceMappingURL=index.js.map
