@@ -924,3 +924,33 @@ export type {
   JobMatchAggregateStore,
   JobMatchProperties,
 } from "./job-match.js";
+
+export {
+  ScoreWeightProfile,
+  ScoringConfiguration,
+  SignalContribution,
+  ScoreBreakdown,
+  ScoreFingerprint,
+  roundToPrecision,
+  JobMatchScoreSnapshot,
+  JOB_MATCH_SCORE_CREATED,
+  JOB_MATCH_SCORE_CALCULATED,
+  JOB_MATCH_SCORE_ARCHIVED,
+  JobMatchScore,
+} from "./job-match-score.js";
+
+export type {
+  JobMatchScoreLifecycle,
+  SignalWeights,
+  MissingSignalPolicy,
+  StateCompatibilityMapping,
+  ScoringConfigurationProperties,
+  SignalContributionProperties,
+  JobMatchScoreSnapshotProperties,
+  JobMatchScoreDomainEventName,
+  JobMatchScoreDomainEvent,
+  JobMatchScorePersistenceContract,
+  JobMatchScoreAggregateStore,
+  MatchSignalsInput,
+  JobMatchScoreProperties,
+} from "./job-match-score.js";

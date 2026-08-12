@@ -96,4 +96,5 @@ export { JobSource, JobExternalIdentity, JobImportProvenance, JobRawPayload, Job
 export { JobSourceReference, CanonicalBudget, CanonicalLocation, CanonicalJob, JobNormalizedFingerprint, JobNormalizationSnapshot, JobNormalization, JOB_NORMALIZATION_CREATED, JOB_NORMALIZED, JOB_NORMALIZATION_ARCHIVED, } from "./job-normalization.js";
 export { ModelReference, JobVectorFingerprint, JobEmbeddingSnapshot, JOB_EMBEDDING_CREATED, JOB_EMBEDDING_GENERATED, JOB_EMBEDDING_ARCHIVED, JobEmbedding, } from "./job-embedding.js";
 export { freezeMatchSignals, calculateCosineSimilarity, matchExperience, matchBudget, matchJobType, matchLocation, JobMatchSnapshot, JOB_MATCH_CREATED, JOB_MATCH_EVALUATED, JOB_MATCH_ARCHIVED, JobMatch, } from "./job-match.js";
+export { ScoreWeightProfile, ScoringConfiguration, SignalContribution, ScoreBreakdown, ScoreFingerprint, roundToPrecision, JobMatchScoreSnapshot, JOB_MATCH_SCORE_CREATED, JOB_MATCH_SCORE_CALCULATED, JOB_MATCH_SCORE_ARCHIVED, JobMatchScore, } from "./job-match-score.js";
 //# sourceMappingURL=index.js.map
