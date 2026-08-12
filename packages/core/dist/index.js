@@ -94,4 +94,5 @@ export { ToneProfile, ToneRequest, ToneResult, ReplyToneAdjustmentSnapshot, Repl
 export { GrammarProfile, GrammarRequest, GrammarResult, ReplyGrammarCorrectionSnapshot, ReplyGrammarCorrection, REPLY_GRAMMAR_DRAFTED, REPLY_GRAMMAR_REQUESTED, REPLY_GRAMMAR_CORRECTED, REPLY_GRAMMAR_ARCHIVED, } from "./reply-grammar.js";
 export { JobSource, JobExternalIdentity, JobImportProvenance, JobRawPayload, JobImportFingerprint, JobImportSnapshot, JobImport, JOB_IMPORT_RECEIVED, JOB_IMPORTED, JOB_IMPORT_ARCHIVED, } from "./job-import.js";
 export { JobSourceReference, CanonicalBudget, CanonicalLocation, CanonicalJob, JobNormalizedFingerprint, JobNormalizationSnapshot, JobNormalization, JOB_NORMALIZATION_CREATED, JOB_NORMALIZED, JOB_NORMALIZATION_ARCHIVED, } from "./job-normalization.js";
+export { ModelReference, JobVectorFingerprint, JobEmbeddingSnapshot, JOB_EMBEDDING_CREATED, JOB_EMBEDDING_GENERATED, JOB_EMBEDDING_ARCHIVED, JobEmbedding, } from "./job-embedding.js";
 //# sourceMappingURL=index.js.map

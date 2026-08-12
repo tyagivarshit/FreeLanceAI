@@ -871,3 +871,27 @@ export type {
   JobNormalizationAggregateStore,
   JobNormalizationProperties,
 } from "./job-normalization.js";
+
+export {
+  ModelReference,
+  JobVectorFingerprint,
+  JobEmbeddingSnapshot,
+  JOB_EMBEDDING_CREATED,
+  JOB_EMBEDDING_GENERATED,
+  JOB_EMBEDDING_ARCHIVED,
+  JobEmbedding,
+} from "./job-embedding.js";
+
+export type {
+  JobEmbeddingLifecycle,
+  ModelReferenceProperties,
+  JobEmbeddingSnapshotProperties,
+  JobEmbeddingDomainEventName,
+  JobEmbeddingDomainEvent,
+  JobEmbeddingPersistenceContract,
+  JobEmbeddingAggregateStore,
+  EmbeddingGeneratorInput,
+  EmbeddingGeneratorResult,
+  EmbeddingGenerator,
+  JobEmbeddingProperties,
+} from "./job-embedding.js";
