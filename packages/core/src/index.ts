@@ -978,3 +978,32 @@ export type {
   ScoredMatchInput,
   JobMatchRankingProperties,
 } from "./job-match-ranking.js";
+
+export {
+  ExplanationPolicy,
+  ExplanationFact,
+  ExplanationModel,
+  ExplanationFingerprint,
+  buildEvidenceFactFingerprint,
+  JobMatchExplanationSnapshot,
+  JOB_MATCH_EXPLANATION_CREATED,
+  JOB_MATCH_EXPLANATION_GENERATED,
+  JOB_MATCH_EXPLANATION_ARCHIVED,
+  JobMatchExplanation,
+} from "./job-match-explanation.js";
+
+export type {
+  JobMatchExplanationLifecycle,
+  ExplanationPolicyProperties,
+  ExplanationFactProperties,
+  ExplanationModelProperties,
+  ExplanationRenderer,
+  JobMatchExplanationSnapshotProperties,
+  JobMatchExplanationDomainEventName,
+  JobMatchExplanationDomainEvent,
+  JobMatchExplanationPersistenceContract,
+  JobMatchExplanationAggregateStore,
+  ScoredContributionInput,
+  AuthoritativeEvidenceInput,
+  JobMatchExplanationProperties,
+} from "./job-match-explanation.js";
