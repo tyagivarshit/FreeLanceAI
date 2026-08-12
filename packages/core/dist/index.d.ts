@@ -71,9 +71,9 @@ export { ExplanationPolicy, ExplanationFact, ExplanationModel, ExplanationFinger
 export type { JobMatchExplanationLifecycle, ExplanationPolicyProperties, ExplanationFactProperties, ExplanationModelProperties, ExplanationRenderer, JobMatchExplanationSnapshotProperties, JobMatchExplanationDomainEventName, JobMatchExplanationDomainEvent, JobMatchExplanationPersistenceContract, JobMatchExplanationAggregateStore, ScoredContributionInput, AuthoritativeEvidenceInput, JobMatchExplanationProperties, } from "./job-match-explanation.js";
 export { MemoryCacheStore, CacheKeyBuilder, JobMatchCacheManager } from "./job-match-cache.js";
 export type { CacheOutcome, CachedJobMatchResult, CacheStore, MemoryCacheOptions, JobMatchCachePolicy, CacheObservabilityHooks, JobMatchCacheConfig, JobMatchCacheContext, } from "./job-match-cache.js";
-export { JobMatchWorkItemSnapshot, JobMatchWorkItem, } from "./job-match-work-item.js";
+export { JobMatchWorkItemSnapshot, JobMatchWorkItem } from "./job-match-work-item.js";
 export type { JobMatchWorkItemStatus, JobMatchContext, PolicyVersions, ResultReferences, FailureMetadata, JobMatchWorkItemProperties, JobMatchWorkItemDomainEvent, JobMatchWorkItemStore, } from "./job-match-work-item.js";
-export type { JobMatchQueue, } from "./job-match-queue.js";
+export type { JobMatchQueue } from "./job-match-queue.js";
 export { ValidationError, TenantError, VersionError, DomainError, CancellationError, TransientInfrastructureError, PermanentInfrastructureError, JobMatchWorker, } from "./job-match-worker.js";
 export type { WorkerConfig, JobMatchPipelineResolver, WorkerObservabilityHooks, } from "./job-match-worker.js";
 //# sourceMappingURL=index.d.ts.map
