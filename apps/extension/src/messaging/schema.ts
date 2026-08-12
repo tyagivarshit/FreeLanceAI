@@ -139,6 +139,23 @@ export function validatePayload(type: string, category: MessageCategory, payload
       break;
     }
 
+    case "EXTRACT_JOB": {
+      if (!payload || typeof payload !== "object" || Array.isArray(payload)) {
+        throw new Error("EXTRACT_JOB payload must be an object.");
+      }
+      const data = payload as Record<string, unknown>;
+      if (typeof data.url !== "string" || data.url.trim() === "") {
+        throw new Error("EXTRACT_JOB requires a non-empty string url.");
+      }
+      if (typeof data.tabId !== "number" || !Number.isInteger(data.tabId) || data.tabId < 0) {
+        throw new Error("EXTRACT_JOB requires a valid tabId number.");
+      }
+      if (typeof data.frameId !== "number" || !Number.isInteger(data.frameId) || data.frameId < 0) {
+        throw new Error("EXTRACT_JOB requires a valid frameId number.");
+      }
+      break;
+    }
+
     case "MATCH_COMPLETED": {
       if (!payload || typeof payload !== "object" || Array.isArray(payload)) {
         throw new Error("MATCH_COMPLETED payload must be an object.");

@@ -50,6 +50,13 @@ const MESSAGE_REGISTRY: Record<string, MessageDefinition> = {
     allowedReceivers: ["SERVICE_WORKER"],
     timeoutMs: 10,
   },
+  EXTRACT_JOB: {
+    type: "EXTRACT_JOB",
+    category: "REQUEST",
+    allowedSenders: ["CONTENT_SCRIPT", "EXTENSION_UI"],
+    allowedReceivers: ["SERVICE_WORKER"],
+    timeoutMs: 10000,
+  },
 };
 
 export class MessageDispatcher {
