@@ -1,0 +1,36 @@
+{
+  "manifest_version": 3,
+  "name": "FreelanceOS Job Matcher",
+  "version": "0.1.0",
+  "description": "Enterprise background matching extension for FreelanceOS.",
+  "action": {
+    "default_popup": "src/popup.html"
+  },
+  "options_page": "src/options.html",
+  "background": {
+    "service_worker": "dist/src/service-worker.js",
+    "type": "module"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://*.upwork.com/*", "https://*.linkedin.com/*"],
+      "js": ["dist/src/content-script.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "permissions": ["storage"],
+  "host_permissions": [
+    "https://*.upwork.com/*",
+    "https://*.linkedin.com/*",
+    "http://localhost:4000/*"
+  ],
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self';"
+  },
+  "web_accessible_resources": [
+    {
+      "resources": ["assets/*"],
+      "matches": ["https://*.upwork.com/*", "https://*.linkedin.com/*"]
+    }
+  ]
+}

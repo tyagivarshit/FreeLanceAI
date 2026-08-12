@@ -1,0 +1,20 @@
+{
+  "name": "freelanceos-extension",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "tsc && node dist/scripts/validate-manifest.js",
+    "typecheck": "tsc --noEmit",
+    "clean": "node -e \"const fs = require('fs'); fs.rmSync('dist', { recursive: true, force: true }); fs.rmSync('tsconfig.tsbuildinfo', { force: true });\"",
+    "test": "node --test dist/test/manifest.test.js"
+  },
+  "dependencies": {
+    "@freelanceos/config": "*"
+  },
+  "devDependencies": {
+    "@freelanceos/ts-config": "*",
+    "@types/chrome": "0.0.268",
+    "typescript": "5.5.4"
+  }
+}
