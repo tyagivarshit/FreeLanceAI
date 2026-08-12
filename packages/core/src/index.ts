@@ -895,3 +895,32 @@ export type {
   EmbeddingGenerator,
   JobEmbeddingProperties,
 } from "./job-embedding.js";
+
+export {
+  freezeMatchSignals,
+  calculateCosineSimilarity,
+  matchExperience,
+  matchBudget,
+  matchJobType,
+  matchLocation,
+  JobMatchSnapshot,
+  JOB_MATCH_CREATED,
+  JOB_MATCH_EVALUATED,
+  JOB_MATCH_ARCHIVED,
+  JobMatch,
+} from "./job-match.js";
+
+export type {
+  JobMatchLifecycle,
+  MatchSignals,
+  FreelancerMatchingProfile,
+  JobNormalizationInput,
+  JobEmbeddingInput,
+  MatchingInputs,
+  JobMatchSnapshotProperties,
+  JobMatchDomainEventName,
+  JobMatchDomainEvent,
+  JobMatchPersistenceContract,
+  JobMatchAggregateStore,
+  JobMatchProperties,
+} from "./job-match.js";

@@ -95,4 +95,5 @@ export { GrammarProfile, GrammarRequest, GrammarResult, ReplyGrammarCorrectionSn
 export { JobSource, JobExternalIdentity, JobImportProvenance, JobRawPayload, JobImportFingerprint, JobImportSnapshot, JobImport, JOB_IMPORT_RECEIVED, JOB_IMPORTED, JOB_IMPORT_ARCHIVED, } from "./job-import.js";
 export { JobSourceReference, CanonicalBudget, CanonicalLocation, CanonicalJob, JobNormalizedFingerprint, JobNormalizationSnapshot, JobNormalization, JOB_NORMALIZATION_CREATED, JOB_NORMALIZED, JOB_NORMALIZATION_ARCHIVED, } from "./job-normalization.js";
 export { ModelReference, JobVectorFingerprint, JobEmbeddingSnapshot, JOB_EMBEDDING_CREATED, JOB_EMBEDDING_GENERATED, JOB_EMBEDDING_ARCHIVED, JobEmbedding, } from "./job-embedding.js";
+export { freezeMatchSignals, calculateCosineSimilarity, matchExperience, matchBudget, matchJobType, matchLocation, JobMatchSnapshot, JOB_MATCH_CREATED, JOB_MATCH_EVALUATED, JOB_MATCH_ARCHIVED, JobMatch, } from "./job-match.js";
 //# sourceMappingURL=index.js.map
