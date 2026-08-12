@@ -97,4 +97,5 @@ export { JobSourceReference, CanonicalBudget, CanonicalLocation, CanonicalJob, J
 export { ModelReference, JobVectorFingerprint, JobEmbeddingSnapshot, JOB_EMBEDDING_CREATED, JOB_EMBEDDING_GENERATED, JOB_EMBEDDING_ARCHIVED, JobEmbedding, } from "./job-embedding.js";
 export { freezeMatchSignals, calculateCosineSimilarity, matchExperience, matchBudget, matchJobType, matchLocation, JobMatchSnapshot, JOB_MATCH_CREATED, JOB_MATCH_EVALUATED, JOB_MATCH_ARCHIVED, JobMatch, } from "./job-match.js";
 export { ScoreWeightProfile, ScoringConfiguration, SignalContribution, ScoreBreakdown, ScoreFingerprint, roundToPrecision, JobMatchScoreSnapshot, JOB_MATCH_SCORE_CREATED, JOB_MATCH_SCORE_CALCULATED, JOB_MATCH_SCORE_ARCHIVED, JobMatchScore, } from "./job-match-score.js";
+export { JobMatchRankingPolicy, RankedMatch, RankingFingerprint, buildCandidateSetIdentity, JobMatchRankingSnapshot, JOB_MATCH_RANKING_CREATED, JOB_MATCH_RANKING_COMPLETED, JOB_MATCH_RANKING_ARCHIVED, JobMatchRanking, } from "./job-match-ranking.js";
 //# sourceMappingURL=index.js.map

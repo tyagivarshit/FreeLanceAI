@@ -954,3 +954,27 @@ export type {
   MatchSignalsInput,
   JobMatchScoreProperties,
 } from "./job-match-score.js";
+
+export {
+  JobMatchRankingPolicy,
+  RankedMatch,
+  RankingFingerprint,
+  buildCandidateSetIdentity,
+  JobMatchRankingSnapshot,
+  JOB_MATCH_RANKING_CREATED,
+  JOB_MATCH_RANKING_COMPLETED,
+  JOB_MATCH_RANKING_ARCHIVED,
+  JobMatchRanking,
+} from "./job-match-ranking.js";
+
+export type {
+  JobMatchRankingLifecycle,
+  RankedMatchProperties,
+  JobMatchRankingSnapshotProperties,
+  JobMatchRankingDomainEventName,
+  JobMatchRankingDomainEvent,
+  JobMatchRankingPersistenceContract,
+  JobMatchRankingAggregateStore,
+  ScoredMatchInput,
+  JobMatchRankingProperties,
+} from "./job-match-ranking.js";
