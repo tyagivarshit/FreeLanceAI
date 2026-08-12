@@ -19,6 +19,7 @@
   },
   "dependencies": {
     "@freelanceos/config": "*",
+    "@freelanceos/core": "*",
     "ioredis": "5.4.1"
   },
   "devDependencies": {

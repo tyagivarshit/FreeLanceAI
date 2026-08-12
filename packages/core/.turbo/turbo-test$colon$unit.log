@@ -3,86 +3,5466 @@
 > node --test dist/*.test.js
 
 TAP version 13
+# Subtest: AI Request Domain Aggregate Tests
+    # Subtest: Metadata value object equality checks
+    ok 1 - Metadata value object equality checks
+      ---
+      duration_ms: 3.3983
+      type: 'test'
+      ...
+    # Subtest: Request creation success: status Received and AI_REQUEST_RECEIVED event emitted with strong types
+    ok 2 - Request creation success: status Received and AI_REQUEST_RECEIVED event emitted with strong types
+      ---
+      duration_ms: 0.6674
+      type: 'test'
+      ...
+    # Subtest: Creation validation fails when fields are missing (ID, Request Context Reference, Owner, Metadata)
+    ok 3 - Creation validation fails when fields are missing (ID, Request Context Reference, Owner, Metadata)
+      ---
+      duration_ms: 0.8745
+      type: 'test'
+      ...
+    # Subtest: Metadata validation (correlationId is required)
+    ok 4 - Metadata validation (correlationId is required)
+      ---
+      duration_ms: 0.2891
+      type: 'test'
+      ...
+    # Subtest: Tenant Isolation checks (wrong ownerId causes validation failure)
+    ok 5 - Tenant Isolation checks (wrong ownerId causes validation failure)
+      ---
+      duration_ms: 0.5148
+      type: 'test'
+      ...
+    # Subtest: Lifecycle transitions: Received -> Accepted -> Orchestrating -> Completed
+    ok 6 - Lifecycle transitions: Received -> Accepted -> Orchestrating -> Completed
+      ---
+      duration_ms: 0.3584
+      type: 'test'
+      ...
+    # Subtest: Lifecycle transitions: Received -> Failed
+    ok 7 - Lifecycle transitions: Received -> Failed
+      ---
+      duration_ms: 0.3731
+      type: 'test'
+      ...
+    # Subtest: Metadata replacement verification on active request
+    ok 8 - Metadata replacement verification on active request
+      ---
+      duration_ms: 0.3998
+      type: 'test'
+      ...
+    # Subtest: Invalid lifecycle status transitions throw error
+    ok 9 - Invalid lifecycle status transitions throw error
+      ---
+      duration_ms: 0.5418
+      type: 'test'
+      ...
+    # Subtest: Immutable properties verification (IDs and References cannot change)
+    ok 10 - Immutable properties verification (IDs and References cannot change)
+      ---
+      duration_ms: 0.6106
+      type: 'test'
+      ...
+    # Subtest: Mock aggregate store compliance validation
+    ok 11 - Mock aggregate store compliance validation
+      ---
+      duration_ms: 0.3985
+      type: 'test'
+      ...
+    1..11
+ok 1 - AI Request Domain Aggregate Tests
+  ---
+  duration_ms: 10.6675
+  type: 'suite'
+  ...
+# Subtest: Attachment Domain Aggregate Tests
+    # Subtest: Attachment Metadata value object fields and equality check
+    ok 1 - Attachment Metadata value object fields and equality check
+      ---
+      duration_ms: 6.2025
+      type: 'test'
+      ...
+    # Subtest: Attachment creation success: status Pending and ATTACHMENT_CREATED event emitted
+    ok 2 - Attachment creation success: status Pending and ATTACHMENT_CREATED event emitted
+      ---
+      duration_ms: 0.6817
+      type: 'test'
+      ...
+    # Subtest: Creation validation fails when fields are missing (ID, Parent, Owner, Reference, Metadata, Visibility)
+    ok 3 - Creation validation fails when fields are missing (ID, Parent, Owner, Reference, Metadata, Visibility)
+      ---
+      duration_ms: 0.8949
+      type: 'test'
+      ...
+    # Subtest: Metadata validation (displayName and mediaType are required)
+    ok 4 - Metadata validation (displayName and mediaType are required)
+      ---
+      duration_ms: 0.2967
+      type: 'test'
+      ...
+    # Subtest: Visibility validation (classification is required)
+    ok 5 - Visibility validation (classification is required)
+      ---
+      duration_ms: 0.2963
+      type: 'test'
+      ...
+    # Subtest: Tenant Isolation checks (wrong ownerId causes validation failure)
+    ok 6 - Tenant Isolation checks (wrong ownerId causes validation failure)
+      ---
+      duration_ms: 0.5296
+      type: 'test'
+      ...
+    # Subtest: Lifecycle transitions: Pending -> Available -> Archived -> Deleted
+    ok 7 - Lifecycle transitions: Pending -> Available -> Archived -> Deleted
+      ---
+      duration_ms: 0.4041
+      type: 'test'
+      ...
+    # Subtest: Lifecycle transitions: Pending -> Deleted (cancel registration)
+    ok 8 - Lifecycle transitions: Pending -> Deleted (cancel registration)
+      ---
+      duration_ms: 0.3713
+      type: 'test'
+      ...
+    # Subtest: Metadata and Visibility replacement verification on active files
+    ok 9 - Metadata and Visibility replacement verification on active files
+      ---
+      duration_ms: 0.5972
+      type: 'test'
+      ...
+    # Subtest: Invalid lifecycle status transitions throw error
+    ok 10 - Invalid lifecycle status transitions throw error
+      ---
+      duration_ms: 0.8611
+      type: 'test'
+      ...
+    # Subtest: Immutable properties verification (IDs and References cannot change)
+    ok 11 - Immutable properties verification (IDs and References cannot change)
+      ---
+      duration_ms: 0.2351
+      type: 'test'
+      ...
+    # Subtest: Mock aggregate store compliance validation
+    ok 12 - Mock aggregate store compliance validation
+      ---
+      duration_ms: 0.3647
+      type: 'test'
+      ...
+    1..12
+ok 2 - Attachment Domain Aggregate Tests
+  ---
+  duration_ms: 14.0564
+  type: 'suite'
+  ...
+# Subtest: Client Insights Domain Model & Invariants Tests
+    # Subtest: Aggregate creation: status Draft, snapshot version 1, properties matched
+    ok 1 - Aggregate creation: status Draft, snapshot version 1, properties matched
+      ---
+      duration_ms: 3.7792
+      type: 'test'
+      ...
+    # Subtest: Value Object Invariants: formats and classifications
+    ok 2 - Value Object Invariants: formats and classifications
+      ---
+      duration_ms: 1.3241
+      type: 'test'
+      ...
+    # Subtest: Date immutability: defensive copy on constructors and getters
+    ok 3 - Date immutability: defensive copy on constructors and getters
+      ---
+      duration_ms: 18.1842
+      type: 'test'
+      ...
+    # Subtest: ClientInsightSnapshot Date immutability
+    ok 4 - ClientInsightSnapshot Date immutability
+      ---
+      duration_ms: 0.9276
+      type: 'test'
+      ...
+    # Subtest: Snapshot history append-only and immutability
+    ok 5 - Snapshot history append-only and immutability
+      ---
+      duration_ms: 1.9983
+      type: 'test'
+      ...
+    # Subtest: Lifecycle transitions: valid flows and domain events
+    ok 6 - Lifecycle transitions: valid flows and domain events
+      ---
+      duration_ms: 12.1843
+      type: 'test'
+      ...
+    # Subtest: Lifecycle transitions: invalid path validation
+    ok 7 - Lifecycle transitions: invalid path validation
+      ---
+      duration_ms: 1.1587
+      type: 'test'
+      ...
+    # Subtest: Ownership context check
+    ok 8 - Ownership context check
+      ---
+      duration_ms: 0.6477
+      type: 'test'
+      ...
+    # Subtest: Aggregate invariant enforcement on properties
+    ok 9 - Aggregate invariant enforcement on properties
+      ---
+      duration_ms: 0.6605
+      type: 'test'
+      ...
+    # Subtest: Mock interfaces contract compliance check
+    ok 10 - Mock interfaces contract compliance check
+      ---
+      duration_ms: 1.0516
+      type: 'test'
+      ...
+    # Subtest: ClientInsight properties immutability checks
+    ok 11 - ClientInsight properties immutability checks
+      ---
+      duration_ms: 0.7029
+      type: 'test'
+      ...
+    1..11
+ok 3 - Client Insights Domain Model & Invariants Tests
+  ---
+  duration_ms: 46.7715
+  type: 'suite'
+  ...
+# Subtest: Client Memory Update Aggregate & Invariants Tests
+    # Subtest: Aggregate creation: status Draft, snapshot version 1, properties matched
+    ok 1 - Aggregate creation: status Draft, snapshot version 1, properties matched
+      ---
+      duration_ms: 3.0129
+      type: 'test'
+      ...
+    # Subtest: Value Object Invariants: operation types and classifications
+    ok 2 - Value Object Invariants: operation types and classifications
+      ---
+      duration_ms: 1.1719
+      type: 'test'
+      ...
+    # Subtest: Date immutability: defensive copy on constructors and getters
+    ok 3 - Date immutability: defensive copy on constructors and getters
+      ---
+      duration_ms: 0.5837
+      type: 'test'
+      ...
+    # Subtest: ClientMemoryUpdateSnapshot Date immutability
+    ok 4 - ClientMemoryUpdateSnapshot Date immutability
+      ---
+      duration_ms: 2.6936
+      type: 'test'
+      ...
+    # Subtest: Snapshot history append-only and immutability
+    ok 5 - Snapshot history append-only and immutability
+      ---
+      duration_ms: 0.6291
+      type: 'test'
+      ...
+    # Subtest: Lifecycle transitions: valid flows and domain events
+    ok 6 - Lifecycle transitions: valid flows and domain events
+      ---
+      duration_ms: 2.823
+      type: 'test'
+      ...
+    # Subtest: Lifecycle transitions: rejection flow and domain event
+    ok 7 - Lifecycle transitions: rejection flow and domain event
+      ---
+      duration_ms: 0.6124
+      type: 'test'
+      ...
+    # Subtest: Lifecycle transitions: invalid paths
+    ok 8 - Lifecycle transitions: invalid paths
+      ---
+      duration_ms: 0.8228
+      type: 'test'
+      ...
+    # Subtest: Ownership verification checking
+    ok 9 - Ownership verification checking
+      ---
+      duration_ms: 0.5814
+      type: 'test'
+      ...
+    # Subtest: Aggregate invariant enforcement on properties
+    ok 10 - Aggregate invariant enforcement on properties
+      ---
+      duration_ms: 0.7455
+      type: 'test'
+      ...
+    # Subtest: Mock store interface compliance check
+    ok 11 - Mock store interface compliance check
+      ---
+      duration_ms: 0.4739
+      type: 'test'
+      ...
+    # Subtest: ClientMemoryUpdate properties immutability checks
+    ok 12 - ClientMemoryUpdate properties immutability checks
+      ---
+      duration_ms: 0.7129
+      type: 'test'
+      ...
+    # Subtest: Memory Mutation Boundary Safety (ClientMemoryUpdate does NOT mutate actual memory)
+    ok 13 - Memory Mutation Boundary Safety (ClientMemoryUpdate does NOT mutate actual memory)
+      ---
+      duration_ms: 0.3116
+      type: 'test'
+      ...
+    1..13
+ok 4 - Client Memory Update Aggregate & Invariants Tests
+  ---
+  duration_ms: 17.7557
+  type: 'suite'
+  ...
+# Subtest: Client Summary Domain Aggregate & Value Objects Tests
+    # Subtest: Aggregate creation success: initial status Draft, version 1 snapshot, registered event emitted
+    ok 1 - Aggregate creation success: initial status Draft, version 1 snapshot, registered event emitted
+      ---
+      duration_ms: 4.6882
+      type: 'test'
+      ...
+    # Subtest: Immutable Summary content value object
+    ok 2 - Immutable Summary content value object
+      ---
+      duration_ms: 0.9489
+      type: 'test'
+      ...
+    # Subtest: Metadata immutability
+    ok 3 - Metadata immutability
+      ---
+      duration_ms: 0.7666
+      type: 'test'
+      ...
+    # Subtest: Classification immutability
+    ok 4 - Classification immutability
+      ---
+      duration_ms: 0.2802
+      type: 'test'
+      ...
+    # Subtest: Scope immutability
+    ok 5 - Scope immutability
+      ---
+      duration_ms: 0.2333
+      type: 'test'
+      ...
+    # Subtest: Fingerprint immutability
+    ok 6 - Fingerprint immutability
+      ---
+      duration_ms: 0.346
+      type: 'test'
+      ...
+    # Subtest: Fingerprint rejects hashes and provider identifiers
+    ok 7 - Fingerprint rejects hashes and provider identifiers
+      ---
+      duration_ms: 0.5354
+      type: 'test'
+      ...
+    # Subtest: Summary reference format validation
+    ok 8 - Summary reference format validation
+      ---
+      duration_ms: 0.5292
+      type: 'test'
+      ...
+    # Subtest: Append-only Snapshot History and completeness
+    ok 9 - Append-only Snapshot History and completeness
+      ---
+      duration_ms: 0.7562
+      type: 'test'
+      ...
+    # Subtest: Historical Snapshot immutability
+    ok 10 - Historical Snapshot immutability
+      ---
+      duration_ms: 0.7414
+      type: 'test'
+      ...
+    # Subtest: Lifecycle transitions: valid paths
+    ok 11 - Lifecycle transitions: valid paths
+      ---
+      duration_ms: 0.6225
+      type: 'test'
+      ...
+    # Subtest: Invalid lifecycle transitions throw errors
+    ok 12 - Invalid lifecycle transitions throw errors
+      ---
+      duration_ms: 0.5399
+      type: 'test'
+      ...
+    # Subtest: Ownership validation works correctly
+    ok 13 - Ownership validation works correctly
+      ---
+      duration_ms: 0.4392
+      type: 'test'
+      ...
+    # Subtest: Aggregate invariant enforcement on properties
+    ok 14 - Aggregate invariant enforcement on properties
+      ---
+      duration_ms: 1.6441
+      type: 'test'
+      ...
+    # Subtest: Mock store interface compliance check
+    ok 15 - Mock store interface compliance check
+      ---
+      duration_ms: 0.4306
+      type: 'test'
+      ...
+    # Subtest: Mock persistence unique reference check compliance
+    ok 16 - Mock persistence unique reference check compliance
+      ---
+      duration_ms: 0.234
+      type: 'test'
+      ...
+    # Subtest: Mock projection values compliance check
+    ok 17 - Mock projection values compliance check
+      ---
+      duration_ms: 0.1708
+      type: 'test'
+      ...
+    # Subtest: ClientSummary Date immutability: defensive copy on constructor and getters
+    ok 18 - ClientSummary Date immutability: defensive copy on constructor and getters
+      ---
+      duration_ms: 1.6453
+      type: 'test'
+      ...
+    # Subtest: SummarySnapshot Date immutability: defensive copy on constructor and getter
+    ok 19 - SummarySnapshot Date immutability: defensive copy on constructor and getter
+      ---
+      duration_ms: 0.362
+      type: 'test'
+      ...
+    1..19
+ok 5 - Client Summary Domain Aggregate & Value Objects Tests
+  ---
+  duration_ms: 20.0352
+  type: 'suite'
+  ...
+# Subtest: Client Aggregate Roots & Invariants Tests
+    # Subtest: Client creation (Lead status by default and CLIENT_CREATED event generated)
+    ok 1 - Client creation (Lead status by default and CLIENT_CREATED event generated)
+      ---
+      duration_ms: 5.629
+      type: 'test'
+      ...
+    # Subtest: Missing owner throws error
+    ok 2 - Missing owner throws error
+      ---
+      duration_ms: 1.2143
+      type: 'test'
+      ...
+    # Subtest: Client update profile success and CLIENT_UPDATED event emitted
+    ok 3 - Client update profile success and CLIENT_UPDATED event emitted
+      ---
+      duration_ms: 0.6194
+      type: 'test'
+      ...
+    # Subtest: Client update fails if ownership validation fails
+    ok 4 - Client update fails if ownership validation fails
+      ---
+      duration_ms: 0.28
+      type: 'test'
+      ...
+    # Subtest: Transition to Active enforces required metadata
+    ok 5 - Transition to Active enforces required metadata
+      ---
+      duration_ms: 0.7176
+      type: 'test'
+      ...
+    # Subtest: Invalid lifecycle status transitions throw error
+    ok 6 - Invalid lifecycle status transitions throw error
+      ---
+      duration_ms: 0.434
+      type: 'test'
+      ...
+    # Subtest: Archive transition emits CLIENT_ARCHIVED and Reactivate transition emits CLIENT_REACTIVATED
+    ok 7 - Archive transition emits CLIENT_ARCHIVED and Reactivate transition emits CLIENT_REACTIVATED
+      ---
+      duration_ms: 0.4861
+      type: 'test'
+      ...
+    # Subtest: Aggregate invariant validation: name length, country, currency formats
+    ok 8 - Aggregate invariant validation: name length, country, currency formats
+      ---
+      duration_ms: 0.764
+      type: 'test'
+      ...
+    # Subtest: Duplicate identity prevention check
+    ok 9 - Duplicate identity prevention check
+      ---
+      duration_ms: 1.2737
+      type: 'test'
+      ...
+    1..9
+ok 6 - Client Aggregate Roots & Invariants Tests
+  ---
+  duration_ms: 15.1422
+  type: 'suite'
+  ...
+# Subtest: Confidence Domain and Boundary Tests
+    # Subtest: Confidence score validation: bounds, NaN, Infinity
+    ok 1 - Confidence score validation: bounds, NaN, Infinity
+      ---
+      duration_ms: 24.5044
+      type: 'test'
+      ...
+    # Subtest: Confidence level validation
+    ok 2 - Confidence level validation
+      ---
+      duration_ms: 1.4064
+      type: 'test'
+      ...
+    # Subtest: Confidence reason validation
+    ok 3 - Confidence reason validation
+      ---
+      duration_ms: 1.174
+      type: 'test'
+      ...
+    # Subtest: Confidence evidence validation
+    ok 4 - Confidence evidence validation
+      ---
+      duration_ms: 0.7546
+      type: 'test'
+      ...
+    # Subtest: Confidence assessment properties mapping and date copying
+    ok 5 - Confidence assessment properties mapping and date copying
+      ---
+      duration_ms: 1.5719
+      type: 'test'
+      ...
+    # Subtest: No calculation formula is defined by blueprint - representation only
+    ok 6 - No calculation formula is defined by blueprint - representation only
+      ---
+      duration_ms: 1.7615
+      type: 'test'
+      ...
+    # Subtest: Domain event verification
+    ok 7 - Domain event verification
+      ---
+      duration_ms: 1.1996
+      type: 'test'
+      ...
+    # Subtest: Mock contracts compliance verification
+    ok 8 - Mock contracts compliance verification
+      ---
+      duration_ms: 2.3055
+      type: 'test'
+      ...
+    # Subtest: Boundary Verification: Confidence does NOT execute rules, extract facts, or call AI providers
+    ok 9 - Boundary Verification: Confidence does NOT execute rules, extract facts, or call AI providers
+      ---
+      duration_ms: 1.0197
+      type: 'test'
+      ...
+    # Subtest: Confidence assessment validations: empty properties
+    ok 10 - Confidence assessment validations: empty properties
+      ---
+      duration_ms: 2.7246
+      type: 'test'
+      ...
+    # Subtest: Detailed Date Immutability Matrix for Confidence (setTime, setDate, setFullYear)
+    ok 11 - Detailed Date Immutability Matrix for Confidence (setTime, setDate, setFullYear)
+      ---
+      duration_ms: 1.4262
+      type: 'test'
+      ...
+    # Subtest: Confidence representation preserves 6B decision linkage
+    ok 12 - Confidence representation preserves 6B decision linkage
+      ---
+      duration_ms: 0.345
+      type: 'test'
+      ...
+    # Subtest: Confidence determinism: identical properties yield identical assessments
+    ok 13 - Confidence determinism: identical properties yield identical assessments
+      ---
+      duration_ms: 0.8991
+      type: 'test'
+      ...
+    1..13
+ok 7 - Confidence Domain and Boundary Tests
+  ---
+  duration_ms: 47.6793
+  type: 'suite'
+  ...
+# Subtest: Context Builder Domain Aggregate Tests
+    # Subtest: Context creation success: status Draft, rules/refs copied, registered event emitted
+    ok 1 - Context creation success: status Draft, rules/refs copied, registered event emitted
+      ---
+      duration_ms: 4.9099
+      type: 'test'
+      ...
+    # Subtest: Context reference format validation rejects invalid keys
+    ok 2 - Context reference format validation rejects invalid keys
+      ---
+      duration_ms: 0.8116
+      type: 'test'
+      ...
+    # Subtest: Ownership validation blocks execution under invalid actor ID
+    ok 3 - Ownership validation blocks execution under invalid actor ID
+      ---
+      duration_ms: 1.1387
+      type: 'test'
+      ...
+    # Subtest: Updating draft replaces value objects and keeps historical arrays immutable
+    ok 4 - Updating draft replaces value objects and keeps historical arrays immutable
+      ---
+      duration_ms: 0.4326
+      type: 'test'
+      ...
+    # Subtest: Lifecycle flow: Draft -> Validated -> Published -> Archived
+    ok 5 - Lifecycle flow: Draft -> Validated -> Published -> Archived
+      ---
+      duration_ms: 0.5713
+      type: 'test'
+      ...
+    # Subtest: Draft -> Archived transition works successfully
+    ok 6 - Draft -> Archived transition works successfully
+      ---
+      duration_ms: 0.2283
+      type: 'test'
+      ...
+    # Subtest: Validated -> Archived transition works successfully
+    ok 7 - Validated -> Archived transition works successfully
+      ---
+      duration_ms: 0.4083
+      type: 'test'
+      ...
+    # Subtest: Invalid lifecycle transition: cannot publish draft without validation
+    ok 8 - Invalid lifecycle transition: cannot publish draft without validation
+      ---
+      duration_ms: 0.556
+      type: 'test'
+      ...
+    # Subtest: Mock interfaces contract compliance check
+    ok 9 - Mock interfaces contract compliance check
+      ---
+      duration_ms: 1.1861
+      type: 'test'
+      ...
+    1..9
+ok 8 - Context Builder Domain Aggregate Tests
+  ---
+  duration_ms: 13.1764
+  type: 'suite'
+  ...
+# Subtest: Conversation Import Domain Aggregate & Value Objects Tests
+    # Subtest: Aggregate creation success: initial status Draft, version 1 snapshot
+    ok 1 - Aggregate creation success: initial status Draft, version 1 snapshot
+      ---
+      duration_ms: 3.7728
+      type: 'test'
+      ...
+    # Subtest: ImportFingerprint provider neutrality, format flexibility, and immutability
+    ok 2 - ImportFingerprint provider neutrality, format flexibility, and immutability
+      ---
+      duration_ms: 0.8464
+      type: 'test'
+      ...
+    # Subtest: References format validation
+    ok 3 - References format validation
+      ---
+      duration_ms: 0.4336
+      type: 'test'
+      ...
+    # Subtest: ConversationReference provider neutrality validation
+    ok 4 - ConversationReference provider neutrality validation
+      ---
+      duration_ms: 0.5723
+      type: 'test'
+      ...
+    # Subtest: SourceClassification validates valid providers case-insensitively
+    ok 5 - SourceClassification validates valid providers case-insensitively
+      ---
+      duration_ms: 0.3056
+      type: 'test'
+      ...
+    # Subtest: Append-only Snapshot History and immutability
+    ok 6 - Append-only Snapshot History and immutability
+      ---
+      duration_ms: 0.6238
+      type: 'test'
+      ...
+    # Subtest: Lifecycle operations and events
+    ok 7 - Lifecycle operations and events
+      ---
+      duration_ms: 0.7431
+      type: 'test'
+      ...
+    # Subtest: Invalid lifecycle operations throw errors
+    ok 8 - Invalid lifecycle operations throw errors
+      ---
+      duration_ms: 0.7018
+      type: 'test'
+      ...
+    # Subtest: Ownership validation on operations
+    ok 9 - Ownership validation on operations
+      ---
+      duration_ms: 0.6083
+      type: 'test'
+      ...
+    # Subtest: Aggregate invariant enforcement on properties
+    ok 10 - Aggregate invariant enforcement on properties
+      ---
+      duration_ms: 0.7843
+      type: 'test'
+      ...
+    # Subtest: Date immutability: defensive copy on constructor and getters
+    ok 11 - Date immutability: defensive copy on constructor and getters
+      ---
+      duration_ms: 0.4229
+      type: 'test'
+      ...
+    # Subtest: ConversationImportSnapshot Date immutability
+    ok 12 - ConversationImportSnapshot Date immutability
+      ---
+      duration_ms: 0.2179
+      type: 'test'
+      ...
+    # Subtest: Mock store interface compliance check
+    ok 13 - Mock store interface compliance check
+      ---
+      duration_ms: 0.4049
+      type: 'test'
+      ...
+    # Subtest: Mock persistence unique reference check compliance
+    ok 14 - Mock persistence unique reference check compliance
+      ---
+      duration_ms: 0.2072
+      type: 'test'
+      ...
+    # Subtest: Mock projection values compliance check
+    ok 15 - Mock projection values compliance check
+      ---
+      duration_ms: 0.1761
+      type: 'test'
+      ...
+    # Subtest: ConversationImport mandatory fields immutability checks
+    ok 16 - ConversationImport mandatory fields immutability checks
+      ---
+      duration_ms: 2.2578
+      type: 'test'
+      ...
+    1..16
+ok 9 - Conversation Import Domain Aggregate & Value Objects Tests
+  ---
+  duration_ms: 15.9207
+  type: 'suite'
+  ...
+# Subtest: Embedding Aggregate & Invariants Domain Tests
+    # Subtest: Aggregate creation: status Draft, snapshot version 1, properties matched
+    ok 1 - Aggregate creation: status Draft, snapshot version 1, properties matched
+      ---
+      duration_ms: 14.1666
+      type: 'test'
+      ...
+    # Subtest: EmbeddingVector constraints validation
+    ok 2 - EmbeddingVector constraints validation
+      ---
+      duration_ms: 1.0693
+      type: 'test'
+      ...
+    # Subtest: EmbeddingVector immutability check
+    ok 3 - EmbeddingVector immutability check
+      ---
+      duration_ms: 0.5612
+      type: 'test'
+      ...
+    # Subtest: Dimension mismatches and validations
+    ok 4 - Dimension mismatches and validations
+      ---
+      duration_ms: 0.3782
+      type: 'test'
+      ...
+    # Subtest: Value Object Invariants: format check and immutability
+    ok 5 - Value Object Invariants: format check and immutability
+      ---
+      duration_ms: 0.6987
+      type: 'test'
+      ...
+    # Subtest: Date immutability: defensive copy on constructors and getters
+    ok 6 - Date immutability: defensive copy on constructors and getters
+      ---
+      duration_ms: 0.4394
+      type: 'test'
+      ...
+    # Subtest: EmbeddingSnapshot Date immutability
+    ok 7 - EmbeddingSnapshot Date immutability
+      ---
+      duration_ms: 0.3036
+      type: 'test'
+      ...
+    # Subtest: Snapshot history append-only and immutability
+    ok 8 - Snapshot history append-only and immutability
+      ---
+      duration_ms: 0.6278
+      type: 'test'
+      ...
+    # Subtest: Lifecycle transitions: valid flows and domain events
+    ok 9 - Lifecycle transitions: valid flows and domain events
+      ---
+      duration_ms: 4.0988
+      type: 'test'
+      ...
+    # Subtest: Lifecycle transitions: invalid paths
+    ok 10 - Lifecycle transitions: invalid paths
+      ---
+      duration_ms: 0.9537
+      type: 'test'
+      ...
+    # Subtest: Aggregate invariant enforcement on properties
+    ok 11 - Aggregate invariant enforcement on properties
+      ---
+      duration_ms: 0.3544
+      type: 'test'
+      ...
+    # Subtest: Mock store interface compliance check
+    ok 12 - Mock store interface compliance check
+      ---
+      duration_ms: 0.4337
+      type: 'test'
+      ...
+    # Subtest: Embedding aggregate properties immutability checks
+    ok 13 - Embedding aggregate properties immutability checks
+      ---
+      duration_ms: 0.3858
+      type: 'test'
+      ...
+    1..13
+ok 10 - Embedding Aggregate & Invariants Domain Tests
+  ---
+  duration_ms: 27.8129
+  type: 'suite'
+  ...
+# Subtest: Hybrid Search Domain and Boundary Tests
+    # Subtest: HybridSearchRequest creation and properties mapping
+    ok 1 - HybridSearchRequest creation and properties mapping
+      ---
+      duration_ms: 2.7245
+      type: 'test'
+      ...
+    # Subtest: Fusion strategy value validation and case-insensitivity
+    ok 2 - Fusion strategy value validation and case-insensitivity
+      ---
+      duration_ms: 1.1874
+      type: 'test'
+      ...
+    # Subtest: Fusion weight validation
+    ok 3 - Fusion weight validation
+      ---
+      duration_ms: 0.4299
+      type: 'test'
+      ...
+    # Subtest: Fusion score validation
+    ok 4 - Fusion score validation
+      ---
+      duration_ms: 0.38
+      type: 'test'
+      ...
+    # Subtest: Weighted score fusion behavior: vector-only, lexical-only, and merged candidates
+    ok 5 - Weighted score fusion behavior: vector-only, lexical-only, and merged candidates
+      ---
+      duration_ms: 2.5506
+      type: 'test'
+      ...
+    # Subtest: RRF score fusion behavior with rank-based calculation
+    ok 6 - RRF score fusion behavior with rank-based calculation
+      ---
+      duration_ms: 1.2017
+      type: 'test'
+      ...
+    # Subtest: Limit truncation in candidate list
+    ok 7 - Limit truncation in candidate list
+      ---
+      duration_ms: 0.9846
+      type: 'test'
+      ...
+    # Subtest: Hybrid result candidate list immutability
+    ok 8 - Hybrid result candidate list immutability
+      ---
+      duration_ms: 0.5274
+      type: 'test'
+      ...
+    # Subtest: Mock interfaces contract compliance check
+    ok 9 - Mock interfaces contract compliance check
+      ---
+      duration_ms: 4.6946
+      type: 'test'
+      ...
+    # Subtest: Boundary Verification: Hybrid Search does NOT rank business objectives or interact with databases
+    ok 10 - Boundary Verification: Hybrid Search does NOT rank business objectives or interact with databases
+      ---
+      duration_ms: 1.4521
+      type: 'test'
+      ...
+    # Subtest: Hybrid search candidate properties immutability check
+    ok 11 - Hybrid search candidate properties immutability check
+      ---
+      duration_ms: 1.7107
+      type: 'test'
+      ...
+    1..11
+ok 11 - Hybrid Search Domain and Boundary Tests
+  ---
+  duration_ms: 23.0307
+  type: 'suite'
+  ...
+# Subtest: Chapter 8C — Job Embedding Domain Tests
+    # Subtest: 1. Source Normalization Reference
+        # Subtest: valid jobNormalizationId and normalizationVersion
+        ok 1 - valid jobNormalizationId and normalizationVersion
+          ---
+          duration_ms: 2.828
+          type: 'test'
+          ...
+        # Subtest: tenant isolation validation
+        ok 2 - tenant isolation validation
+          ---
+          duration_ms: 0.747
+          type: 'test'
+          ...
+        # Subtest: reference immutability
+        ok 3 - reference immutability
+          ---
+          duration_ms: 1.3769
+          type: 'test'
+          ...
+        1..3
+    ok 1 - 1. Source Normalization Reference
+      ---
+      duration_ms: 8.5964
+      type: 'suite'
+      ...
+    # Subtest: 2. Embedding Version
+        # Subtest: v1 accepted and rejects invalid formats
+        ok 1 - v1 accepted and rejects invalid formats
+          ---
+          duration_ms: 4.4705
+          type: 'test'
+          ...
+        # Subtest: embeddingVersion is immutable
+        ok 2 - embeddingVersion is immutable
+          ---
+          duration_ms: 0.8063
+          type: 'test'
+          ...
+        # Subtest: participates in identity and reprocessing boundary
+        ok 3 - participates in identity and reprocessing boundary
+          ---
+          duration_ms: 1.2612
+          type: 'test'
+          ...
+        1..3
+    ok 2 - 2. Embedding Version
+      ---
+      duration_ms: 10.0154
+      type: 'suite'
+      ...
+    # Subtest: 3. Model Reference
+        # Subtest: valid construction and metadata preservation with zero credentials
+        ok 1 - valid construction and metadata preservation with zero credentials
+          ---
+          duration_ms: 0.8592
+          type: 'test'
+          ...
+        # Subtest: model reference immutability
+        ok 2 - model reference immutability
+          ---
+          duration_ms: 0.4033
+          type: 'test'
+          ...
+        1..2
+    ok 3 - 3. Model Reference
+      ---
+      duration_ms: 1.8753
+      type: 'suite'
+      ...
+    # Subtest: 4. Vector Validation
+        # Subtest: valid numeric vector accepted
+        ok 1 - valid numeric vector accepted
+          ---
+          duration_ms: 2.1337
+          type: 'test'
+          ...
+        # Subtest: invalid vector configurations rejected
+        ok 2 - invalid vector configurations rejected
+          ---
+          duration_ms: 1.2827
+          type: 'test'
+          ...
+        1..2
+    ok 4 - 4. Vector Validation
+      ---
+      duration_ms: 3.6783
+      type: 'suite'
+      ...
+    # Subtest: 5. Vector Immutability
+        # Subtest: constructor defensive copies & getter immutability prevent modifications
+        ok 1 - constructor defensive copies & getter immutability prevent modifications
+          ---
+          duration_ms: 0.9663
+          type: 'test'
+          ...
+        1..1
+    ok 5 - 5. Vector Immutability
+      ---
+      duration_ms: 1.1416
+      type: 'suite'
+      ...
+    # Subtest: 6. Input Fingerprint
+        # Subtest: preserves normalized state fingerprint, is immutable and separate
+        ok 1 - preserves normalized state fingerprint, is immutable and separate
+          ---
+          duration_ms: 0.4274
+          type: 'test'
+          ...
+        1..1
+    ok 6 - 6. Input Fingerprint
+      ---
+      duration_ms: 0.6481
+      type: 'suite'
+      ...
+    # Subtest: 7. Vector Fingerprint
+        # Subtest: vector fingerprint properties and determinism
+        ok 1 - vector fingerprint properties and determinism
+          ---
+          duration_ms: 0.3245
+          type: 'test'
+          ...
+        1..1
+    ok 7 - 7. Vector Fingerprint
+      ---
+      duration_ms: 0.5172
+      type: 'suite'
+      ...
+    # Subtest: 8. Aggregate Creation
+        # Subtest: initializes state as CREATED with snapshot version 1 and domain event
+        ok 1 - initializes state as CREATED with snapshot version 1 and domain event
+          ---
+          duration_ms: 0.7245
+          type: 'test'
+          ...
+        1..1
+    ok 8 - 8. Aggregate Creation
+      ---
+      duration_ms: 0.8899
+      type: 'suite'
+      ...
+    # Subtest: 9. Generation Operation
+        # Subtest: markGenerated transitions CREATED to GENERATED, increments snapshot and emits event
+        ok 1 - markGenerated transitions CREATED to GENERATED, increments snapshot and emits event
+          ---
+          duration_ms: 0.5717
+          type: 'test'
+          ...
+        1..1
+    ok 9 - 9. Generation Operation
+      ---
+      duration_ms: 0.7191
+      type: 'suite'
+      ...
+    # Subtest: 10. Archive Operation
+        # Subtest: transitions CREATED -> ARCHIVED and GENERATED -> ARCHIVED correctly
+        ok 1 - transitions CREATED -> ARCHIVED and GENERATED -> ARCHIVED correctly
+          ---
+          duration_ms: 0.7044
+          type: 'test'
+          ...
+        1..1
+    ok 10 - 10. Archive Operation
+      ---
+      duration_ms: 4.0415
+      type: 'suite'
+      ...
+    # Subtest: 11. Invalid Lifecycle transitions
+        # Subtest: rejects backwards and invalid transitions from ARCHIVED
+        ok 1 - rejects backwards and invalid transitions from ARCHIVED
+          ---
+          duration_ms: 1.2292
+          type: 'test'
+          ...
+        1..1
+    ok 11 - 11. Invalid Lifecycle transitions
+      ---
+      duration_ms: 1.4803
+      type: 'suite'
+      ...
+    # Subtest: 12. Ownership Validation
+        # Subtest: mutations reject wrong owners with exact error, leaving state unmodified
+        ok 1 - mutations reject wrong owners with exact error, leaving state unmodified
+          ---
+          duration_ms: 1.0068
+          type: 'test'
+          ...
+        1..1
+    ok 12 - 12. Ownership Validation
+      ---
+      duration_ms: 1.1404
+      type: 'suite'
+      ...
+    # Subtest: 13. Snapshot Invariants
+        # Subtest: sequential snapshot versions starting at 1 with no duplicates/gaps
+        ok 1 - sequential snapshot versions starting at 1 with no duplicates/gaps
+          ---
+          duration_ms: 0.7122
+          type: 'test'
+          ...
+        1..1
+    ok 13 - 13. Snapshot Invariants
+      ---
+      duration_ms: 3.2469
+      type: 'suite'
+      ...
+    # Subtest: 14. Date Immutability
+        # Subtest: defensive copies on entry and exit, setTime fails to modify private state
+        ok 1 - defensive copies on entry and exit, setTime fails to modify private state
+          ---
+          duration_ms: 3.4537
+          type: 'test'
+          ...
+        1..1
+    ok 14 - 14. Date Immutability
+      ---
+      duration_ms: 3.6323
+      type: 'suite'
+      ...
+    # Subtest: 15. Domain Events
+        # Subtest: event payload naming & structure contains zero infrastructure references
+        ok 1 - event payload naming & structure contains zero infrastructure references
+          ---
+          duration_ms: 1.3978
+          type: 'test'
+          ...
+        1..1
+    ok 15 - 15. Domain Events
+      ---
+      duration_ms: 1.7379
+      type: 'suite'
+      ...
+    # Subtest: 16. Persistence Contracts compilation
+        # Subtest: signatures match technological neutrality rules
+        ok 1 - signatures match technological neutrality rules
+          ---
+          duration_ms: 0.4321
+          type: 'test'
+          ...
+        1..1
+    ok 16 - 16. Persistence Contracts compilation
+      ---
+      duration_ms: 0.5715
+      type: 'suite'
+      ...
+    # Subtest: 17. Provider Boundary
+        # Subtest: Verify no AI models, credentials, HTTP or SDK libraries imported
+        ok 1 - Verify no AI models, credentials, HTTP or SDK libraries imported
+          ---
+          duration_ms: 0.2962
+          type: 'test'
+          ...
+        1..1
+    ok 17 - 17. Provider Boundary
+      ---
+      duration_ms: 0.3961
+      type: 'suite'
+      ...
+    # Subtest: 18. Vector Search Boundary
+        # Subtest: Verify cosine similarity or search engines are excluded
+        ok 1 - Verify cosine similarity or search engines are excluded
+          ---
+          duration_ms: 0.1846
+          type: 'test'
+          ...
+        1..1
+    ok 18 - 18. Vector Search Boundary
+      ---
+      duration_ms: 0.2683
+      type: 'suite'
+      ...
+    # Subtest: 19. Future Chapter Boundaries
+        # Subtest: Verify no matching, scoring, ranking, explanation, caching, or workers are implemented
+        ok 1 - Verify no matching, scoring, ranking, explanation, caching, or workers are implemented
+          ---
+          duration_ms: 0.1666
+          type: 'test'
+          ...
+        1..1
+    ok 19 - 19. Future Chapter Boundaries
+      ---
+      duration_ms: 0.2472
+      type: 'suite'
+      ...
+    1..19
+ok 12 - Chapter 8C — Job Embedding Domain Tests
+  ---
+  duration_ms: 52.8532
+  type: 'suite'
+  ...
+# Subtest: Chapter 8A — Job Import Pipeline Domain Tests
+    # Subtest: JobExternalIdentity
+        # Subtest: valid source and externalJobId
+        ok 1 - valid source and externalJobId
+          ---
+          duration_ms: 1.6089
+          type: 'test'
+          ...
+        # Subtest: empty source rejected
+        ok 2 - empty source rejected
+          ---
+          duration_ms: 0.7881
+          type: 'test'
+          ...
+        # Subtest: empty externalJobId rejected
+        ok 3 - empty externalJobId rejected
+          ---
+          duration_ms: 0.3138
+          type: 'test'
+          ...
+        # Subtest: value immutability
+        ok 4 - value immutability
+          ---
+          duration_ms: 0.2925
+          type: 'test'
+          ...
+        # Subtest: value equality
+        ok 5 - value equality
+          ---
+          duration_ms: 0.4552
+          type: 'test'
+          ...
+        1..5
+    ok 1 - JobExternalIdentity
+      ---
+      duration_ms: 6.0954
+      type: 'suite'
+      ...
+    # Subtest: JobImportProvenance
+        # Subtest: valid properties
+        ok 1 - valid properties
+          ---
+          duration_ms: 0.5271
+          type: 'test'
+          ...
+        # Subtest: immutability and Date defensive copying
+        ok 2 - immutability and Date defensive copying
+          ---
+          duration_ms: 0.2988
+          type: 'test'
+          ...
+        1..2
+    ok 2 - JobImportProvenance
+      ---
+      duration_ms: 1.332
+      type: 'suite'
+      ...
+    # Subtest: JobImportFingerprint
+        # Subtest: valid fingerprint
+        ok 1 - valid fingerprint
+          ---
+          duration_ms: 0.4004
+          type: 'test'
+          ...
+        # Subtest: invalid fingerprint rejected
+        ok 2 - invalid fingerprint rejected
+          ---
+          duration_ms: 0.4803
+          type: 'test'
+          ...
+        # Subtest: immutability
+        ok 3 - immutability
+          ---
+          duration_ms: 0.4287
+          type: 'test'
+          ...
+        1..3
+    ok 3 - JobImportFingerprint
+      ---
+      duration_ms: 3.8746
+      type: 'suite'
+      ...
+    # Subtest: Raw payload protection
+        # Subtest: valid payload and nested object/array immutability
+        ok 1 - valid payload and nested object/array immutability
+          ---
+          duration_ms: 1.65
+          type: 'test'
+          ...
+        1..1
+    ok 4 - Raw payload protection
+      ---
+      duration_ms: 1.7933
+      type: 'suite'
+      ...
+    # Subtest: JobImport Aggregate creation
+        # Subtest: Draft creation and RECEIVED status, snapshot version 1, event emitted
+        ok 1 - Draft creation and RECEIVED status, snapshot version 1, event emitted
+          ---
+          duration_ms: 1.2264
+          type: 'test'
+          ...
+        1..1
+    ok 5 - JobImport Aggregate creation
+      ---
+      duration_ms: 1.3838
+      type: 'suite'
+      ...
+    # Subtest: Ownership validation
+        # Subtest: authorized markImported succeeds, unauthorized rejected
+        ok 1 - authorized markImported succeeds, unauthorized rejected
+          ---
+          duration_ms: 0.7813
+          type: 'test'
+          ...
+        # Subtest: authorized archive succeeds, unauthorized rejected
+        ok 2 - authorized archive succeeds, unauthorized rejected
+          ---
+          duration_ms: 0.3988
+          type: 'test'
+          ...
+        1..2
+    ok 6 - Ownership validation
+      ---
+      duration_ms: 1.3611
+      type: 'suite'
+      ...
+    # Subtest: Lifecycle Transitions
+        # Subtest: RECEIVED -> IMPORTED
+        ok 1 - RECEIVED -> IMPORTED
+          ---
+          duration_ms: 0.3235
+          type: 'test'
+          ...
+        # Subtest: RECEIVED -> ARCHIVED
+        ok 2 - RECEIVED -> ARCHIVED
+          ---
+          duration_ms: 0.2031
+          type: 'test'
+          ...
+        # Subtest: IMPORTED -> ARCHIVED
+        ok 3 - IMPORTED -> ARCHIVED
+          ---
+          duration_ms: 0.2779
+          type: 'test'
+          ...
+        # Subtest: Archived is terminal, invalid transitions rejected
+        ok 4 - Archived is terminal, invalid transitions rejected
+          ---
+          duration_ms: 0.4298
+          type: 'test'
+          ...
+        1..4
+    ok 7 - Lifecycle Transitions
+      ---
+      duration_ms: 1.4607
+      type: 'suite'
+      ...
+    # Subtest: Snapshot history
+        # Subtest: incremental sequential snapshots
+        ok 1 - incremental sequential snapshots
+          ---
+          duration_ms: 0.4181
+          type: 'test'
+          ...
+        1..1
+    ok 8 - Snapshot history
+      ---
+      duration_ms: 0.5276
+      type: 'suite'
+      ...
+    # Subtest: Date Immutability
+        # Subtest: Date fields are defensively copied
+        ok 1 - Date fields are defensively copied
+          ---
+          duration_ms: 0.4347
+          type: 'test'
+          ...
+        1..1
+    ok 9 - Date Immutability
+      ---
+      duration_ms: 0.55
+      type: 'suite'
+      ...
+    # Subtest: Domain Events Verification
+        # Subtest: emitted event names and payload schema
+        ok 1 - emitted event names and payload schema
+          ---
+          duration_ms: 0.3435
+          type: 'test'
+          ...
+        1..1
+    ok 10 - Domain Events Verification
+      ---
+      duration_ms: 0.4963
+      type: 'suite'
+      ...
+    # Subtest: Persistence signatures check
+        # Subtest: contracts verify technology neutrality
+        ok 1 - contracts verify technology neutrality
+          ---
+          duration_ms: 0.2344
+          type: 'test'
+          ...
+        1..1
+    ok 11 - Persistence signatures check
+      ---
+      duration_ms: 0.3432
+      type: 'suite'
+      ...
+    # Subtest: Boundary isolation tests
+        # Subtest: No external library imports or machine matching logic exists in core
+        ok 1 - No external library imports or machine matching logic exists in core
+          ---
+          duration_ms: 0.2613
+          type: 'test'
+          ...
+        1..1
+    ok 12 - Boundary isolation tests
+      ---
+      duration_ms: 0.3574
+      type: 'suite'
+      ...
+    1..12
+ok 13 - Chapter 8A — Job Import Pipeline Domain Tests
+  ---
+  duration_ms: 23.8087
+  type: 'suite'
+  ...
+# Subtest: Chapter 8H — Caching Layer Validation
+    # Subtest: 1. Cache Identity & Key Generation
+        # Subtest: should generate key with all critical dimensions deterministically
+        ok 1 - should generate key with all critical dimensions deterministically
+          ---
+          duration_ms: 6.8289
+          type: 'test'
+          ...
+        # Subtest: should throw error if required context fields are missing or empty
+        ok 2 - should throw error if required context fields are missing or empty
+          ---
+          duration_ms: 1.2792
+          type: 'test'
+          ...
+        # Subtest: should produce different keys if any version or parameter changes (collision resistance)
+        ok 3 - should produce different keys if any version or parameter changes (collision resistance)
+          ---
+          duration_ms: 2.1021
+          type: 'test'
+          ...
+        1..3
+    ok 1 - 1. Cache Identity & Key Generation
+      ---
+      duration_ms: 12.1519
+      type: 'suite'
+      ...
+    # Subtest: 2. Cache Namespace & Safe Safe Schema Format
+        # Subtest: should prefix with default job-match:v1 namespace
+        ok 1 - should prefix with default job-match:v1 namespace
+          ---
+          duration_ms: 0.7067
+          type: 'test'
+          ...
+        1..1
+    ok 2 - 2. Cache Namespace & Safe Safe Schema Format
+      ---
+      duration_ms: 1.138
+      type: 'suite'
+      ...
+    # Subtest: 3. Tenant Isolation
+        # Subtest: should keep same jobMatchId isolated under different tenantIds
+        ok 1 - should keep same jobMatchId isolated under different tenantIds
+          ---
+          duration_ms: 0.6238
+          type: 'test'
+          ...
+        # Subtest: should reject reading a cache payload if tenantId inside deserialized object does not match requested tenantId
+        ok 2 - should reject reading a cache payload if tenantId inside deserialized object does not match requested tenantId
+          ---
+          duration_ms: 1.7083
+          type: 'test'
+          ...
+        1..2
+    ok 3 - 3. Tenant Isolation
+      ---
+      duration_ms: 2.7135
+      type: 'suite'
+      ...
+    # Subtest: 4. Explicit Serialization & Deserialization Boundaries
+        # Subtest: should successfully serialize and deserialize a valid payload
+        ok 1 - should successfully serialize and deserialize a valid payload
+          ---
+          duration_ms: 2.3333
+          type: 'test'
+          ...
+        # Subtest: should reject and return MISS/INVALID for malformed JSON string payload
+        ok 2 - should reject and return MISS/INVALID for malformed JSON string payload
+          ---
+          duration_ms: 0.5561
+          type: 'test'
+          ...
+        # Subtest: should reject when schema version in payload is unsupported
+        ok 3 - should reject when schema version in payload is unsupported
+          ---
+          duration_ms: 1.1365
+          type: 'test'
+          ...
+        # Subtest: should reject if any required field is missing in payload shape validation
+        ok 4 - should reject if any required field is missing in payload shape validation
+          ---
+          duration_ms: 0.997
+          type: 'test'
+          ...
+        1..4
+    ok 4 - 4. Explicit Serialization & Deserialization Boundaries
+      ---
+      duration_ms: 5.461
+      type: 'suite'
+      ...
+    # Subtest: 5. Fingerprint Validation
+        # Subtest: should return L1_HIT when fingerprint is correct
+        ok 1 - should return L1_HIT when fingerprint is correct
+          ---
+          duration_ms: 0.5816
+          type: 'test'
+          ...
+        # Subtest: should return MISS/INVALID when fingerprint changes (e.g. data updated upstream)
+        ok 2 - should return MISS/INVALID when fingerprint changes (e.g. data updated upstream)
+          ---
+          duration_ms: 1.1917
+          type: 'test'
+          ...
+        1..2
+    ok 5 - 5. Fingerprint Validation
+      ---
+      duration_ms: 1.9653
+      type: 'suite'
+      ...
+    # Subtest: 6. L1 Process-Local Memory Cache
+        # Subtest: should hit L1 cache directly
+        ok 1 - should hit L1 cache directly
+          ---
+          duration_ms: 0.9494
+          type: 'test'
+          ...
+        # Subtest: should evict Least Recently Used entry when L1 capacity is exceeded
+        ok 2 - should evict Least Recently Used entry when L1 capacity is exceeded
+          ---
+          duration_ms: 11.1161
+          type: 'test'
+          ...
+        1..2
+    ok 6 - 6. L1 Process-Local Memory Cache
+      ---
+      duration_ms: 12.6125
+      type: 'suite'
+      ...
+    # Subtest: 7. L2 Redis Cache Adapter Integration & Mock Validation
+        # Subtest: should retrieve from L2 store on L1 miss, then populate L1
+        ok 1 - should retrieve from L2 store on L1 miss, then populate L1
+          ---
+          duration_ms: 0.9652
+          type: 'test'
+          ...
+        1..1
+    ok 7 - 7. L2 Redis Cache Adapter Integration & Mock Validation
+      ---
+      duration_ms: 1.1971
+      type: 'suite'
+      ...
+    # Subtest: 8. Tiered Cache flow (L1 -> L2)
+        # Subtest: should check L1 first, then L2, then populate L1
+        ok 1 - should check L1 first, then L2, then populate L1
+          ---
+          duration_ms: 1.8506
+          type: 'test'
+          ...
+        1..1
+    ok 8 - 8. Tiered Cache flow (L1 -> L2)
+      ---
+      duration_ms: 2.1206
+      type: 'suite'
+      ...
+    # Subtest: 9. Degradation & Safe Fallback on Cache Failures
+        # Subtest: should degrade to MISS gracefully if L2 Redis throws an error on GET
+        ok 1 - should degrade to MISS gracefully if L2 Redis throws an error on GET
+          ---
+          duration_ms: 0.7525
+          type: 'test'
+          ...
+        # Subtest: should not crash application or throw error if L2 Redis throws an error on SET
+        ok 2 - should not crash application or throw error if L2 Redis throws an error on SET
+          ---
+          duration_ms: 1.116
+          type: 'test'
+          ...
+        # Subtest: should gracefully timeout on GET if Redis hangs, yielding ERROR/MISS
+        ok 3 - should gracefully timeout on GET if Redis hangs, yielding ERROR/MISS
+          ---
+          duration_ms: 76.1832
+          type: 'test'
+          ...
+        1..3
+    ok 9 - 9. Degradation & Safe Fallback on Cache Failures
+      ---
+      duration_ms: 78.5765
+      type: 'suite'
+      ...
+    # Subtest: 10. Time To Live (TTL)
+        # Subtest: should reject reading an L1 entry that has expired
+        ok 1 - should reject reading an L1 entry that has expired
+          ---
+          duration_ms: 1110.3311
+          type: 'test'
+          ...
+        1..1
+    ok 10 - 10. Time To Live (TTL)
+      ---
+      duration_ms: 1110.7425
+      type: 'suite'
+      ...
+    # Subtest: 11. Cache Invalidation Mechanics
+        # Subtest: should correctly evict keys from both L1 and L2 stores
+        ok 1 - should correctly evict keys from both L1 and L2 stores
+          ---
+          duration_ms: 0.8248
+          type: 'test'
+          ...
+        # Subtest: should handle invalidating missing keys idempotently and safely without error
+        ok 2 - should handle invalidating missing keys idempotently and safely without error
+          ---
+          duration_ms: 0.3271
+          type: 'test'
+          ...
+        1..2
+    ok 11 - 11. Cache Invalidation Mechanics
+      ---
+      duration_ms: 1.3279
+      type: 'suite'
+      ...
+    # Subtest: 12. Cache Stampede Protection (Single-Flight)
+        # Subtest: should coalesce concurrent identical requests into a single computation
+        ok 1 - should coalesce concurrent identical requests into a single computation
+          ---
+          duration_ms: 36.4064
+          type: 'test'
+          ...
+        # Subtest: should NOT coalesce requests from different tenants or version contexts
+        ok 2 - should NOT coalesce requests from different tenants or version contexts
+          ---
+          duration_ms: 1.8714
+          type: 'test'
+          ...
+        # Subtest: should clean up flight map after completed or failed computation
+        ok 3 - should clean up flight map after completed or failed computation
+          ---
+          duration_ms: 0.7628
+          type: 'test'
+          ...
+        1..3
+    ok 12 - 12. Cache Stampede Protection (Single-Flight)
+      ---
+      duration_ms: 39.4488
+      type: 'suite'
+      ...
+    # Subtest: 14. Immutability Validation
+        # Subtest: should deeply freeze returned cache results to prevent modification leaks
+        ok 1 - should deeply freeze returned cache results to prevent modification leaks
+          ---
+          duration_ms: 0.4212
+          type: 'test'
+          ...
+        1..1
+    ok 13 - 14. Immutability Validation
+      ---
+      duration_ms: 0.5168
+      type: 'suite'
+      ...
+    # Subtest: 15. Security Scanner (Credential and Secret Leak Prevention)
+        # Subtest: should block set operations when payload contains sensitive keywords in keys
+        ok 1 - should block set operations when payload contains sensitive keywords in keys
+          ---
+          duration_ms: 0.3976
+          type: 'test'
+          ...
+        # Subtest: should recursively block sets for nested secrets in the payload object
+        ok 2 - should recursively block sets for nested secrets in the payload object
+          ---
+          duration_ms: 0.3788
+          type: 'test'
+          ...
+        1..2
+    ok 14 - 15. Security Scanner (Credential and Secret Leak Prevention)
+      ---
+      duration_ms: 0.9155
+      type: 'suite'
+      ...
+    # Subtest: 16. Codebase Architecture Boundaries
+        # Subtest: should verify that the caching layer imports no AI, matching, scoring or external provider packages
+        ok 1 - should verify that the caching layer imports no AI, matching, scoring or external provider packages
+          ---
+          duration_ms: 0.1778
+          type: 'test'
+          ...
+        1..1
+    ok 15 - 16. Codebase Architecture Boundaries
+      ---
+      duration_ms: 0.2652
+      type: 'suite'
+      ...
+    1..15
+ok 14 - Chapter 8H — Caching Layer Validation
+  ---
+  duration_ms: 1273.7959
+  type: 'suite'
+  ...
+# Subtest: Chapter 8G — Match Explanation Domain Tests
+    # Subtest: 1. Explanation Identity
+        # Subtest: valid construction and logical properties
+        ok 1 - valid construction and logical properties
+          ---
+          duration_ms: 2.5515
+          type: 'test'
+          ...
+        # Subtest: identity fields are immutable
+        ok 2 - identity fields are immutable
+          ---
+          duration_ms: 1.3463
+          type: 'test'
+          ...
+        1..2
+    ok 1 - 1. Explanation Identity
+      ---
+      duration_ms: 5.6892
+      type: 'suite'
+      ...
+    # Subtest: 2. Explanation Policy
+        # Subtest: valid construction, policy version format check
+        ok 1 - valid construction, policy version format check
+          ---
+          duration_ms: 0.7634
+          type: 'test'
+          ...
+        1..1
+    ok 2 - 2. Explanation Policy
+      ---
+      duration_ms: 1.0494
+      type: 'suite'
+      ...
+    # Subtest: 3. Evidence Consumption
+        # Subtest: MatchSignals, ScoreBreakdown and Ranking consumed as-is
+        ok 1 - MatchSignals, ScoreBreakdown and Ranking consumed as-is
+          ---
+          duration_ms: 2.7026
+          type: 'test'
+          ...
+        1..1
+    ok 3 - 3. Evidence Consumption
+      ---
+      duration_ms: 2.9139
+      type: 'suite'
+      ...
+    # Subtest: 4. Explanation Facts
+        # Subtest: matched skill, missing skill, compatibility state and rank facts are generated
+        ok 1 - matched skill, missing skill, compatibility state and rank facts are generated
+          ---
+          duration_ms: 0.9093
+          type: 'test'
+          ...
+        1..1
+    ok 4 - 4. Explanation Facts
+      ---
+      duration_ms: 1.6477
+      type: 'suite'
+      ...
+    # Subtest: 5. Unknown Handling
+        # Subtest: UNKNOWN is preserved and does not become a gap mismatch claim
+        ok 1 - UNKNOWN is preserved and does not become a gap mismatch claim
+          ---
+          duration_ms: 1.2196
+          type: 'test'
+          ...
+        1..1
+    ok 5 - 5. Unknown Handling
+      ---
+      duration_ms: 1.7162
+      type: 'suite'
+      ...
+    # Subtest: 6. No Hallucinated Facts
+        # Subtest: arbitrary business claims and hire predictions are absent
+        ok 1 - arbitrary business claims and hire predictions are absent
+          ---
+          duration_ms: 1.3958
+          type: 'test'
+          ...
+        1..1
+    ok 6 - 6. No Hallucinated Facts
+      ---
+      duration_ms: 1.6755
+      type: 'suite'
+      ...
+    # Subtest: 7. Explanation Sections
+        # Subtest: supported sections are filled and deterministic
+        ok 1 - supported sections are filled and deterministic
+          ---
+          duration_ms: 1.3699
+          type: 'test'
+          ...
+        1..1
+    ok 7 - 7. Explanation Sections
+      ---
+      duration_ms: 1.5537
+      type: 'suite'
+      ...
+    # Subtest: 8. Fact Ordering
+        # Subtest: facts collection uses deterministic alphabetical/prioritized order
+        ok 1 - facts collection uses deterministic alphabetical/prioritized order
+          ---
+          duration_ms: 3.5577
+          type: 'test'
+          ...
+        1..1
+    ok 8 - 8. Fact Ordering
+      ---
+      duration_ms: 4.0848
+      type: 'suite'
+      ...
+    # Subtest: 9. Duplicate Facts
+        # Subtest: deduplicates redundant evidence
+        ok 1 - deduplicates redundant evidence
+          ---
+          duration_ms: 1.4712
+          type: 'test'
+          ...
+        1..1
+    ok 9 - 9. Duplicate Facts
+      ---
+      duration_ms: 1.86
+      type: 'suite'
+      ...
+    # Subtest: 10. Score Context
+        # Subtest: exact upstream score and contributions are preserved
+        ok 1 - exact upstream score and contributions are preserved
+          ---
+          duration_ms: 0.5447
+          type: 'test'
+          ...
+        1..1
+    ok 10 - 10. Score Context
+      ---
+      duration_ms: 0.7378
+      type: 'suite'
+      ...
+    # Subtest: 11. Ranking Context
+        # Subtest: exact rank and total candidate count preserved
+        ok 1 - exact rank and total candidate count preserved
+          ---
+          duration_ms: 0.5202
+          type: 'test'
+          ...
+        1..1
+    ok 11 - 11. Ranking Context
+      ---
+      duration_ms: 0.6555
+      type: 'suite'
+      ...
+    # Subtest: 12. Fingerprint
+        # Subtest: fingerprint changes with evidence details context
+        ok 1 - fingerprint changes with evidence details context
+          ---
+          duration_ms: 0.4761
+          type: 'test'
+          ...
+        1..1
+    ok 12 - 12. Fingerprint
+      ---
+      duration_ms: 1.7011
+      type: 'suite'
+      ...
+    # Subtest: 13. Aggregate Creation
+        # Subtest: starts in CREATED state with version 1 snapshot and domain event
+        ok 1 - starts in CREATED state with version 1 snapshot and domain event
+          ---
+          duration_ms: 0.3573
+          type: 'test'
+          ...
+        1..1
+    ok 13 - 13. Aggregate Creation
+      ---
+      duration_ms: 0.4746
+      type: 'suite'
+      ...
+    # Subtest: 14. Generation Operation
+        # Subtest: transitions status CREATED -> GENERATED, outputs facts, model and event
+        ok 1 - transitions status CREATED -> GENERATED, outputs facts, model and event
+          ---
+          duration_ms: 0.4189
+          type: 'test'
+          ...
+        1..1
+    ok 14 - 14. Generation Operation
+      ---
+      duration_ms: 0.5299
+      type: 'suite'
+      ...
+    # Subtest: 15. Archive Operation
+        # Subtest: archive transitions aggregates correctly
+        ok 1 - archive transitions aggregates correctly
+          ---
+          duration_ms: 0.6465
+          type: 'test'
+          ...
+        1..1
+    ok 15 - 15. Archive Operation
+      ---
+      duration_ms: 0.8389
+      type: 'suite'
+      ...
+    # Subtest: 16. Invalid Lifecycle
+        # Subtest: rejects backwards states from GENERATED and terminal states
+        ok 1 - rejects backwards states from GENERATED and terminal states
+          ---
+          duration_ms: 0.6928
+          type: 'test'
+          ...
+        1..1
+    ok 16 - 16. Invalid Lifecycle
+      ---
+      duration_ms: 0.8138
+      type: 'suite'
+      ...
+    # Subtest: 17. Ownership Validation
+        # Subtest: mutations reject wrong owners with exact error, zero side-effects
+        ok 1 - mutations reject wrong owners with exact error, zero side-effects
+          ---
+          duration_ms: 0.3982
+          type: 'test'
+          ...
+        1..1
+    ok 17 - 17. Ownership Validation
+      ---
+      duration_ms: 0.5265
+      type: 'suite'
+      ...
+    # Subtest: 18. Tenant Isolation
+        # Subtest: rejects evidence from a different tenant
+        ok 1 - rejects evidence from a different tenant
+          ---
+          duration_ms: 0.4446
+          type: 'test'
+          ...
+        1..1
+    ok 18 - 18. Tenant Isolation
+      ---
+      duration_ms: 0.5653
+      type: 'suite'
+      ...
+    # Subtest: 19. Version Compatibility
+        # Subtest: rejects mismatches on matchingVersion, scoringVersion or rankingVersion
+        ok 1 - rejects mismatches on matchingVersion, scoringVersion or rankingVersion
+          ---
+          duration_ms: 0.2926
+          type: 'test'
+          ...
+        1..1
+    ok 19 - 19. Version Compatibility
+      ---
+      duration_ms: 0.4064
+      type: 'suite'
+      ...
+    # Subtest: 20. Idempotency
+        # Subtest: fingerprint changes when evidence context changes
+        ok 1 - fingerprint changes when evidence context changes
+          ---
+          duration_ms: 0.2752
+          type: 'test'
+          ...
+        1..1
+    ok 20 - 20. Idempotency
+      ---
+      duration_ms: 0.3746
+      type: 'suite'
+      ...
+    # Subtest: 21. Snapshots
+        # Subtest: sequential snapshots validation
+        ok 1 - sequential snapshots validation
+          ---
+          duration_ms: 0.6432
+          type: 'test'
+          ...
+        1..1
+    ok 21 - 21. Snapshots
+      ---
+      duration_ms: 1.0852
+      type: 'suite'
+      ...
+    # Subtest: 22. Date Immutability
+        # Subtest: defensive copies are verified on entry and exit
+        ok 1 - defensive copies are verified on entry and exit
+          ---
+          duration_ms: 1.6436
+          type: 'test'
+          ...
+        1..1
+    ok 22 - 22. Date Immutability
+      ---
+      duration_ms: 1.8011
+      type: 'suite'
+      ...
+    # Subtest: 23. ExplanationModel Immutability
+        # Subtest: model arrays and structures are frozen
+        ok 1 - model arrays and structures are frozen
+          ---
+          duration_ms: 0.4346
+          type: 'test'
+          ...
+        1..1
+    ok 23 - 23. ExplanationModel Immutability
+      ---
+      duration_ms: 0.5987
+      type: 'suite'
+      ...
+    # Subtest: 24. ExplanationFact Immutability
+        # Subtest: fact parameters are immutable
+        ok 1 - fact parameters are immutable
+          ---
+          duration_ms: 0.4894
+          type: 'test'
+          ...
+        1..1
+    ok 24 - 24. ExplanationFact Immutability
+      ---
+      duration_ms: 0.6637
+      type: 'suite'
+      ...
+    # Subtest: 25. Domain Events
+        # Subtest: domain events are frozen, with correct versions and zero secrets
+        ok 1 - domain events are frozen, with correct versions and zero secrets
+          ---
+          duration_ms: 0.5922
+          type: 'test'
+          ...
+        1..1
+    ok 25 - 25. Domain Events
+      ---
+      duration_ms: 0.7407
+      type: 'suite'
+      ...
+    # Subtest: 26. Persistence contracts
+        # Subtest: neutral contracts compile and run successfully
+        ok 1 - neutral contracts compile and run successfully
+          ---
+          duration_ms: 0.3152
+          type: 'test'
+          ...
+        1..1
+    ok 26 - 26. Persistence contracts
+      ---
+      duration_ms: 0.4929
+      type: 'suite'
+      ...
+    # Subtest: 27. AI Boundary Isolation Checks
+        # Subtest: Verify no LLM client imports
+        ok 1 - Verify no LLM client imports
+          ---
+          duration_ms: 0.2737
+          type: 'test'
+          ...
+        1..1
+    ok 27 - 27. AI Boundary Isolation Checks
+      ---
+      duration_ms: 0.4031
+      type: 'suite'
+      ...
+    # Subtest: 28. Downstream Boundary Isolation Checks
+        # Subtest: Verify no score calculation, matching, ranking, caching, or workers
+        ok 1 - Verify no score calculation, matching, ranking, caching, or workers
+          ---
+          duration_ms: 0.1967
+          type: 'test'
+          ...
+        1..1
+    ok 28 - 28. Downstream Boundary Isolation Checks
+      ---
+      duration_ms: 0.3425
+      type: 'suite'
+      ...
+    1..28
+ok 15 - Chapter 8G — Match Explanation Domain Tests
+  ---
+  duration_ms: 40.8725
+  type: 'suite'
+  ...
+# Subtest: Chapter 8F — Job Match Ranking Domain Tests
+    # Subtest: 1. Ranking Identity
+        # Subtest: valid construction and logical properties
+        ok 1 - valid construction and logical properties
+          ---
+          duration_ms: 19.3291
+          type: 'test'
+          ...
+        # Subtest: identity fields are immutable
+        ok 2 - identity fields are immutable
+          ---
+          duration_ms: 1.5357
+          type: 'test'
+          ...
+        1..2
+    ok 1 - 1. Ranking Identity
+      ---
+      duration_ms: 22.5609
+      type: 'suite'
+      ...
+    # Subtest: 2. Ranking Policy
+        # Subtest: valid construction, immutable
+        ok 1 - valid construction, immutable
+          ---
+          duration_ms: 1.1451
+          type: 'test'
+          ...
+        1..1
+    ok 2 - 2. Ranking Policy
+      ---
+      duration_ms: 1.3928
+      type: 'suite'
+      ...
+    # Subtest: 3. Primary Score Ordering
+        # Subtest: higher score ranks first, scores are not recalculated
+        ok 1 - higher score ranks first, scores are not recalculated
+          ---
+          duration_ms: 1.3631
+          type: 'test'
+          ...
+        1..1
+    ok 3 - 3. Primary Score Ordering
+      ---
+      duration_ms: 2.1681
+      type: 'suite'
+      ...
+    # Subtest: 4. Tie-Breaking
+        # Subtest: equal scores deterministic fallback: tieBreakerKey ASC, matchId ASC
+        ok 1 - equal scores deterministic fallback: tieBreakerKey ASC, matchId ASC
+          ---
+          duration_ms: 0.6263
+          type: 'test'
+          ...
+        1..1
+    ok 4 - 4. Tie-Breaking
+      ---
+      duration_ms: 1.3765
+      type: 'suite'
+      ...
+    # Subtest: 5. Rank Numbering
+        # Subtest: starts at 1 and increments deterministically
+        ok 1 - starts at 1 and increments deterministically
+          ---
+          duration_ms: 0.6323
+          type: 'test'
+          ...
+        1..1
+    ok 5 - 5. Rank Numbering
+      ---
+      duration_ms: 0.9342
+      type: 'suite'
+      ...
+    # Subtest: 6. Candidate Set
+        # Subtest: candidate count and set fingerprint changes distinguish contexts
+        ok 1 - candidate count and set fingerprint changes distinguish contexts
+          ---
+          duration_ms: 0.3127
+          type: 'test'
+          ...
+        1..1
+    ok 6 - 6. Candidate Set
+      ---
+      duration_ms: 4.9211
+      type: 'suite'
+      ...
+    # Subtest: 7. Duplicate Candidates
+        # Subtest: duplicate matchId rejected in create factory
+        ok 1 - duplicate matchId rejected in create factory
+          ---
+          duration_ms: 0.4196
+          type: 'test'
+          ...
+        1..1
+    ok 7 - 7. Duplicate Candidates
+      ---
+      duration_ms: 0.5712
+      type: 'suite'
+      ...
+    # Subtest: 8. Score-Version Compatibility
+        # Subtest: rejects mismatched matchingVersion or scoringVersion candidates
+        ok 1 - rejects mismatched matchingVersion or scoringVersion candidates
+          ---
+          duration_ms: 0.7397
+          type: 'test'
+          ...
+        1..1
+    ok 8 - 8. Score-Version Compatibility
+      ---
+      duration_ms: 1.0627
+      type: 'suite'
+      ...
+    # Subtest: 9. Empty Ranking
+        # Subtest: empty sets are valid ranking outputs
+        ok 1 - empty sets are valid ranking outputs
+          ---
+          duration_ms: 0.6837
+          type: 'test'
+          ...
+        1..1
+    ok 9 - 9. Empty Ranking
+      ---
+      duration_ms: 16.4207
+      type: 'suite'
+      ...
+    # Subtest: 10. Ranking Result
+        # Subtest: checks correct mapping fields on RankedMatch entries
+        ok 1 - checks correct mapping fields on RankedMatch entries
+          ---
+          duration_ms: 5.6106
+          type: 'test'
+          ...
+        1..1
+    ok 10 - 10. Ranking Result
+      ---
+      duration_ms: 6.1698
+      type: 'suite'
+      ...
+    # Subtest: 11. Ranking Fingerprint
+        # Subtest: deterministic fingerprint checks
+        ok 1 - deterministic fingerprint checks
+          ---
+          duration_ms: 0.6238
+          type: 'test'
+          ...
+        1..1
+    ok 11 - 11. Ranking Fingerprint
+      ---
+      duration_ms: 0.9384
+      type: 'suite'
+      ...
+    # Subtest: 12. Aggregate Creation
+        # Subtest: initial state is CREATED with snapshot 1 and domain event
+        ok 1 - initial state is CREATED with snapshot 1 and domain event
+          ---
+          duration_ms: 0.9528
+          type: 'test'
+          ...
+        1..1
+    ok 12 - 12. Aggregate Creation
+      ---
+      duration_ms: 1.1289
+      type: 'suite'
+      ...
+    # Subtest: 13. Ranking Operation
+        # Subtest: transitions status and outputs completed domain event
+        ok 1 - transitions status and outputs completed domain event
+          ---
+          duration_ms: 6.1718
+          type: 'test'
+          ...
+        1..1
+    ok 13 - 13. Ranking Operation
+      ---
+      duration_ms: 6.3263
+      type: 'suite'
+      ...
+    # Subtest: 14. Archive Operation
+        # Subtest: archive transitions CREATED and RANKED to ARCHIVED correctly
+        ok 1 - archive transitions CREATED and RANKED to ARCHIVED correctly
+          ---
+          duration_ms: 2.137
+          type: 'test'
+          ...
+        1..1
+    ok 14 - 14. Archive Operation
+      ---
+      duration_ms: 2.2933
+      type: 'suite'
+      ...
+    # Subtest: 15. Invalid Lifecycle
+        # Subtest: rejects backwards states from RANKED and terminal states
+        ok 1 - rejects backwards states from RANKED and terminal states
+          ---
+          duration_ms: 4.0026
+          type: 'test'
+          ...
+        1..1
+    ok 15 - 15. Invalid Lifecycle
+      ---
+      duration_ms: 4.1666
+      type: 'suite'
+      ...
+    # Subtest: 16. Ownership Validation
+        # Subtest: mutations reject wrong owners with exact error, zero side-effects
+        ok 1 - mutations reject wrong owners with exact error, zero side-effects
+          ---
+          duration_ms: 4.1801
+          type: 'test'
+          ...
+        1..1
+    ok 16 - 16. Ownership Validation
+      ---
+      duration_ms: 4.367
+      type: 'suite'
+      ...
+    # Subtest: 17. Tenant Isolation
+        # Subtest: rejects candidates from a different tenant
+        ok 1 - rejects candidates from a different tenant
+          ---
+          duration_ms: 0.546
+          type: 'test'
+          ...
+        1..1
+    ok 17 - 17. Tenant Isolation
+      ---
+      duration_ms: 0.6824
+      type: 'suite'
+      ...
+    # Subtest: 18. Idempotency
+        # Subtest: fingerprint changes when ranking subject or candidate sets differ
+        ok 1 - fingerprint changes when ranking subject or candidate sets differ
+          ---
+          duration_ms: 0.3314
+          type: 'test'
+          ...
+        1..1
+    ok 18 - 18. Idempotency
+      ---
+      duration_ms: 0.4404
+      type: 'suite'
+      ...
+    # Subtest: 19. Snapshots
+        # Subtest: sequential snapshots starting at 1 with no gaps
+        ok 1 - sequential snapshots starting at 1 with no gaps
+          ---
+          duration_ms: 0.6769
+          type: 'test'
+          ...
+        1..1
+    ok 19 - 19. Snapshots
+      ---
+      duration_ms: 0.7968
+      type: 'suite'
+      ...
+    # Subtest: 20. Date Immutability
+        # Subtest: defensive copies are verified on entry and exit
+        ok 1 - defensive copies are verified on entry and exit
+          ---
+          duration_ms: 11.9736
+          type: 'test'
+          ...
+        1..1
+    ok 20 - 20. Date Immutability
+      ---
+      duration_ms: 12.155
+      type: 'suite'
+      ...
+    # Subtest: 21. Domain Events
+        # Subtest: domain events are frozen, with correct versions and zero secrets
+        ok 1 - domain events are frozen, with correct versions and zero secrets
+          ---
+          duration_ms: 0.4641
+          type: 'test'
+          ...
+        1..1
+    ok 21 - 21. Domain Events
+      ---
+      duration_ms: 0.5857
+      type: 'suite'
+      ...
+    # Subtest: 22. Persistence contracts
+        # Subtest: neutral contracts compile and run successfully
+        ok 1 - neutral contracts compile and run successfully
+          ---
+          duration_ms: 0.2373
+          type: 'test'
+          ...
+        1..1
+    ok 22 - 22. Persistence contracts
+      ---
+      duration_ms: 0.3268
+      type: 'suite'
+      ...
+    # Subtest: 23. Boundary Isolation Checks
+        # Subtest: Verify no score calculation, matching, embedding, explanation, caching, queues, AI or network is enqueued
+        ok 1 - Verify no score calculation, matching, embedding, explanation, caching, queues, AI or network is enqueued
+          ---
+          duration_ms: 0.2005
+          type: 'test'
+          ...
+        1..1
+    ok 23 - 23. Boundary Isolation Checks
+      ---
+      duration_ms: 0.2998
+      type: 'suite'
+      ...
+    1..23
+ok 16 - Chapter 8F — Job Match Ranking Domain Tests
+  ---
+  duration_ms: 96.6549
+  type: 'suite'
+  ...
+# Subtest: Chapter 8E — Job Weighted Scoring Domain Tests
+    # Subtest: 1. Score Identity
+        # Subtest: valid construction and logical properties
+        ok 1 - valid construction and logical properties
+          ---
+          duration_ms: 4.396
+          type: 'test'
+          ...
+        # Subtest: identity fields are immutable
+        ok 2 - identity fields are immutable
+          ---
+          duration_ms: 0.9834
+          type: 'test'
+          ...
+        1..2
+    ok 1 - 1. Score Identity
+      ---
+      duration_ms: 6.8099
+      type: 'suite'
+      ...
+    # Subtest: 2. Weight Profile
+        # Subtest: valid weight profile setup, immutable
+        ok 1 - valid weight profile setup, immutable
+          ---
+          duration_ms: 2.1467
+          type: 'test'
+          ...
+        # Subtest: invalid weights non-finite and negative are rejected
+        ok 2 - invalid weights non-finite and negative are rejected
+          ---
+          duration_ms: 0.8088
+          type: 'test'
+          ...
+        # Subtest: optional weights sum validation invariant
+        ok 3 - optional weights sum validation invariant
+          ---
+          duration_ms: 1.0815
+          type: 'test'
+          ...
+        1..3
+    ok 2 - 2. Weight Profile
+      ---
+      duration_ms: 4.8324
+      type: 'suite'
+      ...
+    # Subtest: 3. Numeric Signals
+        # Subtest: semanticSimilarity range check and shifts-to-positive normalization
+        ok 1 - semanticSimilarity range check and shifts-to-positive normalization
+          ---
+          duration_ms: 1.8559
+          type: 'test'
+          ...
+        # Subtest: skillCoverage range checks
+        ok 2 - skillCoverage range checks
+          ---
+          duration_ms: 0.7187
+          type: 'test'
+          ...
+        1..2
+    ok 3 - 3. Numeric Signals
+      ---
+      duration_ms: 3.209
+      type: 'suite'
+      ...
+    # Subtest: 4. Compatibility Mapping
+        # Subtest: controlled states mapping evaluated deterministically with strict UNKNOWN handling
+        ok 1 - controlled states mapping evaluated deterministically with strict UNKNOWN handling
+          ---
+          duration_ms: 0.7157
+          type: 'test'
+          ...
+        1..1
+    ok 4 - 4. Compatibility Mapping
+      ---
+      duration_ms: 0.9377
+      type: 'suite'
+      ...
+    # Subtest: 5. Missing-Signal Policy
+        # Subtest: available-weight policy sum isolation
+        ok 1 - available-weight policy sum isolation
+          ---
+          duration_ms: 0.9778
+          type: 'test'
+          ...
+        # Subtest: fixed-denominator policy handles missing signals
+        ok 2 - fixed-denominator policy handles missing signals
+          ---
+          duration_ms: 0.7338
+          type: 'test'
+          ...
+        # Subtest: strict-validation policy throws error on missing signals
+        ok 3 - strict-validation policy throws error on missing signals
+          ---
+          duration_ms: 0.6404
+          type: 'test'
+          ...
+        1..3
+    ok 5 - 5. Missing-Signal Policy
+      ---
+      duration_ms: 2.5927
+      type: 'suite'
+      ...
+    # Subtest: 6. Contributions
+        # Subtest: calculates contribution details deterministically
+        ok 1 - calculates contribution details deterministically
+          ---
+          duration_ms: 0.28
+          type: 'test'
+          ...
+        1..1
+    ok 6 - 6. Contributions
+      ---
+      duration_ms: 0.4036
+      type: 'suite'
+      ...
+    # Subtest: 7. Final Score
+        # Subtest: version-aware and scales to 0-1, 0-100, 0-1000 scales with precision
+        ok 1 - version-aware and scales to 0-1, 0-100, 0-1000 scales with precision
+          ---
+          duration_ms: 1.925
+          type: 'test'
+          ...
+        1..1
+    ok 7 - 7. Final Score
+      ---
+      duration_ms: 2.1374
+      type: 'suite'
+      ...
+    # Subtest: 8. ScoreBreakdown
+        # Subtest: ScoreBreakdown stores all signal details immutably
+        ok 1 - ScoreBreakdown stores all signal details immutably
+          ---
+          duration_ms: 0.698
+          type: 'test'
+          ...
+        1..1
+    ok 8 - 8. ScoreBreakdown
+      ---
+      duration_ms: 0.9199
+      type: 'suite'
+      ...
+    # Subtest: 9. ScoreFingerprint
+        # Subtest: deterministic fingerprint changes when rules version updates
+        ok 1 - deterministic fingerprint changes when rules version updates
+          ---
+          duration_ms: 4.5845
+          type: 'test'
+          ...
+        1..1
+    ok 9 - 9. ScoreFingerprint
+      ---
+      duration_ms: 4.959
+      type: 'suite'
+      ...
+    # Subtest: 10. Aggregate Creation
+        # Subtest: creates aggregate in CREATED state with version 1 snapshot and domain event
+        ok 1 - creates aggregate in CREATED state with version 1 snapshot and domain event
+          ---
+          duration_ms: 0.519
+          type: 'test'
+          ...
+        1..1
+    ok 10 - 10. Aggregate Creation
+      ---
+      duration_ms: 0.6953
+      type: 'suite'
+      ...
+    # Subtest: 11. Calculation Operation
+        # Subtest: calculate transitions CREATED -> CALCULATED, yields score and breakdown
+        ok 1 - calculate transitions CREATED -> CALCULATED, yields score and breakdown
+          ---
+          duration_ms: 0.3627
+          type: 'test'
+          ...
+        1..1
+    ok 11 - 11. Calculation Operation
+      ---
+      duration_ms: 0.4918
+      type: 'suite'
+      ...
+    # Subtest: 12. Archive Operation
+        # Subtest: transitions CREATED -> ARCHIVED and CALCULATED -> ARCHIVED correctly
+        ok 1 - transitions CREATED -> ARCHIVED and CALCULATED -> ARCHIVED correctly
+          ---
+          duration_ms: 2.689
+          type: 'test'
+          ...
+        1..1
+    ok 12 - 12. Archive Operation
+      ---
+      duration_ms: 2.8466
+      type: 'suite'
+      ...
+    # Subtest: 13. Invalid Lifecycle
+        # Subtest: rejects backwards and invalid state updates
+        ok 1 - rejects backwards and invalid state updates
+          ---
+          duration_ms: 0.7623
+          type: 'test'
+          ...
+        1..1
+    ok 13 - 13. Invalid Lifecycle
+      ---
+      duration_ms: 0.9128
+      type: 'suite'
+      ...
+    # Subtest: 14. Ownership Validation
+        # Subtest: mutations reject wrong owners with exact error
+        ok 1 - mutations reject wrong owners with exact error
+          ---
+          duration_ms: 0.3604
+          type: 'test'
+          ...
+        1..1
+    ok 14 - 14. Ownership Validation
+      ---
+      duration_ms: 0.468
+      type: 'suite'
+      ...
+    # Subtest: 15. Tenant Isolation
+        # Subtest: rejects inputs from a different tenant
+        ok 1 - rejects inputs from a different tenant
+          ---
+          duration_ms: 0.1806
+          type: 'test'
+          ...
+        1..1
+    ok 15 - 15. Tenant Isolation
+      ---
+      duration_ms: 0.2759
+      type: 'suite'
+      ...
+    # Subtest: 16. Idempotency
+        # Subtest: scoring context changes generate distinct fingerprints
+        ok 1 - scoring context changes generate distinct fingerprints
+          ---
+          duration_ms: 0.2137
+          type: 'test'
+          ...
+        1..1
+    ok 16 - 16. Idempotency
+      ---
+      duration_ms: 0.3213
+      type: 'suite'
+      ...
+    # Subtest: 17. Snapshots
+        # Subtest: sequential snapshot versions check
+        ok 1 - sequential snapshot versions check
+          ---
+          duration_ms: 0.5416
+          type: 'test'
+          ...
+        1..1
+    ok 17 - 17. Snapshots
+      ---
+      duration_ms: 0.6616
+      type: 'suite'
+      ...
+    # Subtest: 18. Date Immutability
+        # Subtest: defensive copies are verified on entry and exit
+        ok 1 - defensive copies are verified on entry and exit
+          ---
+          duration_ms: 8.5994
+          type: 'test'
+          ...
+        1..1
+    ok 18 - 18. Date Immutability
+      ---
+      duration_ms: 8.7417
+      type: 'suite'
+      ...
+    # Subtest: 19. Domain Events
+        # Subtest: domain events are frozen, with correct versions and zero secrets
+        ok 1 - domain events are frozen, with correct versions and zero secrets
+          ---
+          duration_ms: 1.0536
+          type: 'test'
+          ...
+        1..1
+    ok 19 - 19. Domain Events
+      ---
+      duration_ms: 1.2414
+      type: 'suite'
+      ...
+    # Subtest: 20. Persistence contracts
+        # Subtest: neutral contracts compile and run successfully
+        ok 1 - neutral contracts compile and run successfully
+          ---
+          duration_ms: 1.2723
+          type: 'test'
+          ...
+        1..1
+    ok 20 - 20. Persistence contracts
+      ---
+      duration_ms: 1.5209
+      type: 'suite'
+      ...
+    # Subtest: 21. Boundary Isolation Checks
+        # Subtest: Verify no matching, embedding, ranking, caching, queues, AI or network is enqueued
+        ok 1 - Verify no matching, embedding, ranking, caching, queues, AI or network is enqueued
+          ---
+          duration_ms: 0.3187
+          type: 'test'
+          ...
+        1..1
+    ok 21 - 21. Boundary Isolation Checks
+      ---
+      duration_ms: 0.5555
+      type: 'suite'
+      ...
+    1..21
+ok 17 - Chapter 8E — Job Weighted Scoring Domain Tests
+  ---
+  duration_ms: 51.5616
+  type: 'suite'
+  ...
+# Subtest: Chapter 8D — Job Matching Engine Domain Tests
+    # Subtest: 1. Match Identity
+        # Subtest: valid construction and logical properties
+        ok 1 - valid construction and logical properties
+          ---
+          duration_ms: 3.7328
+          type: 'test'
+          ...
+        # Subtest: identity fields are immutable
+        ok 2 - identity fields are immutable
+          ---
+          duration_ms: 1.587
+          type: 'test'
+          ...
+        1..2
+    ok 1 - 1. Match Identity
+      ---
+      duration_ms: 7.0265
+      type: 'suite'
+      ...
+    # Subtest: 2. Tenant Isolation
+        # Subtest: same-tenant inputs are evaluated successfully
+        ok 1 - same-tenant inputs are evaluated successfully
+          ---
+          duration_ms: 2.6909
+          type: 'test'
+          ...
+        # Subtest: cross-tenant inputs are rejected
+        ok 2 - cross-tenant inputs are rejected
+          ---
+          duration_ms: 0.4497
+          type: 'test'
+          ...
+        1..2
+    ok 2 - 2. Tenant Isolation
+      ---
+      duration_ms: 3.6094
+      type: 'suite'
+      ...
+    # Subtest: 3. Semantic Matching
+        # Subtest: valid equal-dimension vectors calculate deterministic similarity within [-1, 1] range
+        ok 1 - valid equal-dimension vectors calculate deterministic similarity within [-1, 1] range
+          ---
+          duration_ms: 0.821
+          type: 'test'
+          ...
+        # Subtest: incompatible dimensions are rejected
+        ok 2 - incompatible dimensions are rejected
+          ---
+          duration_ms: 0.2855
+          type: 'test'
+          ...
+        # Subtest: invalid vector elements are rejected
+        ok 3 - invalid vector elements are rejected
+          ---
+          duration_ms: 0.6115
+          type: 'test'
+          ...
+        # Subtest: verifies that no overallScore is calculated inside similarity signal
+        ok 4 - verifies that no overallScore is calculated inside similarity signal
+          ---
+          duration_ms: 0.3774
+          type: 'test'
+          ...
+        1..4
+    ok 3 - 3. Semantic Matching
+      ---
+      duration_ms: 5.1336
+      type: 'suite'
+      ...
+    # Subtest: 4. Skill Matching
+        # Subtest: extracts exact canonical skill intersection & missing lists in sorted order
+        ok 1 - extracts exact canonical skill intersection & missing lists in sorted order
+          ---
+          duration_ms: 2.1745
+          type: 'test'
+          ...
+        # Subtest: skill signal arrays are immutable
+        ok 2 - skill signal arrays are immutable
+          ---
+          duration_ms: 0.7716
+          type: 'test'
+          ...
+        1..2
+    ok 4 - 4. Skill Matching
+      ---
+      duration_ms: 3.1842
+      type: 'suite'
+      ...
+    # Subtest: 5. Experience Compatibility
+        # Subtest: maps experience combinations onto COMPATIBLE, PARTIAL, INCOMPATIBLE, or UNKNOWN
+        ok 1 - maps experience combinations onto COMPATIBLE, PARTIAL, INCOMPATIBLE, or UNKNOWN
+          ---
+          duration_ms: 0.3592
+          type: 'test'
+          ...
+        1..1
+    ok 5 - 5. Experience Compatibility
+      ---
+      duration_ms: 0.485
+      type: 'suite'
+      ...
+    # Subtest: 6. Budget Compatibility
+        # Subtest: budget rules evaluate compatibility cleanly
+        ok 1 - budget rules evaluate compatibility cleanly
+          ---
+          duration_ms: 0.2135
+          type: 'test'
+          ...
+        # Subtest: currency differences return INCOMPATIBLE without conversion
+        ok 2 - currency differences return INCOMPATIBLE without conversion
+          ---
+          duration_ms: 0.1284
+          type: 'test'
+          ...
+        1..2
+    ok 6 - 6. Budget Compatibility
+      ---
+      duration_ms: 0.484
+      type: 'suite'
+      ...
+    # Subtest: 7. Job Type Compatibility
+        # Subtest: evaluates job-type mapping rules
+        ok 1 - evaluates job-type mapping rules
+          ---
+          duration_ms: 0.1875
+          type: 'test'
+          ...
+        1..1
+    ok 7 - 7. Job Type Compatibility
+      ---
+      duration_ms: 0.2765
+      type: 'suite'
+      ...
+    # Subtest: 8. Location Compatibility
+        # Subtest: location compatibility evaluations
+        ok 1 - location compatibility evaluations
+          ---
+          duration_ms: 0.3413
+          type: 'test'
+          ...
+        1..1
+    ok 8 - 8. Location Compatibility
+      ---
+      duration_ms: 0.4355
+      type: 'suite'
+      ...
+    # Subtest: 9. MatchSignals
+        # Subtest: deep immutability on MatchSignals fields, zero score metrics
+        ok 1 - deep immutability on MatchSignals fields, zero score metrics
+          ---
+          duration_ms: 0.7972
+          type: 'test'
+          ...
+        1..1
+    ok 9 - 9. MatchSignals
+      ---
+      duration_ms: 1.0161
+      type: 'suite'
+      ...
+    # Subtest: 10. Aggregate Creation
+        # Subtest: creates aggregate in CREATED state with snapshot version 1 and domain event
+        ok 1 - creates aggregate in CREATED state with snapshot version 1 and domain event
+          ---
+          duration_ms: 0.3847
+          type: 'test'
+          ...
+        1..1
+    ok 10 - 10. Aggregate Creation
+      ---
+      duration_ms: 0.517
+      type: 'suite'
+      ...
+    # Subtest: 11. Evaluation Operation
+        # Subtest: transitions CREATED -> EVALUATED, generates signals, and increments snapshot
+        ok 1 - transitions CREATED -> EVALUATED, generates signals, and increments snapshot
+          ---
+          duration_ms: 0.4559
+          type: 'test'
+          ...
+        1..1
+    ok 11 - 11. Evaluation Operation
+      ---
+      duration_ms: 0.5492
+      type: 'suite'
+      ...
+    # Subtest: 12. Archive Operation
+        # Subtest: transitions CREATED -> ARCHIVED and EVALUATED -> ARCHIVED correctly
+        ok 1 - transitions CREATED -> ARCHIVED and EVALUATED -> ARCHIVED correctly
+          ---
+          duration_ms: 0.6696
+          type: 'test'
+          ...
+        1..1
+    ok 12 - 12. Archive Operation
+      ---
+      duration_ms: 0.7701
+      type: 'suite'
+      ...
+    # Subtest: 13. Invalid Lifecycle
+        # Subtest: rejects backward and terminal state lifecycle updates
+        ok 1 - rejects backward and terminal state lifecycle updates
+          ---
+          duration_ms: 0.6527
+          type: 'test'
+          ...
+        1..1
+    ok 13 - 13. Invalid Lifecycle
+      ---
+      duration_ms: 0.7737
+      type: 'suite'
+      ...
+    # Subtest: 14. Ownership Validation
+        # Subtest: mutating commands enforce ownership with exact period-ended error
+        ok 1 - mutating commands enforce ownership with exact period-ended error
+          ---
+          duration_ms: 1.4844
+          type: 'test'
+          ...
+        1..1
+    ok 14 - 14. Ownership Validation
+      ---
+      duration_ms: 3.4137
+      type: 'suite'
+      ...
+    # Subtest: 15. Snapshots
+        # Subtest: strictly sequential snapshot history starting at 1, append-only
+        ok 1 - strictly sequential snapshot history starting at 1, append-only
+          ---
+          duration_ms: 0.8698
+          type: 'test'
+          ...
+        1..1
+    ok 15 - 15. Snapshots
+      ---
+      duration_ms: 1.1949
+      type: 'suite'
+      ...
+    # Subtest: 16. Date Immutability
+        # Subtest: defensive copying on entry and exit prevents internal changes via setTime
+        ok 1 - defensive copying on entry and exit prevents internal changes via setTime
+          ---
+          duration_ms: 1.4888
+          type: 'test'
+          ...
+        1..1
+    ok 16 - 16. Date Immutability
+      ---
+      duration_ms: 1.7756
+      type: 'suite'
+      ...
+    # Subtest: 17. Domain Events
+        # Subtest: exact domain events, payload structure and freezing with no secrets
+        ok 1 - exact domain events, payload structure and freezing with no secrets
+          ---
+          duration_ms: 0.4293
+          type: 'test'
+          ...
+        1..1
+    ok 17 - 17. Domain Events
+      ---
+      duration_ms: 1.2296
+      type: 'suite'
+      ...
+    # Subtest: 18. Persistence contracts
+        # Subtest: neutral contracts compile and run successfully
+        ok 1 - neutral contracts compile and run successfully
+          ---
+          duration_ms: 0.235
+          type: 'test'
+          ...
+        1..1
+    ok 18 - 18. Persistence contracts
+      ---
+      duration_ms: 0.3384
+      type: 'suite'
+      ...
+    # Subtest: 19. Boundary Isolation Checks
+        # Subtest: Verify no overallScore, weightedScore, confidence, ranking, explanation, caching, queues, AI or network is enqueued
+        ok 1 - Verify no overallScore, weightedScore, confidence, ranking, explanation, caching, queues, AI or network is enqueued
+          ---
+          duration_ms: 0.2868
+          type: 'test'
+          ...
+        1..1
+    ok 19 - 19. Boundary Isolation Checks
+      ---
+      duration_ms: 0.3964
+      type: 'suite'
+      ...
+    1..19
+ok 18 - Chapter 8D — Job Matching Engine Domain Tests
+  ---
+  duration_ms: 35.5604
+  type: 'suite'
+  ...
+# Subtest: Chapter 8B — Job Normalization Domain Tests
+    # Subtest: 1. Source Reference
+        # Subtest: valid JobImport reference & source identity
+        ok 1 - valid JobImport reference & source identity
+          ---
+          duration_ms: 1.76
+          type: 'test'
+          ...
+        # Subtest: tenant isolation validation in logical references
+        ok 2 - tenant isolation validation in logical references
+          ---
+          duration_ms: 2.2431
+          type: 'test'
+          ...
+        # Subtest: JobSourceReference immutability
+        ok 3 - JobSourceReference immutability
+          ---
+          duration_ms: 1.0793
+          type: 'test'
+          ...
+        1..3
+    ok 1 - 1. Source Reference
+      ---
+      duration_ms: 7.2914
+      type: 'suite'
+      ...
+    # Subtest: 2. Normalization Version
+        # Subtest: v1 accepted and version is immutable
+        ok 1 - v1 accepted and version is immutable
+          ---
+          duration_ms: 0.3817
+          type: 'test'
+          ...
+        # Subtest: invalid version rejected
+        ok 2 - invalid version rejected
+          ---
+          duration_ms: 0.3889
+          type: 'test'
+          ...
+        # Subtest: version participates in reprocessing and identity boundary
+        ok 3 - version participates in reprocessing and identity boundary
+          ---
+          duration_ms: 0.4392
+          type: 'test'
+          ...
+        1..3
+    ok 2 - 2. Normalization Version
+      ---
+      duration_ms: 1.7402
+      type: 'suite'
+      ...
+    # Subtest: 3. CanonicalJob
+        # Subtest: valid canonical representation construction
+        ok 1 - valid canonical representation construction
+          ---
+          duration_ms: 1.8613
+          type: 'test'
+          ...
+        # Subtest: required field validation
+        ok 2 - required field validation
+          ---
+          duration_ms: 0.9768
+          type: 'test'
+          ...
+        # Subtest: optional field behavior and preservation of absence
+        ok 3 - optional field behavior and preservation of absence
+          ---
+          duration_ms: 0.5649
+          type: 'test'
+          ...
+        # Subtest: CanonicalJob and nested immutability
+        ok 4 - CanonicalJob and nested immutability
+          ---
+          duration_ms: 0.8128
+          type: 'test'
+          ...
+        1..4
+    ok 3 - 3. CanonicalJob
+      ---
+      duration_ms: 4.794
+      type: 'suite'
+      ...
+    # Subtest: 4. Title Normalization
+        # Subtest: whitespace cleanup, deterministic formatting, semantic wording preserved
+        ok 1 - whitespace cleanup, deterministic formatting, semantic wording preserved
+          ---
+          duration_ms: 0.3632
+          type: 'test'
+          ...
+        1..1
+    ok 4 - 4. Title Normalization
+      ---
+      duration_ms: 0.6459
+      type: 'suite'
+      ...
+    # Subtest: 5. Description Normalization
+        # Subtest: whitespace, tab, and line ending normalization, preserving semantic content
+        ok 1 - whitespace, tab, and line ending normalization, preserving semantic content
+          ---
+          duration_ms: 0.2327
+          type: 'test'
+          ...
+        1..1
+    ok 5 - 5. Description Normalization
+      ---
+      duration_ms: 0.3487
+      type: 'suite'
+      ...
+    # Subtest: 6. Skill Normalization
+        # Subtest: trim, canonical casing, duplicate removal, deterministic ordering
+        ok 1 - trim, canonical casing, duplicate removal, deterministic ordering
+          ---
+          duration_ms: 0.2262
+          type: 'test'
+          ...
+        1..1
+    ok 6 - 6. Skill Normalization
+      ---
+      duration_ms: 0.3217
+      type: 'suite'
+      ...
+    # Subtest: 7. Budget Normalization
+        # Subtest: supported budget forms and canonical representation
+        ok 1 - supported budget forms and canonical representation
+          ---
+          duration_ms: 0.3099
+          type: 'test'
+          ...
+        # Subtest: invalid budget formats rejected
+        ok 2 - invalid budget formats rejected
+          ---
+          duration_ms: 0.3312
+          type: 'test'
+          ...
+        # Subtest: currency is preserved and no conversion occurs
+        ok 3 - currency is preserved and no conversion occurs
+          ---
+          duration_ms: 0.1729
+          type: 'test'
+          ...
+        1..3
+    ok 7 - 7. Budget Normalization
+      ---
+      duration_ms: 1.0002
+      type: 'suite'
+      ...
+    # Subtest: 8. Experience Normalization
+        # Subtest: explicit value representation and absence preservation with no inference
+        ok 1 - explicit value representation and absence preservation with no inference
+          ---
+          duration_ms: 0.3401
+          type: 'test'
+          ...
+        1..1
+    ok 8 - 8. Experience Normalization
+      ---
+      duration_ms: 0.4397
+      type: 'suite'
+      ...
+    # Subtest: 9. Category Normalization
+        # Subtest: preserves category, trims whitespace, handles absence safely
+        ok 1 - preserves category, trims whitespace, handles absence safely
+          ---
+          duration_ms: 0.2157
+          type: 'test'
+          ...
+        1..1
+    ok 9 - 9. Category Normalization
+      ---
+      duration_ms: 0.328
+      type: 'suite'
+      ...
+    # Subtest: 10. Job Type Normalization
+        # Subtest: supported values accepted, invalid types rejected
+        ok 1 - supported values accepted, invalid types rejected
+          ---
+          duration_ms: 2.3219
+          type: 'test'
+          ...
+        1..1
+    ok 10 - 10. Job Type Normalization
+      ---
+      duration_ms: 2.5837
+      type: 'suite'
+      ...
+    # Subtest: 11. Location Normalization
+        # Subtest: canonical location structure and absence handling
+        ok 1 - canonical location structure and absence handling
+          ---
+          duration_ms: 0.59
+          type: 'test'
+          ...
+        1..1
+    ok 11 - 11. Location Normalization
+      ---
+      duration_ms: 0.8415
+      type: 'suite'
+      ...
+    # Subtest: 12. Duration Normalization
+        # Subtest: canonical duration representation where explicitly provided
+        ok 1 - canonical duration representation where explicitly provided
+          ---
+          duration_ms: 0.3472
+          type: 'test'
+          ...
+        1..1
+    ok 12 - 12. Duration Normalization
+      ---
+      duration_ms: 0.485
+      type: 'suite'
+      ...
+    # Subtest: 13. Fingerprint
+        # Subtest: normalized fingerprint behavior and uniqueness
+        ok 1 - normalized fingerprint behavior and uniqueness
+          ---
+          duration_ms: 0.3319
+          type: 'test'
+          ...
+        1..1
+    ok 13 - 13. Fingerprint
+      ---
+      duration_ms: 0.4269
+      type: 'suite'
+      ...
+    # Subtest: 14. Aggregate Creation
+        # Subtest: creates aggregate in CREATED status with snapshot version 1 and domain event
+        ok 1 - creates aggregate in CREATED status with snapshot version 1 and domain event
+          ---
+          duration_ms: 0.4687
+          type: 'test'
+          ...
+        1..1
+    ok 14 - 14. Aggregate Creation
+      ---
+      duration_ms: 0.5676
+      type: 'suite'
+      ...
+    # Subtest: 15 & 16. Lifecycle
+        # Subtest: CREATED -> NORMALIZED -> ARCHIVED
+        ok 1 - CREATED -> NORMALIZED -> ARCHIVED
+          ---
+          duration_ms: 0.73
+          type: 'test'
+          ...
+        # Subtest: CREATED -> ARCHIVED is direct
+        ok 2 - CREATED -> ARCHIVED is direct
+          ---
+          duration_ms: 0.2687
+          type: 'test'
+          ...
+        # Subtest: illegal lifecycle transitions rejected, archived is terminal
+        ok 3 - illegal lifecycle transitions rejected, archived is terminal
+          ---
+          duration_ms: 0.6815
+          type: 'test'
+          ...
+        1..3
+    ok 15 - 15 & 16. Lifecycle
+      ---
+      duration_ms: 1.8728
+      type: 'suite'
+      ...
+    # Subtest: 17. Ownership Validation
+        # Subtest: mutating commands enforce ownership with exact period-ended error
+        ok 1 - mutating commands enforce ownership with exact period-ended error
+          ---
+          duration_ms: 0.3941
+          type: 'test'
+          ...
+        1..1
+    ok 16 - 17. Ownership Validation
+      ---
+      duration_ms: 0.4906
+      type: 'suite'
+      ...
+    # Subtest: 18. Snapshots Invariants
+        # Subtest: starts at 1, sequential, immutable, append-only, sequential validation
+        ok 1 - starts at 1, sequential, immutable, append-only, sequential validation
+          ---
+          duration_ms: 0.582
+          type: 'test'
+          ...
+        1..1
+    ok 17 - 18. Snapshots Invariants
+      ---
+      duration_ms: 1.0184
+      type: 'suite'
+      ...
+    # Subtest: 19. Date Immutability
+        # Subtest: defensive copies are made when dates enter or leave the domain
+        ok 1 - defensive copies are made when dates enter or leave the domain
+          ---
+          duration_ms: 0.5872
+          type: 'test'
+          ...
+        # Subtest: setTime(), setDate(), and setFullYear() verification
+        ok 2 - setTime(), setDate(), and setFullYear() verification
+          ---
+          duration_ms: 3.0929
+          type: 'test'
+          ...
+        1..2
+    ok 18 - 19. Date Immutability
+      ---
+      duration_ms: 3.8884
+      type: 'suite'
+      ...
+    # Subtest: 20. Domain Events
+        # Subtest: exact names, payloads, snapshot versions, no infrastructure metadata, and frozen
+        ok 1 - exact names, payloads, snapshot versions, no infrastructure metadata, and frozen
+          ---
+          duration_ms: 0.6164
+          type: 'test'
+          ...
+        1..1
+    ok 19 - 20. Domain Events
+      ---
+      duration_ms: 0.7708
+      type: 'suite'
+      ...
+    # Subtest: 21. Persistence Contracts
+        # Subtest: interfaces compile and remain technology-neutral
+        ok 1 - interfaces compile and remain technology-neutral
+          ---
+          duration_ms: 0.2895
+          type: 'test'
+          ...
+        1..1
+    ok 20 - 21. Persistence Contracts
+      ---
+      duration_ms: 0.4338
+      type: 'suite'
+      ...
+    # Subtest: 22. Domain Boundaries Verification
+        # Subtest: Verify 8B contains no AI, HTTP, database, embedding, vector, matching, scoring, ranking, explanation, caching, or worker references
+        ok 1 - Verify 8B contains no AI, HTTP, database, embedding, vector, matching, scoring, ranking, explanation, caching, or worker references
+          ---
+          duration_ms: 0.3253
+          type: 'test'
+          ...
+        1..1
+    ok 21 - 22. Domain Boundaries Verification
+      ---
+      duration_ms: 0.4588
+      type: 'suite'
+      ...
+    1..21
+ok 19 - Chapter 8B — Job Normalization Domain Tests
+  ---
+  duration_ms: 36.6649
+  type: 'suite'
+  ...
+# Subtest: Memory Aggregate Root and Value Objects Domain Tests
+    # Subtest: Memory creation success: state Draft, snapshots initialized, registered event emitted
+    ok 1 - Memory creation success: state Draft, snapshots initialized, registered event emitted
+      ---
+      duration_ms: 2.9536
+      type: 'test'
+      ...
+    # Subtest: Memory reference format validation rejects invalid keys
+    ok 2 - Memory reference format validation rejects invalid keys
+      ---
+      duration_ms: 1.0992
+      type: 'test'
+      ...
+    # Subtest: Ownership validation blocks unauthorized owners
+    ok 3 - Ownership validation blocks unauthorized owners
+      ---
+      duration_ms: 0.7704
+      type: 'test'
+      ...
+    # Subtest: Missing owner throws error
+    ok 4 - Missing owner throws error
+      ---
+      duration_ms: 0.3525
+      type: 'test'
+      ...
+    # Subtest: Memory metadata replacement verification
+    ok 5 - Memory metadata replacement verification
+      ---
+      duration_ms: 0.3824
+      type: 'test'
+      ...
+    # Subtest: Append snapshot to history: status unchanged, snapshot collection has append-only behavior
+    ok 6 - Append snapshot to history: status unchanged, snapshot collection has append-only behavior
+      ---
+      duration_ms: 0.4419
+      type: 'test'
+      ...
+    # Subtest: Lifecycle flow: Draft -> Validated -> Published -> Archived
+    ok 7 - Lifecycle flow: Draft -> Validated -> Published -> Archived
+      ---
+      duration_ms: 1.2069
+      type: 'test'
+      ...
+    # Subtest: Metadata replacement is rejected on non-Draft states
+    ok 8 - Metadata replacement is rejected on non-Draft states
+      ---
+      duration_ms: 0.5821
+      type: 'test'
+      ...
+    # Subtest: Draft -> Archived transition is allowed
+    ok 9 - Draft -> Archived transition is allowed
+      ---
+      duration_ms: 0.9737
+      type: 'test'
+      ...
+    # Subtest: Validated -> Archived transition is allowed
+    ok 10 - Validated -> Archived transition is allowed
+      ---
+      duration_ms: 1.0796
+      type: 'test'
+      ...
+    # Subtest: Invalid lifecycle transition: cannot publish draft memory
+    ok 11 - Invalid lifecycle transition: cannot publish draft memory
+      ---
+      duration_ms: 0.5438
+      type: 'test'
+      ...
+    # Subtest: Retention Rule validation constraints
+    ok 12 - Retention Rule validation constraints
+      ---
+      duration_ms: 0.3546
+      type: 'test'
+      ...
+    # Subtest: Mock interfaces contract compliance check
+    ok 13 - Mock interfaces contract compliance check
+      ---
+      duration_ms: 0.5524
+      type: 'test'
+      ...
+    1..13
+ok 20 - Memory Aggregate Root and Value Objects Domain Tests
+  ---
+  duration_ms: 28.1451
+  type: 'suite'
+  ...
+# Subtest: Payment Domain Aggregate & Money Value Object Tests
+    # Subtest: Money Value Object Equality Semantics
+    ok 1 - Money Value Object Equality Semantics
+      ---
+      duration_ms: 2.0943
+      type: 'test'
+      ...
+    # Subtest: Payment creation success: default Pending status and PAYMENT_CREATED event emitted
+    ok 2 - Payment creation success: default Pending status and PAYMENT_CREATED event emitted
+      ---
+      duration_ms: 0.8478
+      type: 'test'
+      ...
+    # Subtest: Creation validates missing fields (ID, Client, Owner, Reference, Money)
+    ok 3 - Creation validates missing fields (ID, Client, Owner, Reference, Money)
+      ---
+      duration_ms: 1.0565
+      type: 'test'
+      ...
+    # Subtest: Monetary Policy Validation is invoked during creation
+    ok 4 - Monetary Policy Validation is invoked during creation
+      ---
+      duration_ms: 0.4889
+      type: 'test'
+      ...
+    # Subtest: Tenant Isolation checks (wrong ownerId causes validation failure)
+    ok 5 - Tenant Isolation checks (wrong ownerId causes validation failure)
+      ---
+      duration_ms: 1.0774
+      type: 'test'
+      ...
+    # Subtest: Lifecycle transitions: Pending -> Authorized -> Captured -> Completed
+    ok 6 - Lifecycle transitions: Pending -> Authorized -> Captured -> Completed
+      ---
+      duration_ms: 0.7177
+      type: 'test'
+      ...
+    # Subtest: Logical Capture Transition: Pending -> Captured
+    ok 7 - Logical Capture Transition: Pending -> Captured
+      ---
+      duration_ms: 1.1931
+      type: 'test'
+      ...
+    # Subtest: Cancellation transitions: Authorized/Captured/Completed -> Cancelled
+    ok 8 - Cancellation transitions: Authorized/Captured/Completed -> Cancelled
+      ---
+      duration_ms: 0.9655
+      type: 'test'
+      ...
+    # Subtest: Failure transitions: Pending/Authorized/Captured/Completed -> Failed
+    ok 9 - Failure transitions: Pending/Authorized/Captured/Completed -> Failed
+      ---
+      duration_ms: 0.6628
+      type: 'test'
+      ...
+    # Subtest: Expiry transitions: Pending/Authorized -> Expired
+    ok 10 - Expiry transitions: Pending/Authorized -> Expired
+      ---
+      duration_ms: 2.1906
+      type: 'test'
+      ...
+    # Subtest: Invalid lifecycle status transitions throw error
+    ok 11 - Invalid lifecycle status transitions throw error
+      ---
+      duration_ms: 0.5513
+      type: 'test'
+      ...
+    # Subtest: Duplicate payment intent protection check
+    ok 12 - Duplicate payment intent protection check
+      ---
+      duration_ms: 0.5355
+      type: 'test'
+      ...
+    # Subtest: Money Value Object and identity properties are immutable
+    ok 13 - Money Value Object and identity properties are immutable
+      ---
+      duration_ms: 0.178
+      type: 'test'
+      ...
+    # Subtest: Mock aggregate store compliance validation
+    ok 14 - Mock aggregate store compliance validation
+      ---
+      duration_ms: 0.3758
+      type: 'test'
+      ...
+    1..14
+ok 21 - Payment Domain Aggregate & Money Value Object Tests
+  ---
+  duration_ms: 18.4324
+  type: 'suite'
+  ...
+# Subtest: Policy Engine Domain Aggregate Root & Value Objects Tests
+    # Subtest: Policy creation success: status Draft, snapshot initialized, domain event emitted
+    ok 1 - Policy creation success: status Draft, snapshot initialized, domain event emitted
+      ---
+      duration_ms: 8.5639
+      type: 'test'
+      ...
+    # Subtest: Policy reference format validation rejects invalid keys
+    ok 2 - Policy reference format validation rejects invalid keys
+      ---
+      duration_ms: 1.5235
+      type: 'test'
+      ...
+    # Subtest: Missing owner throws validation error
+    ok 3 - Missing owner throws validation error
+      ---
+      duration_ms: 0.4365
+      type: 'test'
+      ...
+    # Subtest: Metadata replacement allowed in Draft, rejected in non-Draft states
+    ok 4 - Metadata replacement allowed in Draft, rejected in non-Draft states
+      ---
+      duration_ms: 0.6292
+      type: 'test'
+      ...
+    # Subtest: Ownership validation isolates mutate operations
+    ok 5 - Ownership validation isolates mutate operations
+      ---
+      duration_ms: 0.3876
+      type: 'test'
+      ...
+    # Subtest: Invalid lifecycle status transitions throw errors
+    ok 6 - Invalid lifecycle status transitions throw errors
+      ---
+      duration_ms: 0.5747
+      type: 'test'
+      ...
+    # Subtest: Lifecycle flow and evaluation behavior updates snapshot history
+    ok 7 - Lifecycle flow and evaluation behavior updates snapshot history
+      ---
+      duration_ms: 0.7435
+      type: 'test'
+      ...
+    # Subtest: Append-only snapshot history is structurally frozen
+    ok 8 - Append-only snapshot history is structurally frozen
+      ---
+      duration_ms: 0.8177
+      type: 'test'
+      ...
+    # Subtest: Logical References and DecisionFingerprint value objects immutability
+    ok 9 - Logical References and DecisionFingerprint value objects immutability
+      ---
+      duration_ms: 1.351
+      type: 'test'
+      ...
+    # Subtest: Persistence layer abstractions compliance
+    ok 10 - Persistence layer abstractions compliance
+      ---
+      duration_ms: 1.2323
+      type: 'test'
+      ...
+    1..10
+ok 22 - Policy Engine Domain Aggregate Root & Value Objects Tests
+  ---
+  duration_ms: 23.6347
+  type: 'suite'
+  ...
+# Subtest: Pricing Domain and Boundary Tests
+    # Subtest: Pricing amount validation: bounds, NaN, Infinity
+    ok 1 - Pricing amount validation: bounds, NaN, Infinity
+      ---
+      duration_ms: 3.8024
+      type: 'test'
+      ...
+    # Subtest: Pricing currency accepts generic non-empty strings
+    ok 2 - Pricing currency accepts generic non-empty strings
+      ---
+      duration_ms: 0.4519
+      type: 'test'
+      ...
+    # Subtest: Pricing component properties validation
+    ok 3 - Pricing component properties validation
+      ---
+      duration_ms: 0.5445
+      type: 'test'
+      ...
+    # Subtest: Pricing breakdown properties mapping and collection immutability
+    ok 4 - Pricing breakdown properties mapping and collection immutability
+      ---
+      duration_ms: 0.4595
+      type: 'test'
+      ...
+    # Subtest: Pricing assessment defensive Date copying
+    ok 5 - Pricing assessment defensive Date copying
+      ---
+      duration_ms: 0.7372
+      type: 'test'
+      ...
+    # Subtest: Case C validation: No pricing calculation algorithm is invented inside core
+    ok 6 - Case C validation: No pricing calculation algorithm is invented inside core
+      ---
+      duration_ms: 0.3421
+      type: 'test'
+      ...
+    # Subtest: Boundary Verification: Pricing does NOT calculate confidence, execute rules, or call payment providers
+    ok 7 - Boundary Verification: Pricing does NOT calculate confidence, execute rules, or call payment providers
+      ---
+      duration_ms: 0.3379
+      type: 'test'
+      ...
+    # Subtest: Pricing component validations: missing fields
+    ok 8 - Pricing component validations: missing fields
+      ---
+      duration_ms: 0.6997
+      type: 'test'
+      ...
+    # Subtest: Pricing breakdown validations: missing parameters
+    ok 9 - Pricing breakdown validations: missing parameters
+      ---
+      duration_ms: 0.6123
+      type: 'test'
+      ...
+    # Subtest: Pricing assessment validations: missing parameters
+    ok 10 - Pricing assessment validations: missing parameters
+      ---
+      duration_ms: 1.0832
+      type: 'test'
+      ...
+    # Subtest: Detailed Date Immutability Matrix for Pricing (setTime, setDate, setFullYear)
+    ok 11 - Detailed Date Immutability Matrix for Pricing (setTime, setDate, setFullYear)
+      ---
+      duration_ms: 1.3523
+      type: 'test'
+      ...
+    # Subtest: Pricing representation has NO pricing computation algorithm
+    ok 12 - Pricing representation has NO pricing computation algorithm
+      ---
+      duration_ms: 0.2678
+      type: 'test'
+      ...
+    # Subtest: Pricing determinism check
+    ok 13 - Pricing determinism check
+      ---
+      duration_ms: 0.3394
+      type: 'test'
+      ...
+    1..13
+ok 23 - Pricing Domain and Boundary Tests
+  ---
+  duration_ms: 14.1048
+  type: 'suite'
+  ...
+# Subtest: Project Domain Aggregate Tests
+    # Subtest: Project creation success: status Draft and PROJECT_CREATED event emitted
+    ok 1 - Project creation success: status Draft and PROJECT_CREATED event emitted
+      ---
+      duration_ms: 12.5902
+      type: 'test'
+      ...
+    # Subtest: Creation validation fails when fields are missing (ID, Client, Owner, Reference, Metadata, Visibility)
+    ok 2 - Creation validation fails when fields are missing (ID, Client, Owner, Reference, Metadata, Visibility)
+      ---
+      duration_ms: 1.2025
+      type: 'test'
+      ...
+    # Subtest: Metadata validation (title is mandatory)
+    ok 3 - Metadata validation (title is mandatory)
+      ---
+      duration_ms: 0.3477
+      type: 'test'
+      ...
+    # Subtest: Visibility validation (classification is mandatory)
+    ok 4 - Visibility validation (classification is mandatory)
+      ---
+      duration_ms: 0.2535
+      type: 'test'
+      ...
+    # Subtest: Tenant Isolation checks (wrong ownerId causes validation failure)
+    ok 5 - Tenant Isolation checks (wrong ownerId causes validation failure)
+      ---
+      duration_ms: 0.7012
+      type: 'test'
+      ...
+    # Subtest: Lifecycle transitions: Draft -> Planned -> Active -> Paused -> Active -> Completed -> Archived
+    ok 6 - Lifecycle transitions: Draft -> Planned -> Active -> Paused -> Active -> Completed -> Archived
+      ---
+      duration_ms: 0.4954
+      type: 'test'
+      ...
+    # Subtest: Lifecycle transitions: Active/Paused -> Cancelled -> Archived
+    ok 7 - Lifecycle transitions: Active/Paused -> Cancelled -> Archived
+      ---
+      duration_ms: 0.3995
+      type: 'test'
+      ...
+    # Subtest: Invalid lifecycle status transitions throw error
+    ok 8 - Invalid lifecycle status transitions throw error
+      ---
+      duration_ms: 0.5083
+      type: 'test'
+      ...
+    # Subtest: Immutable properties verification (IDs and Reference cannot change)
+    ok 9 - Immutable properties verification (IDs and Reference cannot change)
+      ---
+      duration_ms: 0.4562
+      type: 'test'
+      ...
+    # Subtest: Mock aggregate store compliance validation
+    ok 10 - Mock aggregate store compliance validation
+      ---
+      duration_ms: 0.8882
+      type: 'test'
+      ...
+    1..10
+ok 24 - Project Domain Aggregate Tests
+  ---
+  duration_ms: 20.717
+  type: 'suite'
+  ...
+# Subtest: PromptBuilder Aggregate Root and Value Objects Domain Tests
+    # Subtest: PromptBuilder creation success: state Draft, snapshots initialized, registered event emitted
+    ok 1 - PromptBuilder creation success: state Draft, snapshots initialized, registered event emitted
+      ---
+      duration_ms: 3.5923
+      type: 'test'
+      ...
+    # Subtest: PromptBuilder reference format validation rejects invalid keys
+    ok 2 - PromptBuilder reference format validation rejects invalid keys
+      ---
+      duration_ms: 0.8705
+      type: 'test'
+      ...
+    # Subtest: PromptCompositionReference validation checks
+    ok 3 - PromptCompositionReference validation checks
+      ---
+      duration_ms: 0.4063
+      type: 'test'
+      ...
+    # Subtest: Logical References validation and equality checks
+    ok 4 - Logical References validation and equality checks
+      ---
+      duration_ms: 0.5499
+      type: 'test'
+      ...
+    # Subtest: Ownership validation blocks unauthorized owners
+    ok 5 - Ownership validation blocks unauthorized owners
+      ---
+      duration_ms: 0.9537
+      type: 'test'
+      ...
+    # Subtest: Missing owner throws error
+    ok 6 - Missing owner throws error
+      ---
+      duration_ms: 0.9018
+      type: 'test'
+      ...
+    # Subtest: Metadata replacement is allowed in Draft but rejected in non-Draft states
+    ok 7 - Metadata replacement is allowed in Draft but rejected in non-Draft states
+      ---
+      duration_ms: 0.383
+      type: 'test'
+      ...
+    # Subtest: Append snapshot to history is append-only and previous snapshots are immutable
+    ok 8 - Append snapshot to history is append-only and previous snapshots are immutable
+      ---
+      duration_ms: 0.8467
+      type: 'test'
+      ...
+    # Subtest: Lifecycle flow: Draft -> Composed -> Validated -> Published -> Archived
+    ok 9 - Lifecycle flow: Draft -> Composed -> Validated -> Published -> Archived
+      ---
+      duration_ms: 1.3483
+      type: 'test'
+      ...
+    # Subtest: Invalid lifecycle transition: cannot validate or publish directly from Draft
+    ok 10 - Invalid lifecycle transition: cannot validate or publish directly from Draft
+      ---
+      duration_ms: 1.2981
+      type: 'test'
+      ...
+    # Subtest: Value Objects equality checks
+    ok 11 - Value Objects equality checks
+      ---
+      duration_ms: 0.7556
+      type: 'test'
+      ...
+    # Subtest: Mock store interface compliance check
+    ok 12 - Mock store interface compliance check
+      ---
+      duration_ms: 0.5967
+      type: 'test'
+      ...
+    1..12
+ok 25 - PromptBuilder Aggregate Root and Value Objects Domain Tests
+  ---
+  duration_ms: 16.2617
+  type: 'suite'
+  ...
+# Subtest: Prompt Registry Domain Aggregate Tests
+    # Subtest: Prompt creation success: initial status Draft, version 1 draft snapshot, and event emitted
+    ok 1 - Prompt creation success: initial status Draft, version 1 draft snapshot, and event emitted
+      ---
+      duration_ms: 2.3538
+      type: 'test'
+      ...
+    # Subtest: Prompt reference format validation rejects invalid strings
+    ok 2 - Prompt reference format validation rejects invalid strings
+      ---
+      duration_ms: 0.8454
+      type: 'test'
+      ...
+    # Subtest: Prompt owner validation blocks operations with mismatched owner ID
+    ok 3 - Prompt owner validation blocks operations with mismatched owner ID
+      ---
+      duration_ms: 0.5496
+      type: 'test'
+      ...
+    # Subtest: Missing owner identity in context throws error
+    ok 4 - Missing owner identity in context throws error
+      ---
+      duration_ms: 0.2467
+      type: 'test'
+      ...
+    # Subtest: Updating a draft successfully replaces metadata value object and updates existing version snapshot
+    ok 5 - Updating a draft successfully replaces metadata value object and updates existing version snapshot
+      ---
+      duration_ms: 0.4817
+      type: 'test'
+      ...
+    # Subtest: Publishing a draft transitions state to Published and freezes version 1 snapshot
+    ok 6 - Publishing a draft transitions state to Published and freezes version 1 snapshot
+      ---
+      duration_ms: 0.3951
+      type: 'test'
+      ...
+    # Subtest: Creating a new draft from Published increments version number and leaves published version frozen
+    ok 7 - Creating a new draft from Published increments version number and leaves published version frozen
+      ---
+      duration_ms: 2.8213
+      type: 'test'
+      ...
+    # Subtest: Lifecycle flow: Published -> Deprecated -> Archived transitions correctly
+    ok 8 - Lifecycle flow: Published -> Deprecated -> Archived transitions correctly
+      ---
+      duration_ms: 1.0296
+      type: 'test'
+      ...
+    # Subtest: Draft -> Archived transition functions correctly
+    ok 9 - Draft -> Archived transition functions correctly
+      ---
+      duration_ms: 0.7303
+      type: 'test'
+      ...
+    # Subtest: Published -> Archived transition functions correctly
+    ok 10 - Published -> Archived transition functions correctly
+      ---
+      duration_ms: 0.9832
+      type: 'test'
+      ...
+    # Subtest: Double archiving throws an error
+    ok 11 - Double archiving throws an error
+      ---
+      duration_ms: 0.5979
+      type: 'test'
+      ...
+    # Subtest: Invalid transition: Cannot publish an archived prompt
+    ok 12 - Invalid transition: Cannot publish an archived prompt
+      ---
+      duration_ms: 0.3317
+      type: 'test'
+      ...
+    # Subtest: Invalid transition: Cannot deprecate draft prompt
+    ok 13 - Invalid transition: Cannot deprecate draft prompt
+      ---
+      duration_ms: 0.3264
+      type: 'test'
+      ...
+    # Subtest: Mock store interface compliance check
+    ok 14 - Mock store interface compliance check
+      ---
+      duration_ms: 0.2687
+      type: 'test'
+      ...
+    # Subtest: Mock persistence unique reference check interface compliance
+    ok 15 - Mock persistence unique reference check interface compliance
+      ---
+      duration_ms: 0.2244
+      type: 'test'
+      ...
+    # Subtest: Mock projection values compliance check
+    ok 16 - Mock projection values compliance check
+      ---
+      duration_ms: 0.1658
+      type: 'test'
+      ...
+    1..16
+ok 26 - Prompt Registry Domain Aggregate Tests
+  ---
+  duration_ms: 15.1238
+  type: 'suite'
+  ...
+# Subtest: Ranking Domain and Boundary Tests
+    # Subtest: RankingRequest creation and immutability
+    ok 1 - RankingRequest creation and immutability
+      ---
+      duration_ms: 1.9518
+      type: 'test'
+      ...
+    # Subtest: Ranking criteria validation and immutability
+    ok 2 - Ranking criteria validation and immutability
+      ---
+      duration_ms: 1.3922
+      type: 'test'
+      ...
+    # Subtest: Ranking policy validation and immutability
+    ok 3 - Ranking policy validation and immutability
+      ---
+      duration_ms: 0.3697
+      type: 'test'
+      ...
+    # Subtest: Ranking score validation and immutability
+    ok 4 - Ranking score validation and immutability
+      ---
+      duration_ms: 0.5166
+      type: 'test'
+      ...
+    # Subtest: Candidate Date/Recency defensive cloning
+    ok 5 - Candidate Date/Recency defensive cloning
+      ---
+      duration_ms: 0.3482
+      type: 'test'
+      ...
+    # Subtest: Candidate properties immutability check
+    ok 6 - Candidate properties immutability check
+      ---
+      duration_ms: 0.2902
+      type: 'test'
+      ...
+    # Subtest: Ranking evaluation: FusionScore first policy
+    ok 7 - Ranking evaluation: FusionScore first policy
+      ---
+      duration_ms: 0.8355
+      type: 'test'
+      ...
+    # Subtest: Ranking evaluation: Recency first policy
+    ok 8 - Ranking evaluation: Recency first policy
+      ---
+      duration_ms: 3.6987
+      type: 'test'
+      ...
+    # Subtest: Ranking evaluation: single candidate behavior
+    ok 9 - Ranking evaluation: single candidate behavior
+      ---
+      duration_ms: 0.5611
+      type: 'test'
+      ...
+    # Subtest: Ranking evaluation: empty candidates behavior
+    ok 10 - Ranking evaluation: empty candidates behavior
+      ---
+      duration_ms: 0.6381
+      type: 'test'
+      ...
+    # Subtest: Tie-breaking handling: deterministic input index fallback
+    ok 11 - Tie-breaking handling: deterministic input index fallback
+      ---
+      duration_ms: 0.6805
+      type: 'test'
+      ...
+    # Subtest: Ranking evaluation: Priority first policy
+    ok 12 - Ranking evaluation: Priority first policy
+      ---
+      duration_ms: 0.2496
+      type: 'test'
+      ...
+    # Subtest: Result collection immutability
+    ok 13 - Result collection immutability
+      ---
+      duration_ms: 0.2345
+      type: 'test'
+      ...
+    # Subtest: Boundary Verification: Ranking does NOT perform database updates or call external models
+    ok 14 - Boundary Verification: Ranking does NOT perform database updates or call external models
+      ---
+      duration_ms: 0.1721
+      type: 'test'
+      ...
+    1..14
+ok 27 - Ranking Domain and Boundary Tests
+  ---
+  duration_ms: 15.3684
+  type: 'suite'
+  ...
+# Subtest: Chapter 7A — Reply Studio / Generation Domain Tests
+    # Subtest: GenerationReference
+        # Subtest: valid reference
+        ok 1 - valid reference
+          ---
+          duration_ms: 2.0193
+          type: 'test'
+          ...
+        # Subtest: empty reference rejected
+        ok 2 - empty reference rejected
+          ---
+          duration_ms: 1.0566
+          type: 'test'
+          ...
+        # Subtest: uppercase rejected
+        ok 3 - uppercase rejected
+          ---
+          duration_ms: 0.2603
+          type: 'test'
+          ...
+        # Subtest: invalid characters rejected
+        ok 4 - invalid characters rejected
+          ---
+          duration_ms: 0.4367
+          type: 'test'
+          ...
+        # Subtest: immutability
+        ok 5 - immutability
+          ---
+          duration_ms: 0.8839
+          type: 'test'
+          ...
+        # Subtest: equality
+        ok 6 - equality
+          ---
+          duration_ms: 3.7595
+          type: 'test'
+          ...
+        1..6
+    ok 1 - GenerationReference
+      ---
+      duration_ms: 10.0134
+      type: 'suite'
+      ...
+    # Subtest: GenerationConstraint
+        # Subtest: length constraints
+        ok 1 - length constraints
+          ---
+          duration_ms: 1.1174
+          type: 'test'
+          ...
+        # Subtest: format constraints
+        ok 2 - format constraints
+          ---
+          duration_ms: 0.6514
+          type: 'test'
+          ...
+        # Subtest: invalid type rejected
+        ok 3 - invalid type rejected
+          ---
+          duration_ms: 0.3619
+          type: 'test'
+          ...
+        # Subtest: invalid value rejected
+        ok 4 - invalid value rejected
+          ---
+          duration_ms: 0.4336
+          type: 'test'
+          ...
+        # Subtest: immutability
+        ok 5 - immutability
+          ---
+          duration_ms: 0.1916
+          type: 'test'
+          ...
+        1..5
+    ok 2 - GenerationConstraint
+      ---
+      duration_ms: 3.5246
+      type: 'suite'
+      ...
+    # Subtest: GenerationMetadata
+        # Subtest: valid construction
+        ok 1 - valid construction
+          ---
+          duration_ms: 0.2159
+          type: 'test'
+          ...
+        # Subtest: missing displayName rejected
+        ok 2 - missing displayName rejected
+          ---
+          duration_ms: 3.7622
+          type: 'test'
+          ...
+        # Subtest: missing description rejected
+        ok 3 - missing description rejected
+          ---
+          duration_ms: 0.2385
+          type: 'test'
+          ...
+        # Subtest: immutability
+        ok 4 - immutability
+          ---
+          duration_ms: 0.2
+          type: 'test'
+          ...
+        1..4
+    ok 3 - GenerationMetadata
+      ---
+      duration_ms: 4.6394
+      type: 'suite'
+      ...
+    # Subtest: GenerationContent
+        # Subtest: valid content
+        ok 1 - valid content
+          ---
+          duration_ms: 0.3263
+          type: 'test'
+          ...
+        # Subtest: empty content rejected
+        ok 2 - empty content rejected
+          ---
+          duration_ms: 0.1467
+          type: 'test'
+          ...
+        # Subtest: HTML tags rejected
+        ok 3 - HTML tags rejected
+          ---
+          duration_ms: 0.2136
+          type: 'test'
+          ...
+        # Subtest: immutability
+        ok 4 - immutability
+          ---
+          duration_ms: 0.171
+          type: 'test'
+          ...
+        1..4
+    ok 4 - GenerationContent
+      ---
+      duration_ms: 1.1176
+      type: 'suite'
+      ...
+    # Subtest: GenerationRequest
+        # Subtest: valid construction & nested validation
+        ok 1 - valid construction & nested validation
+          ---
+          duration_ms: 0.2863
+          type: 'test'
+          ...
+        # Subtest: constraints and request immutability
+        ok 2 - constraints and request immutability
+          ---
+          duration_ms: 0.1883
+          type: 'test'
+          ...
+        1..2
+    ok 5 - GenerationRequest
+      ---
+      duration_ms: 0.5974
+      type: 'suite'
+      ...
+    # Subtest: GenerationResult
+        # Subtest: Date defensive copy
+        ok 1 - Date defensive copy
+          ---
+          duration_ms: 0.274
+          type: 'test'
+          ...
+        1..1
+    ok 6 - GenerationResult
+      ---
+      duration_ms: 0.3577
+      type: 'suite'
+      ...
+    # Subtest: ReplyGeneration creation
+        # Subtest: Draft state, snapshot, and event mapping
+        ok 1 - Draft state, snapshot, and event mapping
+          ---
+          duration_ms: 2.0016
+          type: 'test'
+          ...
+        1..1
+    ok 7 - ReplyGeneration creation
+      ---
+      duration_ms: 2.1228
+      type: 'suite'
+      ...
+    # Subtest: Ownership validation
+        # Subtest: Command operation ownership enforcement
+        ok 1 - Command operation ownership enforcement
+          ---
+          duration_ms: 0.6709
+          type: 'test'
+          ...
+        1..1
+    ok 8 - Ownership validation
+      ---
+      duration_ms: 0.8003
+      type: 'suite'
+      ...
+    # Subtest: Lifecycle Transitions
+        # Subtest: Draft -> Requested -> Generated
+        ok 1 - Draft -> Requested -> Generated
+          ---
+          duration_ms: 0.526
+          type: 'test'
+          ...
+        # Subtest: Draft -> Archived, Requested -> Archived, Generated -> Archived
+        ok 2 - Draft -> Archived, Requested -> Archived, Generated -> Archived
+          ---
+          duration_ms: 0.6043
+          type: 'test'
+          ...
+        # Subtest: Archived is terminal, transitions out are blocked
+        ok 3 - Archived is terminal, transitions out are blocked
+          ---
+          duration_ms: 0.7356
+          type: 'test'
+          ...
+        # Subtest: Illegal transitions throw descriptive exceptions
+        ok 4 - Illegal transitions throw descriptive exceptions
+          ---
+          duration_ms: 0.7141
+          type: 'test'
+          ...
+        1..4
+    ok 9 - Lifecycle Transitions
+      ---
+      duration_ms: 2.8541
+      type: 'suite'
+      ...
+    # Subtest: Snapshot stability and defensive copy
+        # Subtest: mutating snapshots array does not alter history
+        ok 1 - mutating snapshots array does not alter history
+          ---
+          duration_ms: 0.5675
+          type: 'test'
+          ...
+        # Subtest: snapshot dates are copied defensively
+        ok 2 - snapshot dates are copied defensively
+          ---
+          duration_ms: 4.3178
+          type: 'test'
+          ...
+        1..2
+    ok 10 - Snapshot stability and defensive copy
+      ---
+      duration_ms: 7.3463
+      type: 'suite'
+      ...
+    # Subtest: Persistence Interfaces Compile Checks
+        # Subtest: contracts signatures check
+        ok 1 - contracts signatures check
+          ---
+          duration_ms: 0.3565
+          type: 'test'
+          ...
+        1..1
+    ok 11 - Persistence Interfaces Compile Checks
+      ---
+      duration_ms: 0.6884
+      type: 'suite'
+      ...
+    # Subtest: Boundary isolation tests
+        # Subtest: No external libraries are imported
+        ok 1 - No external libraries are imported
+          ---
+          duration_ms: 0.3718
+          type: 'test'
+          ...
+        1..1
+    ok 12 - Boundary isolation tests
+      ---
+      duration_ms: 0.7645
+      type: 'suite'
+      ...
+    1..12
+ok 28 - Chapter 7A — Reply Studio / Generation Domain Tests
+  ---
+  duration_ms: 38.4418
+  type: 'suite'
+  ...
+# Subtest: Chapter 7D — Reply Studio / Grammar Correction Domain Tests
+    # Subtest: GrammarProfile
+        # Subtest: valid profiles vocabulary
+        ok 1 - valid profiles vocabulary
+          ---
+          duration_ms: 1.1104
+          type: 'test'
+          ...
+        # Subtest: unsupported profile rejected
+        ok 2 - unsupported profile rejected
+          ---
+          duration_ms: 0.7863
+          type: 'test'
+          ...
+        # Subtest: immutability
+        ok 3 - immutability
+          ---
+          duration_ms: 0.2332
+          type: 'test'
+          ...
+        # Subtest: equality
+        ok 4 - equality
+          ---
+          duration_ms: 0.2994
+          type: 'test'
+          ...
+        1..4
+    ok 1 - GrammarProfile
+      ---
+      duration_ms: 3.6759
+      type: 'suite'
+      ...
+    # Subtest: GrammarRequest
+        # Subtest: valid request properties
+        ok 1 - valid request properties
+          ---
+          duration_ms: 0.9445
+          type: 'test'
+          ...
+        # Subtest: immutability and nested validation
+        ok 2 - immutability and nested validation
+          ---
+          duration_ms: 0.8622
+          type: 'test'
+          ...
+        1..2
+    ok 2 - GrammarRequest
+      ---
+      duration_ms: 2.1509
+      type: 'suite'
+      ...
+    # Subtest: GrammarResult
+        # Subtest: valid result
+        ok 1 - valid result
+          ---
+          duration_ms: 0.5947
+          type: 'test'
+          ...
+        # Subtest: invalid result content rejected
+        ok 2 - invalid result content rejected
+          ---
+          duration_ms: 0.5162
+          type: 'test'
+          ...
+        1..2
+    ok 3 - GrammarResult
+      ---
+      duration_ms: 3.9111
+      type: 'suite'
+      ...
+    # Subtest: ReplyGrammarCorrection creation
+        # Subtest: initial state, snapshots, and event
+        ok 1 - initial state, snapshots, and event
+          ---
+          duration_ms: 1.1941
+          type: 'test'
+          ...
+        1..1
+    ok 4 - ReplyGrammarCorrection creation
+      ---
+      duration_ms: 1.5024
+      type: 'suite'
+      ...
+    # Subtest: Ownership validation
+        # Subtest: ownership checks on command operations
+        ok 1 - ownership checks on command operations
+          ---
+          duration_ms: 0.8289
+          type: 'test'
+          ...
+        1..1
+    ok 5 - Ownership validation
+      ---
+      duration_ms: 0.9563
+      type: 'suite'
+      ...
+    # Subtest: Lifecycle Transitions
+        # Subtest: Draft -> Requested -> Corrected
+        ok 1 - Draft -> Requested -> Corrected
+          ---
+          duration_ms: 0.2977
+          type: 'test'
+          ...
+        # Subtest: Draft -> Archived, Requested -> Archived, Corrected -> Archived
+        ok 2 - Draft -> Archived, Requested -> Archived, Corrected -> Archived
+          ---
+          duration_ms: 0.4514
+          type: 'test'
+          ...
+        # Subtest: Archived is terminal, transitions out are blocked
+        ok 3 - Archived is terminal, transitions out are blocked
+          ---
+          duration_ms: 0.3132
+          type: 'test'
+          ...
+        # Subtest: Illegal transitions throw descriptive exceptions
+        ok 4 - Illegal transitions throw descriptive exceptions
+          ---
+          duration_ms: 0.307
+          type: 'test'
+          ...
+        1..4
+    ok 6 - Lifecycle Transitions
+      ---
+      duration_ms: 1.5755
+      type: 'suite'
+      ...
+    # Subtest: Grammar completion rules
+        # Subtest: requires valid result and stores it
+        ok 1 - requires valid result and stores it
+          ---
+          duration_ms: 0.5066
+          type: 'test'
+          ...
+        1..1
+    ok 7 - Grammar completion rules
+      ---
+      duration_ms: 0.6811
+      type: 'suite'
+      ...
+    # Subtest: Snapshots Stability
+        # Subtest: mutating snapshots array throws
+        ok 1 - mutating snapshots array throws
+          ---
+          duration_ms: 0.3494
+          type: 'test'
+          ...
+        # Subtest: snapshot dates are copied defensively
+        ok 2 - snapshot dates are copied defensively
+          ---
+          duration_ms: 0.2162
+          type: 'test'
+          ...
+        # Subtest: snapshot version sequential increment
+        ok 3 - snapshot version sequential increment
+          ---
+          duration_ms: 0.2043
+          type: 'test'
+          ...
+        1..3
+    ok 8 - Snapshots Stability
+      ---
+      duration_ms: 0.9386
+      type: 'suite'
+      ...
+    # Subtest: Domain Events Verification
+        # Subtest: emit domain events matching transition status
+        ok 1 - emit domain events matching transition status
+          ---
+          duration_ms: 0.2756
+          type: 'test'
+          ...
+        1..1
+    ok 9 - Domain Events Verification
+      ---
+      duration_ms: 0.397
+      type: 'suite'
+      ...
+    # Subtest: Persistence Interfaces Compile Checks
+        # Subtest: signatures matching check
+        ok 1 - signatures matching check
+          ---
+          duration_ms: 0.2151
+          type: 'test'
+          ...
+        1..1
+    ok 10 - Persistence Interfaces Compile Checks
+      ---
+      duration_ms: 0.327
+      type: 'suite'
+      ...
+    # Subtest: Boundary isolation tests
+        # Subtest: No external library imports exist
+        ok 1 - No external library imports exist
+          ---
+          duration_ms: 0.1703
+          type: 'test'
+          ...
+        1..1
+    ok 11 - Boundary isolation tests
+      ---
+      duration_ms: 0.2533
+      type: 'suite'
+      ...
+    1..11
+ok 29 - Chapter 7D — Reply Studio / Grammar Correction Domain Tests
+  ---
+  duration_ms: 18.6043
+  type: 'suite'
+  ...
+# Subtest: Chapter 7B — Reply Studio / Rewrite Domain Tests
+    # Subtest: RewriteInstruction
+        # Subtest: valid instruction
+        ok 1 - valid instruction
+          ---
+          duration_ms: 1.0352
+          type: 'test'
+          ...
+        # Subtest: invalid input rejected
+        ok 2 - invalid input rejected
+          ---
+          duration_ms: 0.7085
+          type: 'test'
+          ...
+        # Subtest: immutability
+        ok 3 - immutability
+          ---
+          duration_ms: 0.2282
+          type: 'test'
+          ...
+        1..3
+    ok 1 - RewriteInstruction
+      ---
+      duration_ms: 3.1975
+      type: 'suite'
+      ...
+    # Subtest: RewriteRequest
+        # Subtest: valid request properties
+        ok 1 - valid request properties
+          ---
+          duration_ms: 0.6615
+          type: 'test'
+          ...
+        # Subtest: invalid inputs rejected
+        ok 2 - invalid inputs rejected
+          ---
+          duration_ms: 0.419
+          type: 'test'
+          ...
+        # Subtest: immutability
+        ok 3 - immutability
+          ---
+          duration_ms: 0.4009
+          type: 'test'
+          ...
+        1..3
+    ok 2 - RewriteRequest
+      ---
+      duration_ms: 1.8307
+      type: 'suite'
+      ...
+    # Subtest: RewriteResult
+        # Subtest: valid result and Date copy
+        ok 1 - valid result and Date copy
+          ---
+          duration_ms: 0.5859
+          type: 'test'
+          ...
+        # Subtest: invalid result parameters rejected
+        ok 2 - invalid result parameters rejected
+          ---
+          duration_ms: 0.3076
+          type: 'test'
+          ...
+        1..2
+    ok 3 - RewriteResult
+      ---
+      duration_ms: 3.4842
+      type: 'suite'
+      ...
+    # Subtest: ReplyRewrite creation
+        # Subtest: initial state, snapshots, and event
+        ok 1 - initial state, snapshots, and event
+          ---
+          duration_ms: 2.0658
+          type: 'test'
+          ...
+        1..1
+    ok 4 - ReplyRewrite creation
+      ---
+      duration_ms: 2.3792
+      type: 'suite'
+      ...
+    # Subtest: Ownership validation
+        # Subtest: ownership checks on command operations
+        ok 1 - ownership checks on command operations
+          ---
+          duration_ms: 0.6387
+          type: 'test'
+          ...
+        1..1
+    ok 5 - Ownership validation
+      ---
+      duration_ms: 0.7615
+      type: 'suite'
+      ...
+    # Subtest: Lifecycle Transitions
+        # Subtest: Draft -> Requested -> Rewritten
+        ok 1 - Draft -> Requested -> Rewritten
+          ---
+          duration_ms: 0.5054
+          type: 'test'
+          ...
+        # Subtest: Draft -> Archived, Requested -> Archived, Rewritten -> Archived
+        ok 2 - Draft -> Archived, Requested -> Archived, Rewritten -> Archived
+          ---
+          duration_ms: 0.5753
+          type: 'test'
+          ...
+        # Subtest: Archived is terminal, transitions out are blocked
+        ok 3 - Archived is terminal, transitions out are blocked
+          ---
+          duration_ms: 0.3054
+          type: 'test'
+          ...
+        # Subtest: Illegal transitions throw descriptive exceptions
+        ok 4 - Illegal transitions throw descriptive exceptions
+          ---
+          duration_ms: 0.3305
+          type: 'test'
+          ...
+        1..4
+    ok 6 - Lifecycle Transitions
+      ---
+      duration_ms: 1.9065
+      type: 'suite'
+      ...
+    # Subtest: Rewrite Completion and Revisions
+        # Subtest: revisions are generated sequentially
+        ok 1 - revisions are generated sequentially
+          ---
+          duration_ms: 0.5786
+          type: 'test'
+          ...
+        1..1
+    ok 7 - Rewrite Completion and Revisions
+      ---
+      duration_ms: 0.677
+      type: 'suite'
+      ...
+    # Subtest: Snapshots Stability
+        # Subtest: mutating snapshots array throws
+        ok 1 - mutating snapshots array throws
+          ---
+          duration_ms: 0.2959
+          type: 'test'
+          ...
+        # Subtest: snapshot dates are copied defensively
+        ok 2 - snapshot dates are copied defensively
+          ---
+          duration_ms: 0.181
+          type: 'test'
+          ...
+        1..2
+    ok 8 - Snapshots Stability
+      ---
+      duration_ms: 0.5997
+      type: 'suite'
+      ...
+    # Subtest: Domain Events Verification
+        # Subtest: emit domain events matching transition status
+        ok 1 - emit domain events matching transition status
+          ---
+          duration_ms: 0.2586
+          type: 'test'
+          ...
+        1..1
+    ok 9 - Domain Events Verification
+      ---
+      duration_ms: 0.3477
+      type: 'suite'
+      ...
+    # Subtest: Persistence Interfaces Compile Checks
+        # Subtest: signatures matching check
+        ok 1 - signatures matching check
+          ---
+          duration_ms: 0.2119
+          type: 'test'
+          ...
+        1..1
+    ok 10 - Persistence Interfaces Compile Checks
+      ---
+      duration_ms: 0.3061
+      type: 'suite'
+      ...
+    # Subtest: Boundary isolation tests
+        # Subtest: No external library imports exist
+        ok 1 - No external library imports exist
+          ---
+          duration_ms: 0.1425
+          type: 'test'
+          ...
+        1..1
+    ok 11 - Boundary isolation tests
+      ---
+      duration_ms: 0.218
+      type: 'suite'
+      ...
+    1..11
+ok 30 - Chapter 7B — Reply Studio / Rewrite Domain Tests
+  ---
+  duration_ms: 17.8421
+  type: 'suite'
+  ...
+# Subtest: Chapter 7C — Reply Studio / Tone Adjustment Domain Tests
+    # Subtest: ToneProfile
+        # Subtest: valid tones vocabulary
+        ok 1 - valid tones vocabulary
+          ---
+          duration_ms: 1.2706
+          type: 'test'
+          ...
+        # Subtest: unsupported tone rejected
+        ok 2 - unsupported tone rejected
+          ---
+          duration_ms: 0.9205
+          type: 'test'
+          ...
+        # Subtest: immutability
+        ok 3 - immutability
+          ---
+          duration_ms: 0.335
+          type: 'test'
+          ...
+        # Subtest: equality
+        ok 4 - equality
+          ---
+          duration_ms: 0.5433
+          type: 'test'
+          ...
+        1..4
+    ok 1 - ToneProfile
+      ---
+      duration_ms: 4.558
+      type: 'suite'
+      ...
+    # Subtest: ToneRequest
+        # Subtest: valid request properties
+        ok 1 - valid request properties
+          ---
+          duration_ms: 0.4089
+          type: 'test'
+          ...
+        # Subtest: immutability and nested validation
+        ok 2 - immutability and nested validation
+          ---
+          duration_ms: 0.3934
+          type: 'test'
+          ...
+        1..2
+    ok 2 - ToneRequest
+      ---
+      duration_ms: 1.2089
+      type: 'suite'
+      ...
+    # Subtest: ToneResult
+        # Subtest: valid result
+        ok 1 - valid result
+          ---
+          duration_ms: 0.7404
+          type: 'test'
+          ...
+        # Subtest: invalid result content rejected
+        ok 2 - invalid result content rejected
+          ---
+          duration_ms: 0.3941
+          type: 'test'
+          ...
+        1..2
+    ok 3 - ToneResult
+      ---
+      duration_ms: 2.9623
+      type: 'suite'
+      ...
+    # Subtest: ReplyToneAdjustment creation
+        # Subtest: initial state, snapshots, and event
+        ok 1 - initial state, snapshots, and event
+          ---
+          duration_ms: 1.3399
+          type: 'test'
+          ...
+        1..1
+    ok 4 - ReplyToneAdjustment creation
+      ---
+      duration_ms: 1.6742
+      type: 'suite'
+      ...
+    # Subtest: Ownership validation
+        # Subtest: ownership checks on command operations
+        ok 1 - ownership checks on command operations
+          ---
+          duration_ms: 0.6246
+          type: 'test'
+          ...
+        1..1
+    ok 5 - Ownership validation
+      ---
+      duration_ms: 0.7545
+      type: 'suite'
+      ...
+    # Subtest: Lifecycle Transitions
+        # Subtest: Draft -> Requested -> Adjusted
+        ok 1 - Draft -> Requested -> Adjusted
+          ---
+          duration_ms: 0.4004
+          type: 'test'
+          ...
+        # Subtest: Draft -> Archived, Requested -> Archived, Adjusted -> Archived
+        ok 2 - Draft -> Archived, Requested -> Archived, Adjusted -> Archived
+          ---
+          duration_ms: 0.6091
+          type: 'test'
+          ...
+        # Subtest: Archived is terminal, transitions out are blocked
+        ok 3 - Archived is terminal, transitions out are blocked
+          ---
+          duration_ms: 0.5018
+          type: 'test'
+          ...
+        # Subtest: Illegal transitions throw descriptive exceptions
+        ok 4 - Illegal transitions throw descriptive exceptions
+          ---
+          duration_ms: 0.3816
+          type: 'test'
+          ...
+        1..4
+    ok 6 - Lifecycle Transitions
+      ---
+      duration_ms: 2.1176
+      type: 'suite'
+      ...
+    # Subtest: Snapshots Stability
+        # Subtest: mutating snapshots array throws
+        ok 1 - mutating snapshots array throws
+          ---
+          duration_ms: 0.7307
+          type: 'test'
+          ...
+        # Subtest: snapshot dates are copied defensively
+        ok 2 - snapshot dates are copied defensively
+          ---
+          duration_ms: 0.3721
+          type: 'test'
+          ...
+        1..2
+    ok 7 - Snapshots Stability
+      ---
+      duration_ms: 1.276
+      type: 'suite'
+      ...
+    # Subtest: Domain Events Verification
+        # Subtest: emit domain events matching transition status
+        ok 1 - emit domain events matching transition status
+          ---
+          duration_ms: 0.4578
+          type: 'test'
+          ...
+        1..1
+    ok 8 - Domain Events Verification
+      ---
+      duration_ms: 0.6111
+      type: 'suite'
+      ...
+    # Subtest: Persistence Interfaces Compile Checks
+        # Subtest: signatures matching check
+        ok 1 - signatures matching check
+          ---
+          duration_ms: 0.3798
+          type: 'test'
+          ...
+        1..1
+    ok 9 - Persistence Interfaces Compile Checks
+      ---
+      duration_ms: 0.714
+      type: 'suite'
+      ...
+    # Subtest: Boundary isolation tests
+        # Subtest: No external library imports exist
+        ok 1 - No external library imports exist
+          ---
+          duration_ms: 0.3272
+          type: 'test'
+          ...
+        1..1
+    ok 10 - Boundary isolation tests
+      ---
+      duration_ms: 0.5168
+      type: 'suite'
+      ...
+    1..10
+ok 31 - Chapter 7C — Reply Studio / Tone Adjustment Domain Tests
+  ---
+  duration_ms: 18.8842
+  type: 'suite'
+  ...
+# Subtest: Repository Domain Aggregate Tests
+    # Subtest: Repository Metadata value object fields and equality check
+    ok 1 - Repository Metadata value object fields and equality check
+      ---
+      duration_ms: 5.8702
+      type: 'test'
+      ...
+    # Subtest: Repository creation success: status Pending and REPOSITORY_REGISTERED event emitted
+    ok 2 - Repository creation success: status Pending and REPOSITORY_REGISTERED event emitted
+      ---
+      duration_ms: 1.2562
+      type: 'test'
+      ...
+    # Subtest: Creation validation fails when fields are missing (ID, Parent, Owner, Reference, Metadata, Visibility)
+    ok 3 - Creation validation fails when fields are missing (ID, Parent, Owner, Reference, Metadata, Visibility)
+      ---
+      duration_ms: 3.2882
+      type: 'test'
+      ...
+    # Subtest: Metadata validation (displayName is required)
+    ok 4 - Metadata validation (displayName is required)
+      ---
+      duration_ms: 0.4551
+      type: 'test'
+      ...
+    # Subtest: Visibility validation (classification is required)
+    ok 5 - Visibility validation (classification is required)
+      ---
+      duration_ms: 0.4052
+      type: 'test'
+      ...
+    # Subtest: Tenant Isolation checks (wrong ownerId causes validation failure)
+    ok 6 - Tenant Isolation checks (wrong ownerId causes validation failure)
+      ---
+      duration_ms: 1.1762
+      type: 'test'
+      ...
+    # Subtest: Lifecycle transitions: Pending -> Available -> Archived -> Removed
+    ok 7 - Lifecycle transitions: Pending -> Available -> Archived -> Removed
+      ---
+      duration_ms: 0.555
+      type: 'test'
+      ...
+    # Subtest: Lifecycle transitions: Pending -> Removed (cancel registration)
+    ok 8 - Lifecycle transitions: Pending -> Removed (cancel registration)
+      ---
+      duration_ms: 0.673
+      type: 'test'
+      ...
+    # Subtest: Metadata and Visibility replacement verification on active repositories
+    ok 9 - Metadata and Visibility replacement verification on active repositories
+      ---
+      duration_ms: 0.6686
+      type: 'test'
+      ...
+    # Subtest: Invalid lifecycle status transitions throw error
+    ok 10 - Invalid lifecycle status transitions throw error
+      ---
+      duration_ms: 1.1224
+      type: 'test'
+      ...
+    # Subtest: Immutable properties verification (IDs and References cannot change)
+    ok 11 - Immutable properties verification (IDs and References cannot change)
+      ---
+      duration_ms: 0.3962
+      type: 'test'
+      ...
+    # Subtest: Mock aggregate store compliance validation
+    ok 12 - Mock aggregate store compliance validation
+      ---
+      duration_ms: 0.5611
+      type: 'test'
+      ...
+    1..12
+ok 32 - Repository Domain Aggregate Tests
+  ---
+  duration_ms: 20.5902
+  type: 'suite'
+  ...
+# Subtest: Scope Extraction Domain and Boundary Tests
+    # Subtest: Aggregate creation (Draft status) and default properties
+    ok 1 - Aggregate creation (Draft status) and default properties
+      ---
+      duration_ms: 2.1007
+      type: 'test'
+      ...
+    # Subtest: Scope fact type validation and normalized uppercase
+    ok 2 - Scope fact type validation and normalized uppercase
+      ---
+      duration_ms: 0.8964
+      type: 'test'
+      ...
+    # Subtest: Scope source reference properties validation
+    ok 3 - Scope source reference properties validation
+      ---
+      duration_ms: 0.3128
+      type: 'test'
+      ...
+    # Subtest: Scope fact value parameters deep freeze
+    ok 4 - Scope fact value parameters deep freeze
+      ---
+      duration_ms: 0.3281
+      type: 'test'
+      ...
+    # Subtest: Scope fact properties validation and immutability
+    ok 5 - Scope fact properties validation and immutability
+      ---
+      duration_ms: 0.9395
+      type: 'test'
+      ...
+    # Subtest: Snapshot creation and defensive date copying
+    ok 6 - Snapshot creation and defensive date copying
+      ---
+      duration_ms: 0.4553
+      type: 'test'
+      ...
+    # Subtest: Aggregate facts management (add/remove) and collection immutability
+    ok 7 - Aggregate facts management (add/remove) and collection immutability
+      ---
+      duration_ms: 0.7321
+      type: 'test'
+      ...
+    # Subtest: Aggregate lifecycle transitions and snapshots history
+    ok 8 - Aggregate lifecycle transitions and snapshots history
+      ---
+      duration_ms: 1.2374
+      type: 'test'
+      ...
+    # Subtest: Domain events validation and payload purity
+    ok 9 - Domain events validation and payload purity
+      ---
+      duration_ms: 0.6173
+      type: 'test'
+      ...
+    # Subtest: Mock contracts compliance verification
+    ok 10 - Mock contracts compliance verification
+      ---
+      duration_ms: 1.062
+      type: 'test'
+      ...
+    # Subtest: Boundary Verification: Scope Extraction does NOT evaluate rules, confidence, or pricing
+    ok 11 - Boundary Verification: Scope Extraction does NOT evaluate rules, confidence, or pricing
+      ---
+      duration_ms: 0.5915
+      type: 'test'
+      ...
+    # Subtest: Scope Fact Value validation with empty description
+    ok 12 - Scope Fact Value validation with empty description
+      ---
+      duration_ms: 17.0044
+      type: 'test'
+      ...
+    # Subtest: Scope Evidence validation: undefined source reference and empty snippet
+    ok 13 - Scope Evidence validation: undefined source reference and empty snippet
+      ---
+      duration_ms: 0.5425
+      type: 'test'
+      ...
+    # Subtest: Scope Fact validation: missing required properties
+    ok 14 - Scope Fact validation: missing required properties
+      ---
+      duration_ms: 0.6119
+      type: 'test'
+      ...
+    # Subtest: Detailed Date Immutability Matrix on snapshot and events (setTime, setDate, setFullYear)
+    ok 15 - Detailed Date Immutability Matrix on snapshot and events (setTime, setDate, setFullYear)
+      ---
+      duration_ms: 28.3602
+      type: 'test'
+      ...
+    # Subtest: Current-state mutation does not alter historical snapshots
+    ok 16 - Current-state mutation does not alter historical snapshots
+      ---
+      duration_ms: 0.8107
+      type: 'test'
+      ...
+    # Subtest: Strict forbidden lifecycle transitions and invariant checks
+    ok 17 - Strict forbidden lifecycle transitions and invariant checks
+      ---
+      duration_ms: 0.5998
+      type: 'test'
+      ...
+    # Subtest: Provider and technology neutrality assertions
+    ok 18 - Provider and technology neutrality assertions
+      ---
+      duration_ms: 0.2274
+      type: 'test'
+      ...
+    1..18
+ok 33 - Scope Extraction Domain and Boundary Tests
+  ---
+  duration_ms: 60.5234
+  type: 'suite'
+  ...
+# Subtest: Scope Rules Domain and Boundary Tests
+    # Subtest: Rule creation, type validation and immutability
+    ok 1 - Rule creation, type validation and immutability
+      ---
+      duration_ms: 3.9212
+      type: 'test'
+      ...
+    # Subtest: Rule set immutability
+    ok 2 - Rule set immutability
+      ---
+      duration_ms: 0.5345
+      type: 'test'
+      ...
+    # Subtest: Scope decision validation
+    ok 3 - Scope decision validation
+      ---
+      duration_ms: 1.9279
+      type: 'test'
+      ...
+    # Subtest: Scope rule violation parameters immutability
+    ok 4 - Scope rule violation parameters immutability
+      ---
+      duration_ms: 0.5843
+      type: 'test'
+      ...
+    # Subtest: Scope evaluation date defensive copying
+    ok 5 - Scope evaluation date defensive copying
+      ---
+      duration_ms: 0.4665
+      type: 'test'
+      ...
+    # Subtest: Engine evaluation: ACCEPT result with empty violations
+    ok 6 - Engine evaluation: ACCEPT result with empty violations
+      ---
+      duration_ms: 1.2488
+      type: 'test'
+      ...
+    # Subtest: Engine evaluation: REJECT result for missing requirement
+    ok 7 - Engine evaluation: REJECT result for missing requirement
+      ---
+      duration_ms: 17.3727
+      type: 'test'
+      ...
+    # Subtest: Engine evaluation: REJECT result for exclusion violation
+    ok 8 - Engine evaluation: REJECT result for exclusion violation
+      ---
+      duration_ms: 0.7792
+      type: 'test'
+      ...
+    # Subtest: Engine evaluation: REQUIRES_REVIEW for contradiction detection
+    ok 9 - Engine evaluation: REQUIRES_REVIEW for contradiction detection
+      ---
+      duration_ms: 1.0645
+      type: 'test'
+      ...
+    # Subtest: Non-contradictory facts with shared words do not trigger a contradiction
+    ok 10 - Non-contradictory facts with shared words do not trigger a contradiction
+      ---
+      duration_ms: 1.1268
+      type: 'test'
+      ...
+    # Subtest: Engine evaluation: dependency rules verification
+    ok 11 - Engine evaluation: dependency rules verification
+      ---
+      duration_ms: 0.6157
+      type: 'test'
+      ...
+    # Subtest: Domain event payload verification
+    ok 12 - Domain event payload verification
+      ---
+      duration_ms: 0.2872
+      type: 'test'
+      ...
+    # Subtest: Mock contracts compliance verification
+    ok 13 - Mock contracts compliance verification
+      ---
+      duration_ms: 0.8303
+      type: 'test'
+      ...
+    # Subtest: Boundary Verification: Scope Rules does NOT extract facts or call AI providers
+    ok 14 - Boundary Verification: Scope Rules does NOT extract facts or call AI providers
+      ---
+      duration_ms: 0.3886
+      type: 'test'
+      ...
+    # Subtest: Scope Rule validation: missing required fields
+    ok 15 - Scope Rule validation: missing required fields
+      ---
+      duration_ms: 0.5827
+      type: 'test'
+      ...
+    # Subtest: Scope Rule Violation validation: empty fields
+    ok 16 - Scope Rule Violation validation: empty fields
+      ---
+      duration_ms: 0.2969
+      type: 'test'
+      ...
+    # Subtest: Detailed Date Immutability Matrix for evaluation (setTime, setDate, setFullYear)
+    ok 17 - Detailed Date Immutability Matrix for evaluation (setTime, setDate, setFullYear)
+      ---
+      duration_ms: 1.5787
+      type: 'test'
+      ...
+    # Subtest: Rules Engine evaluation is strictly deterministic
+    ok 18 - Rules Engine evaluation is strictly deterministic
+      ---
+      duration_ms: 2.7462
+      type: 'test'
+      ...
+    # Subtest: Contradiction check requires case-insensitive and trimmed EXACT match
+    ok 19 - Contradiction check requires case-insensitive and trimmed EXACT match
+      ---
+      duration_ms: 0.5573
+      type: 'test'
+      ...
+    # Subtest: Unimplemented/ignored rules types pass without violations
+    ok 20 - Unimplemented/ignored rules types pass without violations
+      ---
+      duration_ms: 0.5747
+      type: 'test'
+      ...
+    1..20
+ok 34 - Scope Rules Domain and Boundary Tests
+  ---
+  duration_ms: 54.4499
+  type: 'suite'
+  ...
+# Subtest: Client Timeline Aggregate & Entry Invariants Tests
+    # Subtest: Client Timeline creation (Initial state is Initialized, no entries, no events)
+    ok 1 - Client Timeline creation (Initial state is Initialized, no entries, no events)
+      ---
+      duration_ms: 3.3711
+      type: 'test'
+      ...
+    # Subtest: Creation validations (Client ID and Owner ID are required)
+    ok 2 - Creation validations (Client ID and Owner ID are required)
+      ---
+      duration_ms: 2.1234
+      type: 'test'
+      ...
+    # Subtest: Append entry success: transitions to Active on first append, assigns visibility, generates TIMELINE_ENTRY_APPENDED
+    ok 3 - Append entry success: transitions to Active on first append, assigns visibility, generates TIMELINE_ENTRY_APPENDED
+      ---
+      duration_ms: 1.006
+      type: 'test'
+      ...
+    # Subtest: Ownership validation fails when appending/archiving/reactivating with wrong OwnerId
+    ok 4 - Ownership validation fails when appending/archiving/reactivating with wrong OwnerId
+      ---
+      duration_ms: 0.4894
+      type: 'test'
+      ...
+    # Subtest: Monotonic chronology invariant: appending older timestamp fails
+    ok 5 - Monotonic chronology invariant: appending older timestamp fails
+      ---
+      duration_ms: 0.7061
+      type: 'test'
+      ...
+    # Subtest: Future timestamp invariant: appending future date fails
+    ok 6 - Future timestamp invariant: appending future date fails
+      ---
+      duration_ms: 0.6216
+      type: 'test'
+      ...
+    # Subtest: Archiving timeline transitions to ReadOnly, blocks further appends, emits TIMELINE_ARCHIVED
+    ok 7 - Archiving timeline transitions to ReadOnly, blocks further appends, emits TIMELINE_ARCHIVED
+      ---
+      duration_ms: 0.6245
+      type: 'test'
+      ...
+    # Subtest: Reactivation transitions ReadOnly back to Active
+    ok 8 - Reactivation transitions ReadOnly back to Active
+      ---
+      duration_ms: 0.3591
+      type: 'test'
+      ...
+    # Subtest: Logical sequence chronology validation on initialization
+    ok 9 - Logical sequence chronology validation on initialization
+      ---
+      duration_ms: 0.7198
+      type: 'test'
+      ...
+    # Subtest: Mock aggregate store abstraction compliance
+    ok 10 - Mock aggregate store abstraction compliance
+      ---
+      duration_ms: 0.7806
+      type: 'test'
+      ...
+    1..10
+ok 35 - Client Timeline Aggregate & Entry Invariants Tests
+  ---
+  duration_ms: 13.9938
+  type: 'suite'
+  ...
 # Subtest: Email Normalization
     # Subtest: should trim and lowercase standard emails
     ok 1 - should trim and lowercase standard emails
       ---
-      duration_ms: 2.9425
+      duration_ms: 9.4815
       type: 'test'
       ...
     # Subtest: should strip sub-addresses for gmail domain by default
     ok 2 - should strip sub-addresses for gmail domain by default
       ---
-      duration_ms: 0.6158
+      duration_ms: 0.4772
       type: 'test'
       ...
     # Subtest: should strip dots for gmail domain by default
     ok 3 - should strip dots for gmail domain by default
       ---
-      duration_ms: 0.491
+      duration_ms: 0.2432
       type: 'test'
       ...
     # Subtest: should not strip sub-addresses or dots for non-gmail domains
     ok 4 - should not strip sub-addresses or dots for non-gmail domains
       ---
-      duration_ms: 0.4344
+      duration_ms: 0.4401
       type: 'test'
       ...
     1..4
-ok 1 - Email Normalization
+ok 36 - Email Normalization
   ---
-  duration_ms: 6.5716
+  duration_ms: 12.4716
   type: 'suite'
   ...
 # Subtest: Password Strength Validation
     # Subtest: should pass a valid complex password
     ok 1 - should pass a valid complex password
       ---
-      duration_ms: 0.9292
+      duration_ms: 0.8435
       type: 'test'
       ...
     # Subtest: should fail on short passwords
     ok 2 - should fail on short passwords
       ---
-      duration_ms: 2.4052
+      duration_ms: 0.852
       type: 'test'
       ...
     # Subtest: should fail on missing uppercase letters
     ok 3 - should fail on missing uppercase letters
       ---
-      duration_ms: 0.5568
+      duration_ms: 0.5582
       type: 'test'
       ...
     # Subtest: should fail on missing lowercase letters
     ok 4 - should fail on missing lowercase letters
       ---
-      duration_ms: 0.5615
+      duration_ms: 0.576
       type: 'test'
       ...
     # Subtest: should fail on missing numbers
     ok 5 - should fail on missing numbers
       ---
-      duration_ms: 0.441
+      duration_ms: 1.2239
       type: 'test'
       ...
     # Subtest: should fail on missing special characters
     ok 6 - should fail on missing special characters
       ---
-      duration_ms: 0.5128
+      duration_ms: 1.0651
       type: 'test'
       ...
     1..6
-ok 2 - Password Strength Validation
+ok 37 - Password Strength Validation
   ---
-  duration_ms: 6.7211
+  duration_ms: 7.5006
   type: 'suite'
   ...
-1..2
-# tests 10
-# suites 2
-# pass 10
+# Subtest: Vector Search Domain and Boundary Tests
+    # Subtest: Search request creation and parameters mapping
+    ok 1 - Search request creation and parameters mapping
+      ---
+      duration_ms: 2.0804
+      type: 'test'
+      ...
+    # Subtest: QueryEmbedding immutability and equality
+    ok 2 - QueryEmbedding immutability and equality
+      ---
+      duration_ms: 0.8454
+      type: 'test'
+      ...
+    # Subtest: Search scope validations and immutability
+    ok 3 - Search scope validations and immutability
+      ---
+      duration_ms: 0.4389
+      type: 'test'
+      ...
+    # Subtest: Search filter wrapper immutability
+    ok 4 - Search filter wrapper immutability
+      ---
+      duration_ms: 0.2568
+      type: 'test'
+      ...
+    # Subtest: Similarity metric validation and immutability
+    ok 5 - Similarity metric validation and immutability
+      ---
+      duration_ms: 0.298
+      type: 'test'
+      ...
+    # Subtest: Similarity score validation and immutability
+    ok 6 - Similarity score validation and immutability
+      ---
+      duration_ms: 0.4637
+      type: 'test'
+      ...
+    # Subtest: Search limit validation
+    ok 7 - Search limit validation
+      ---
+      duration_ms: 0.3243
+      type: 'test'
+      ...
+    # Subtest: Search candidate immutability
+    ok 8 - Search candidate immutability
+      ---
+      duration_ms: 0.6411
+      type: 'test'
+      ...
+    # Subtest: Search result collection immutability
+    ok 9 - Search result collection immutability
+      ---
+      duration_ms: 0.5349
+      type: 'test'
+      ...
+    # Subtest: Empty result behavior
+    ok 10 - Empty result behavior
+      ---
+      duration_ms: 0.6151
+      type: 'test'
+      ...
+    # Subtest: Mock contracts compliance verification
+    ok 11 - Mock contracts compliance verification
+      ---
+      duration_ms: 0.4244
+      type: 'test'
+      ...
+    # Subtest: 5B Boundary Verification: Vector Search does NOT generate embeddings or depend on DBs
+    ok 12 - 5B Boundary Verification: Vector Search does NOT generate embeddings or depend on DBs
+      ---
+      duration_ms: 0.2119
+      type: 'test'
+      ...
+    1..12
+ok 38 - Vector Search Domain and Boundary Tests
+  ---
+  duration_ms: 10.0417
+  type: 'suite'
+  ...
+1..38
+# tests 629
+# suites 240
+# pass 629
 # fail 0
 # cancelled 0
 # skipped 0
 # todo 0
-# duration_ms 246.0215
+# duration_ms 2783.0431

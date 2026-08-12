@@ -53,4 +53,5 @@
  *    - It owns no configuration schemas or environment parser defaults of its own.
  */
 export { verifyRedisConnection, closeRedisConnection } from "./client.js";
+export { RedisCacheStore } from "./cache-store.js";
 //# sourceMappingURL=index.js.map

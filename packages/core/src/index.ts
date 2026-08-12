@@ -1007,3 +1007,16 @@ export type {
   AuthoritativeEvidenceInput,
   JobMatchExplanationProperties,
 } from "./job-match-explanation.js";
+
+export { MemoryCacheStore, CacheKeyBuilder, JobMatchCacheManager } from "./job-match-cache.js";
+
+export type {
+  CacheOutcome,
+  CachedJobMatchResult,
+  CacheStore,
+  MemoryCacheOptions,
+  JobMatchCachePolicy,
+  CacheObservabilityHooks,
+  JobMatchCacheConfig,
+  JobMatchCacheContext,
+} from "./job-match-cache.js";

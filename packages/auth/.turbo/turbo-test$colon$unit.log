@@ -3,206 +3,206 @@
 > node --env-file=../../.env.test --test dist/*.test.js
 
 TAP version 13
-# {"level":"info","time":"2026-08-07T10:26:03.482Z","pid":24112,"hostname":"Tyagi","payload":{"userId":"mock-user-uuid","ipAddress":"127.0.0.1","deviceName":"unknown"},"msg":"[Event Dispatcher] Emitted event: LOGIN_SUCCEEDED"}
+# {"level":"info","time":"2026-08-12T13:45:54.027Z","pid":14304,"hostname":"Tyagi","payload":{"userId":"mock-user-uuid","ipAddress":"127.0.0.1","deviceName":"unknown"},"msg":"[Event Dispatcher] Emitted event: LOGIN_SUCCEEDED"}
 # Subtest: Login Use Case & Flow Security Tests
     # Subtest: should authenticate successfully with correct credentials and active status
     ok 1 - should authenticate successfully with correct credentials and active status
       ---
-      duration_ms: 25.2169
+      duration_ms: 46.3369
       type: 'test'
       ...
     # Subtest: should fail with AuthenticationFailureError for unregistered emails (Timing Protection Path)
     ok 2 - should fail with AuthenticationFailureError for unregistered emails (Timing Protection Path)
       ---
-      duration_ms: 114.889
+      duration_ms: 154.9463
       type: 'test'
       ...
     # Subtest: should fail with AccountSuspendedError if user status is suspended
     ok 3 - should fail with AccountSuspendedError if user status is suspended
       ---
-      duration_ms: 163.3631
+      duration_ms: 149.9903
       type: 'test'
       ...
     # Subtest: should fail with AccountDisabledError if user status is disabled
     ok 4 - should fail with AccountDisabledError if user status is disabled
       ---
-      duration_ms: 168.8206
+      duration_ms: 144.5071
       type: 'test'
       ...
     # Subtest: should fail with PendingVerificationError if user status is pending and verification is required
     ok 5 - should fail with PendingVerificationError if user status is pending and verification is required
       ---
-      duration_ms: 119.5886
+      duration_ms: 170.6045
       type: 'test'
       ...
     # Subtest: should track failed attempts and lock account upon hitting attempts threshold
     ok 6 - should track failed attempts and lock account upon hitting attempts threshold
       ---
-      duration_ms: 184.09
+      duration_ms: 199.7162
       type: 'test'
       ...
     # Subtest: should revoke oldest active sessions if max sessions limit is exceeded
     ok 7 - should revoke oldest active sessions if max sessions limit is exceeded
       ---
-      duration_ms: 18.3799
+      duration_ms: 33.2566
       type: 'test'
       ...
     1..7
 ok 1 - Login Use Case & Flow Security Tests
   ---
-  duration_ms: 797.4886
+  duration_ms: 902.5951
   type: 'suite'
   ...
-# {"level":"info","time":"2026-08-07T10:26:03.598Z","pid":24112,"hostname":"Tyagi","payload":{"email":"unknown@gmail.com","reason":"USER_NOT_FOUND","ipAddress":"127.0.0.1"},"msg":"[Event Dispatcher] Emitted event: LOGIN_FAILED"}
-# {"level":"info","time":"2026-08-07T10:26:03.755Z","pid":24112,"hostname":"Tyagi","payload":{"email":"suspended@gmail.com","reason":"ACCOUNT_SUSPENDED","ipAddress":"127.0.0.1"},"msg":"[Event Dispatcher] Emitted event: LOGIN_FAILED"}
-# {"level":"info","time":"2026-08-07T10:26:03.931Z","pid":24112,"hostname":"Tyagi","payload":{"email":"disabled@gmail.com","reason":"ACCOUNT_DISABLED","ipAddress":"127.0.0.1"},"msg":"[Event Dispatcher] Emitted event: LOGIN_FAILED"}
-# {"level":"info","time":"2026-08-07T10:26:04.051Z","pid":24112,"hostname":"Tyagi","payload":{"email":"pending@gmail.com","reason":"PENDING_VERIFICATION","ipAddress":"127.0.0.1"},"msg":"[Event Dispatcher] Emitted event: LOGIN_FAILED"}
-# {"level":"info","time":"2026-08-07T10:26:04.068Z","pid":24112,"hostname":"Tyagi","payload":{"email":"bruteforce@gmail.com","reason":"INVALID_CREDENTIALS","ipAddress":"127.0.0.1"},"msg":"[Event Dispatcher] Emitted event: LOGIN_FAILED"}
-# {"level":"info","time":"2026-08-07T10:26:04.075Z","pid":24112,"hostname":"Tyagi","payload":{"email":"bruteforce@gmail.com","reason":"INVALID_CREDENTIALS","ipAddress":"127.0.0.1"},"msg":"[Event Dispatcher] Emitted event: LOGIN_FAILED"}
-# {"level":"info","time":"2026-08-07T10:26:04.085Z","pid":24112,"hostname":"Tyagi","payload":{"userId":"mock-user-uuid","email":"bruteforce@gmail.com"},"msg":"[Event Dispatcher] Emitted event: ACCOUNT_LOCKED"}
-# {"level":"info","time":"2026-08-07T10:26:04.086Z","pid":24112,"hostname":"Tyagi","payload":{"email":"bruteforce@gmail.com","reason":"INVALID_CREDENTIALS","ipAddress":"127.0.0.1"},"msg":"[Event Dispatcher] Emitted event: LOGIN_FAILED"}
-# {"level":"info","time":"2026-08-07T10:26:04.252Z","pid":24112,"hostname":"Tyagi","payload":{"userId":"mock-user-uuid","ipAddress":"127.0.0.1","browser":"unknown","platform":"unknown"},"msg":"[Event Dispatcher] Emitted event: NEW_DEVICE_DETECTED"}
-# {"level":"info","time":"2026-08-07T10:26:04.254Z","pid":24112,"hostname":"Tyagi","payload":{"userId":"mock-user-uuid","ipAddress":"127.0.0.1","deviceName":"unknown"},"msg":"[Event Dispatcher] Emitted event: LOGIN_SUCCEEDED"}
-# {"level":"info","time":"2026-08-07T10:26:03.342Z","pid":33192,"hostname":"Tyagi","msg":"[Logout Use Case] Initiating logout: global=false"}
+# {"level":"info","time":"2026-08-12T13:45:54.195Z","pid":14304,"hostname":"Tyagi","payload":{"email":"unknown@gmail.com","reason":"USER_NOT_FOUND","ipAddress":"127.0.0.1"},"msg":"[Event Dispatcher] Emitted event: LOGIN_FAILED"}
+# {"level":"info","time":"2026-08-12T13:45:54.345Z","pid":14304,"hostname":"Tyagi","payload":{"email":"suspended@gmail.com","reason":"ACCOUNT_SUSPENDED","ipAddress":"127.0.0.1"},"msg":"[Event Dispatcher] Emitted event: LOGIN_FAILED"}
+# {"level":"info","time":"2026-08-12T13:45:54.489Z","pid":14304,"hostname":"Tyagi","payload":{"email":"disabled@gmail.com","reason":"ACCOUNT_DISABLED","ipAddress":"127.0.0.1"},"msg":"[Event Dispatcher] Emitted event: LOGIN_FAILED"}
+# {"level":"info","time":"2026-08-12T13:45:54.661Z","pid":14304,"hostname":"Tyagi","payload":{"email":"pending@gmail.com","reason":"PENDING_VERIFICATION","ipAddress":"127.0.0.1"},"msg":"[Event Dispatcher] Emitted event: LOGIN_FAILED"}
+# {"level":"info","time":"2026-08-12T13:45:54.679Z","pid":14304,"hostname":"Tyagi","payload":{"email":"bruteforce@gmail.com","reason":"INVALID_CREDENTIALS","ipAddress":"127.0.0.1"},"msg":"[Event Dispatcher] Emitted event: LOGIN_FAILED"}
+# {"level":"info","time":"2026-08-12T13:45:54.687Z","pid":14304,"hostname":"Tyagi","payload":{"email":"bruteforce@gmail.com","reason":"INVALID_CREDENTIALS","ipAddress":"127.0.0.1"},"msg":"[Event Dispatcher] Emitted event: LOGIN_FAILED"}
+# {"level":"info","time":"2026-08-12T13:45:54.705Z","pid":14304,"hostname":"Tyagi","payload":{"userId":"mock-user-uuid","email":"bruteforce@gmail.com"},"msg":"[Event Dispatcher] Emitted event: ACCOUNT_LOCKED"}
+# {"level":"info","time":"2026-08-12T13:45:54.706Z","pid":14304,"hostname":"Tyagi","payload":{"email":"bruteforce@gmail.com","reason":"INVALID_CREDENTIALS","ipAddress":"127.0.0.1"},"msg":"[Event Dispatcher] Emitted event: LOGIN_FAILED"}
+# {"level":"info","time":"2026-08-12T13:45:54.887Z","pid":14304,"hostname":"Tyagi","payload":{"userId":"mock-user-uuid","ipAddress":"127.0.0.1","browser":"unknown","platform":"unknown"},"msg":"[Event Dispatcher] Emitted event: NEW_DEVICE_DETECTED"}
+# {"level":"info","time":"2026-08-12T13:45:54.895Z","pid":14304,"hostname":"Tyagi","payload":{"userId":"mock-user-uuid","ipAddress":"127.0.0.1","deviceName":"unknown"},"msg":"[Event Dispatcher] Emitted event: LOGIN_SUCCEEDED"}
+# {"level":"info","time":"2026-08-12T13:45:54.006Z","pid":8316,"hostname":"Tyagi","msg":"[Logout Use Case] Initiating logout: global=false"}
 # Subtest: Logout Use Case Verification Tests
     # Subtest: should complete single logout successfully when session is active
     ok 1 - should complete single logout successfully when session is active
       ---
-      duration_ms: 6.5991
+      duration_ms: 17.4923
       type: 'test'
       ...
     # Subtest: should handle already revoked sessions idempotently without store modifications
     ok 2 - should handle already revoked sessions idempotently without store modifications
       ---
-      duration_ms: 0.5754
+      duration_ms: 0.7856
       type: 'test'
       ...
     # Subtest: should handle expired sessions idempotently without store modifications
     ok 3 - should handle expired sessions idempotently without store modifications
       ---
-      duration_ms: 0.5958
+      duration_ms: 0.758
       type: 'test'
       ...
     # Subtest: should execute global logout by invalidating all active sessions and incrementing credentials version
     ok 4 - should execute global logout by invalidating all active sessions and incrementing credentials version
       ---
-      duration_ms: 3.3713
+      duration_ms: 1.4645
       type: 'test'
       ...
     1..4
 ok 2 - Logout Use Case Verification Tests
   ---
-  duration_ms: 13.2975
+  duration_ms: 22.5649
   type: 'suite'
   ...
-# {"level":"info","time":"2026-08-07T10:26:03.346Z","pid":33192,"hostname":"Tyagi","payload":{"sessionId":"active-session-uuid","userId":"user-uuid","revokedAt":"2026-08-07T10:26:03.346Z"},"msg":"[Event Dispatcher] Emitted event: SESSION_REVOKED"}
-# {"level":"info","time":"2026-08-07T10:26:03.346Z","pid":33192,"hostname":"Tyagi","payload":{"userId":"user-uuid","ipAddress":"192.168.1.100","reason":"user_triggered"},"msg":"[Event Dispatcher] Emitted event: USER_LOGGED_OUT"}
-# {"level":"info","time":"2026-08-07T10:26:03.348Z","pid":33192,"hostname":"Tyagi","msg":"[Logout Use Case] Initiating logout: global=false"}
-# {"level":"info","time":"2026-08-07T10:26:03.349Z","pid":33192,"hostname":"Tyagi","msg":"[Logout Use Case] Initiating logout: global=false"}
-# {"level":"info","time":"2026-08-07T10:26:03.350Z","pid":33192,"hostname":"Tyagi","msg":"[Logout Use Case] Initiating logout: global=true"}
-# {"level":"info","time":"2026-08-07T10:26:03.352Z","pid":33192,"hostname":"Tyagi","payload":{"userId":"user-uuid","revokedSessionCount":1,"revokedAt":"2026-08-07T10:26:03.352Z"},"msg":"[Event Dispatcher] Emitted event: GLOBAL_LOGOUT_COMPLETED"}
-# {"level":"info","time":"2026-08-07T10:26:03.352Z","pid":33192,"hostname":"Tyagi","payload":{"userId":"user-uuid","ipAddress":"unknown","reason":"user_triggered"},"msg":"[Event Dispatcher] Emitted event: USER_LOGGED_OUT"}
-# {"level":"error","time":"2026-08-07T10:26:03.386Z","pid":48272,"hostname":"Tyagi","error":{"message":"Database network failure","stack":"Error: Database network failure\\n    at db.select (file:///D:/FreelanceAI/packages/auth/dist/middleware.test.js:225:19)\\n    at validateSession (file:///D:/FreelanceAI/packages/auth/dist/session.js:72:10)\\n    at authenticateRequest (file:///D:/FreelanceAI/packages/auth/dist/middleware.js:30:33)\\n    at TestContext.<anonymous> (file:///D:/FreelanceAI/packages/auth/dist/middleware.test.js:228:30)\\n    at Test.runInAsyncScope (node:async_hooks:214:14)\\n    at Test.run (node:internal/test_runner/test:1047:25)\\n    at async Suite.processPendingSubtests (node:internal/test_runner/test:744:7)","name":"Error"},"msg":"[Authentication Middleware] Pipeline crash"}
+# {"level":"info","time":"2026-08-12T13:45:54.020Z","pid":8316,"hostname":"Tyagi","payload":{"sessionId":"active-session-uuid","userId":"user-uuid","revokedAt":"2026-08-12T13:45:54.020Z"},"msg":"[Event Dispatcher] Emitted event: SESSION_REVOKED"}
+# {"level":"info","time":"2026-08-12T13:45:54.021Z","pid":8316,"hostname":"Tyagi","payload":{"userId":"user-uuid","ipAddress":"192.168.1.100","reason":"user_triggered"},"msg":"[Event Dispatcher] Emitted event: USER_LOGGED_OUT"}
+# {"level":"info","time":"2026-08-12T13:45:54.023Z","pid":8316,"hostname":"Tyagi","msg":"[Logout Use Case] Initiating logout: global=false"}
+# {"level":"info","time":"2026-08-12T13:45:54.023Z","pid":8316,"hostname":"Tyagi","msg":"[Logout Use Case] Initiating logout: global=false"}
+# {"level":"info","time":"2026-08-12T13:45:54.025Z","pid":8316,"hostname":"Tyagi","msg":"[Logout Use Case] Initiating logout: global=true"}
+# {"level":"info","time":"2026-08-12T13:45:54.025Z","pid":8316,"hostname":"Tyagi","payload":{"userId":"user-uuid","revokedSessionCount":1,"revokedAt":"2026-08-12T13:45:54.025Z"},"msg":"[Event Dispatcher] Emitted event: GLOBAL_LOGOUT_COMPLETED"}
+# {"level":"info","time":"2026-08-12T13:45:54.025Z","pid":8316,"hostname":"Tyagi","payload":{"userId":"user-uuid","ipAddress":"unknown","reason":"user_triggered"},"msg":"[Event Dispatcher] Emitted event: USER_LOGGED_OUT"}
+# {"level":"error","time":"2026-08-12T13:45:54.026Z","pid":14420,"hostname":"Tyagi","error":{"message":"Database network failure","stack":"Error: Database network failure\\n    at db.select (file:///D:/FreelanceAI/packages/auth/dist/middleware.test.js:221:19)\\n    at validateSession (file:///D:/FreelanceAI/packages/auth/dist/session.js:72:10)\\n    at authenticateRequest (file:///D:/FreelanceAI/packages/auth/dist/middleware.js:30:33)\\n    at TestContext.<anonymous> (file:///D:/FreelanceAI/packages/auth/dist/middleware.test.js:224:30)\\n    at Test.runInAsyncScope (node:async_hooks:214:14)\\n    at Test.run (node:internal/test_runner/test:1047:25)\\n    at async Suite.processPendingSubtests (node:internal/test_runner/test:744:7)","name":"Error"},"msg":"[Authentication Middleware] Pipeline crash"}
 # Subtest: Authentication Middleware Logic Validation Tests
     # Subtest: should authenticate valid request with active session, return opaque sessionRef, and publish success event
     ok 1 - should authenticate valid request with active session, return opaque sessionRef, and publish success event
       ---
-      duration_ms: 24.2242
+      duration_ms: 49.3522
       type: 'test'
       ...
     # Subtest: should return Anonymous status on anonymous routes without context
     ok 2 - should return Anonymous status on anonymous routes without context
       ---
-      duration_ms: 0.7237
+      duration_ms: 0.7756
       type: 'test'
       ...
     # Subtest: should allow access with Anonymous status for optional route policies when credentials are omitted
     ok 3 - should allow access with Anonymous status for optional route policies when credentials are omitted
       ---
-      duration_ms: 0.364
+      duration_ms: 0.5536
       type: 'test'
       ...
     # Subtest: should block optional routes and return unauthenticated state when malformed credentials are provided
     ok 4 - should block optional routes and return unauthenticated state when malformed credentials are provided
       ---
-      duration_ms: 1.5482
+      duration_ms: 2.9293
       type: 'test'
       ...
     # Subtest: should block requests and return expired state when credentials have expired
     ok 5 - should block requests and return expired state when credentials have expired
       ---
-      duration_ms: 5.3905
+      duration_ms: 5.2229
       type: 'test'
       ...
     # Subtest: should reject request and return invalid session state when session has been revoked in database
     ok 6 - should reject request and return invalid session state when session has been revoked in database
       ---
-      duration_ms: 2.1053
+      duration_ms: 2.2636
       type: 'test'
       ...
     # Subtest: should reject request and return identity invalidated when user credential version changes
     ok 7 - should reject request and return identity invalidated when user credential version changes
       ---
-      duration_ms: 1.2907
+      duration_ms: 1.6275
       type: 'test'
       ...
     # Subtest: should handle database pipeline failures safely and return infrastructure failure status
     ok 8 - should handle database pipeline failures safely and return infrastructure failure status
       ---
-      duration_ms: 16.7863
+      duration_ms: 17.1144
       type: 'test'
       ...
     1..8
 ok 3 - Authentication Middleware Logic Validation Tests
   ---
-  duration_ms: 54.8056
+  duration_ms: 82.8684
   type: 'suite'
   ...
-# {"level":"info","time":"2026-08-07T10:26:03.348Z","pid":36616,"hostname":"Tyagi","msg":"Anti-enumeration triggered for email: existing@example.com. Simulating successful signup."}
+# {"level":"info","time":"2026-08-12T13:45:54.019Z","pid":17832,"hostname":"Tyagi","msg":"Anti-enumeration triggered for email: existing@example.com. Simulating successful signup."}
 # Subtest: Signup Use Case Validation & Mock Flow Tests
     # Subtest: should throw ValidationError if password is too short
     ok 1 - should throw ValidationError if password is too short
       ---
-      duration_ms: 3.7511
+      duration_ms: 8.1711
       type: 'test'
       ...
     # Subtest: should throw DuplicateEmailError if user exists and anti-enumeration is disabled
     ok 2 - should throw DuplicateEmailError if user exists and anti-enumeration is disabled
       ---
-      duration_ms: 1.5201
+      duration_ms: 1.9029
       type: 'test'
       ...
     # Subtest: should return success and not write to DB if user exists and anti-enumeration is enabled
     ok 3 - should return success and not write to DB if user exists and anti-enumeration is enabled
       ---
-      duration_ms: 3.1962
+      duration_ms: 17.8813
       type: 'test'
       ...
     # Subtest: should execute transaction and insert records on successful new registration
     ok 4 - should execute transaction and insert records on successful new registration
       ---
-      duration_ms: 12.6456
+      duration_ms: 10.5416
       type: 'test'
       ...
     # Subtest: should execute transaction and return signedAccessToken if auto-login is active
     ok 5 - should execute transaction and return signedAccessToken if auto-login is active
       ---
-      duration_ms: 13.2791
+      duration_ms: 16.6349
       type: 'test'
       ...
     1..5
 ok 4 - Signup Use Case Validation & Mock Flow Tests
   ---
-  duration_ms: 37.1032
+  duration_ms: 58.9014
   type: 'suite'
   ...
-# {"level":"info","time":"2026-08-07T10:26:03.350Z","pid":36616,"hostname":"Tyagi","payload":{"email":"existing@example.com","userId":"existing-uuid"},"msg":"[Event Dispatcher] Emitted event: REGISTRATION_ATTEMPT_ON_EXISTING_EMAIL"}
-# {"level":"info","time":"2026-08-07T10:26:03.362Z","pid":36616,"hostname":"Tyagi","payload":{"userId":"mock-user-uuid","normalizedEmail":"newuser@gmail.com","registeredAt":"2026-08-07T10:26:03.362Z"},"msg":"[Event Dispatcher] Emitted event: IDENTITY_REGISTERED"}
-# {"level":"info","time":"2026-08-07T10:26:03.362Z","pid":36616,"hostname":"Tyagi","data":{"userId":"mock-user-uuid","email":"newuser@gmail.com","token":"0be45a879098d2ba9ed33b8e0be09eec36bfed88ae6a2ba4c7b69538bf1eb396"},"msg":"[Background Task Dispatcher] Dispatching task: SEND_VERIFICATION_EMAIL"}
-# {"level":"info","time":"2026-08-07T10:26:03.376Z","pid":36616,"hostname":"Tyagi","payload":{"userId":"mock-user-uuid","normalizedEmail":"autosession@gmail.com","registeredAt":"2026-08-07T10:26:03.370Z"},"msg":"[Event Dispatcher] Emitted event: IDENTITY_REGISTERED"}
-# {"level":"info","time":"2026-08-07T10:26:03.376Z","pid":36616,"hostname":"Tyagi","data":{"userId":"mock-user-uuid","email":"autosession@gmail.com","token":"dc375609dcfe9faafec35a7c44a5a80982c000cf4a54f79600add0341aa2a8d7"},"msg":"[Background Task Dispatcher] Dispatching task: SEND_VERIFICATION_EMAIL"}
-# {"level":"info","time":"2026-08-07T10:26:03.386Z","pid":36616,"hostname":"Tyagi","data":{"userId":"mock-user-uuid","email":"newuser@gmail.com","token":"0be45a879098d2ba9ed33b8e0be09eec36bfed88ae6a2ba4c7b69538bf1eb396"},"msg":"[Background Task Execution] Executed task: SEND_VERIFICATION_EMAIL"}
-# {"level":"info","time":"2026-08-07T10:26:03.386Z","pid":36616,"hostname":"Tyagi","data":{"userId":"mock-user-uuid","email":"autosession@gmail.com","token":"dc375609dcfe9faafec35a7c44a5a80982c000cf4a54f79600add0341aa2a8d7"},"msg":"[Background Task Execution] Executed task: SEND_VERIFICATION_EMAIL"}
+# {"level":"info","time":"2026-08-12T13:45:54.034Z","pid":17832,"hostname":"Tyagi","payload":{"email":"existing@example.com","userId":"existing-uuid"},"msg":"[Event Dispatcher] Emitted event: REGISTRATION_ATTEMPT_ON_EXISTING_EMAIL"}
+# {"level":"info","time":"2026-08-12T13:45:54.045Z","pid":17832,"hostname":"Tyagi","payload":{"userId":"mock-user-uuid","normalizedEmail":"newuser@gmail.com","registeredAt":"2026-08-12T13:45:54.045Z"},"msg":"[Event Dispatcher] Emitted event: IDENTITY_REGISTERED"}
+# {"level":"info","time":"2026-08-12T13:45:54.045Z","pid":17832,"hostname":"Tyagi","data":{"userId":"mock-user-uuid","email":"newuser@gmail.com","token":"067e9f1c14ee7cc1a693d2bae7f3de442e4502546c1382f494b8e8385ea4e4f6"},"msg":"[Background Task Dispatcher] Dispatching task: SEND_VERIFICATION_EMAIL"}
+# {"level":"info","time":"2026-08-12T13:45:54.062Z","pid":17832,"hostname":"Tyagi","payload":{"userId":"mock-user-uuid","normalizedEmail":"autosession@gmail.com","registeredAt":"2026-08-12T13:45:54.053Z"},"msg":"[Event Dispatcher] Emitted event: IDENTITY_REGISTERED"}
+# {"level":"info","time":"2026-08-12T13:45:54.062Z","pid":17832,"hostname":"Tyagi","data":{"userId":"mock-user-uuid","email":"autosession@gmail.com","token":"9d3d9b9eabfe7cb9caaa9af1c964d504c5e87d6e61e48b6af6d1e990cd108dd1"},"msg":"[Background Task Dispatcher] Dispatching task: SEND_VERIFICATION_EMAIL"}
+# {"level":"info","time":"2026-08-12T13:45:54.082Z","pid":17832,"hostname":"Tyagi","data":{"userId":"mock-user-uuid","email":"newuser@gmail.com","token":"067e9f1c14ee7cc1a693d2bae7f3de442e4502546c1382f494b8e8385ea4e4f6"},"msg":"[Background Task Execution] Executed task: SEND_VERIFICATION_EMAIL"}
+# {"level":"info","time":"2026-08-12T13:45:54.083Z","pid":17832,"hostname":"Tyagi","data":{"userId":"mock-user-uuid","email":"autosession@gmail.com","token":"9d3d9b9eabfe7cb9caaa9af1c964d504c5e87d6e61e48b6af6d1e990cd108dd1"},"msg":"[Background Task Execution] Executed task: SEND_VERIFICATION_EMAIL"}
 1..4
 # tests 24
 # suites 4
@@ -211,4 +211,4 @@ ok 4 - Signup Use Case Validation & Mock Flow Tests
 # cancelled 0
 # skipped 0
 # todo 0
-# duration_ms 2774.9383
+# duration_ms 2979.0039
