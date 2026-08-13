@@ -199,15 +199,6 @@ export class DashboardUI {
   }
 
   private async loadJobs(showSkeleton: boolean): Promise<void> {
-    if (!navigator.onLine) {
-      this.setConnectionStatus("offline");
-      this.elListErrorTitle.textContent = "Internet Connection Unavailable";
-      this.elListErrorMessage.textContent =
-        "You are currently offline. Check your browser network connectivity.";
-      this.showListState("OFFLINE");
-      return;
-    }
-
     if (showSkeleton) {
       this.showListState("LOADING");
     } else {
@@ -218,7 +209,39 @@ export class DashboardUI {
       // IPC Messaging boundary
       const jobs = await this.client.request<object, DashboardJob[]>("GET_DASHBOARD_JOBS", {});
       this.jobs = jobs || [];
-      this.setConnectionStatus("online");
+
+      // Query offline status to configure connectivity badge
+      const status = await this.client
+        .request<
+          object,
+          { isOnline: boolean; status: string; capturedAt?: number }
+        >("GET_OFFLINE_STATUS", {})
+        .catch(() => ({ isOnline: true, status: "LIVE", capturedAt: undefined }));
+
+      if (status.status === "OFFLINE_SNAPSHOT") {
+        this.setConnectionStatus("offline");
+        if (status.capturedAt) {
+          const dateStr = new Date(status.capturedAt).toLocaleTimeString();
+          this.elConnectionStatusText.textContent = `Offline (Snapshot: ${dateStr})`;
+        } else {
+          this.elConnectionStatusText.textContent = "Offline Snapshot";
+        }
+        this.elJobRetryMatchBtn.disabled = true;
+        this.elJobRetryMatchBtn.title = "Unavailable offline";
+      } else if (status.status === "DEGRADED") {
+        this.setConnectionStatus("offline");
+        this.elConnectionStatusText.textContent = "Degraded (Backend Unavailable)";
+        this.elJobRetryMatchBtn.disabled = true;
+        this.elJobRetryMatchBtn.title = "Unavailable offline";
+      } else if (status.status === "RECONNECTING") {
+        this.setConnectionStatus("stale");
+        this.elConnectionStatusText.textContent = "Reconnecting...";
+      } else {
+        this.setConnectionStatus("online");
+        this.elConnectionStatusText.textContent = "Connected";
+        this.elJobRetryMatchBtn.disabled = false;
+        this.elJobRetryMatchBtn.title = "";
+      }
 
       if (this.jobs.length === 0) {
         this.showListState("EMPTY");
@@ -242,11 +265,19 @@ export class DashboardUI {
     } catch (err) {
       const error = err as Error;
       console.error("[Dashboard] Error loading jobs:", error);
-      this.elListErrorTitle.textContent = "Background Service Unreachable";
-      this.elListErrorMessage.textContent = this.sanitizeText(
-        error.message || "Failed to communicate with Chrome Service Worker.",
-      );
-      this.showListState("ERROR");
+
+      if (!navigator.onLine) {
+        this.elListErrorTitle.textContent = "Internet Connection Unavailable";
+        this.elListErrorMessage.textContent =
+          "You are currently offline and no cached offline snapshot is available.";
+        this.showListState("OFFLINE");
+      } else {
+        this.elListErrorTitle.textContent = "Background Service Unreachable";
+        this.elListErrorMessage.textContent = this.sanitizeText(
+          error.message || "Failed to communicate with Chrome Service Worker.",
+        );
+        this.showListState("ERROR");
+      }
     }
   }
 
@@ -386,6 +417,22 @@ export class DashboardUI {
       }
 
       this.renderJobDetails(job);
+
+      // Disable match retries if we are offline
+      const status = await this.client
+        .request<object, { isOnline: boolean }>("GET_OFFLINE_STATUS", {})
+        .catch(() => ({
+          isOnline: true,
+        }));
+
+      if (!status.isOnline) {
+        this.elJobRetryMatchBtn.disabled = true;
+        this.elJobRetryMatchBtn.title = "Unavailable offline";
+      } else {
+        this.elJobRetryMatchBtn.disabled = false;
+        this.elJobRetryMatchBtn.title = "";
+      }
+
       this.showDetailState("ready");
     } catch (err) {
       console.error("[Dashboard] Error loading job details:", err);
@@ -495,6 +542,17 @@ export class DashboardUI {
 
   private async retryMatch(): Promise<void> {
     if (!this.selectedJobId) {
+      return;
+    }
+
+    const status = await this.client
+      .request<object, { isOnline: boolean }>("GET_OFFLINE_STATUS", {})
+      .catch(() => ({
+        isOnline: true,
+      }));
+
+    if (!status.isOnline) {
+      alert("Match re-evaluation is not available in offline mode.");
       return;
     }
 

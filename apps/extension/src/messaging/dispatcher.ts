@@ -85,6 +85,13 @@ const MESSAGE_REGISTRY: Record<string, MessageDefinition> = {
     allowedReceivers: ["SERVICE_WORKER"],
     timeoutMs: 5000,
   },
+  GET_OFFLINE_STATUS: {
+    type: "GET_OFFLINE_STATUS",
+    category: "REQUEST",
+    allowedSenders: ["EXTENSION_UI"],
+    allowedReceivers: ["SERVICE_WORKER"],
+    timeoutMs: 5000,
+  },
 };
 
 export class MessageDispatcher {

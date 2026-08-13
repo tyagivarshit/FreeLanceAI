@@ -121,6 +121,17 @@ let chromeMessageMock: (message: any, callback: (response: any) => void) => void
 (global as any).chrome = {
   runtime: {
     sendMessage(message: any, callback: any) {
+      if (message.type === "GET_OFFLINE_STATUS") {
+        callback({
+          protocolVersion: "1.0",
+          messageId: "res-status-default",
+          correlationId: message.messageId,
+          type: "GET_OFFLINE_STATUS_RESPONSE",
+          timestamp: Date.now(),
+          payload: { isOnline: true, status: "LIVE" },
+        });
+        return;
+      }
       chromeMessageMock(message, callback);
     },
   },

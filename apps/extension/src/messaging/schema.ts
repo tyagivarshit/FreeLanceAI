@@ -176,6 +176,7 @@ export function validatePayload(type: string, category: MessageCategory, payload
 
     case "GET_DASHBOARD_JOBS":
     case "REFRESH_JOBS":
+    case "GET_OFFLINE_STATUS":
       if (payload !== null && payload !== undefined && typeof payload !== "object") {
         throw new Error(`${type} payload must be an object.`);
       }
