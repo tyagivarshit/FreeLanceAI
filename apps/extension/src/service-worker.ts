@@ -1,12 +1,15 @@
 /* eslint-disable no-console */
 import { PlatformAdapterRegistry } from "./platform/registry.js";
 import { UpworkAdapter } from "./platform/upwork.js";
+import { LinkedInAdapter } from "./platform/linkedin.js";
 import { MessageDispatcher } from "./messaging/dispatcher.js";
 import { validateContext } from "./platform/context.js";
 
 const reg = new PlatformAdapterRegistry();
 const upworkAdapter = new UpworkAdapter();
+const linkedinAdapter = new LinkedInAdapter();
 reg.register(upworkAdapter);
+reg.register(linkedinAdapter);
 
 const dispatcher = new MessageDispatcher("SERVICE_WORKER");
 
