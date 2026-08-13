@@ -7,7 +7,7 @@
     "build": "tsc && node dist/scripts/validate-manifest.js",
     "typecheck": "tsc --noEmit",
     "clean": "node -e \"const fs = require('fs'); fs.rmSync('dist', { recursive: true, force: true }); fs.rmSync('tsconfig.tsbuildinfo', { force: true });\"",
-    "test": "node --test dist/test/manifest.test.js dist/test/messaging.test.js dist/test/platform-adapter.test.js dist/test/upwork-adapter.test.js dist/test/linkedin-adapter.test.js dist/test/dashboard.test.js dist/test/offline.test.js"
+    "test": "node --test dist/test/manifest.test.js dist/test/messaging.test.js dist/test/platform-adapter.test.js dist/test/upwork-adapter.test.js dist/test/linkedin-adapter.test.js dist/test/dashboard.test.js dist/test/offline.test.js dist/test/certification.test.js"
   },
   "dependencies": {
     "@freelanceos/config": "*"
