@@ -76,4 +76,8 @@ export type { JobMatchWorkItemStatus, JobMatchContext, PolicyVersions, ResultRef
 export type { JobMatchQueue } from "./job-match-queue.js";
 export { ValidationError, TenantError, VersionError, DomainError, CancellationError, TransientInfrastructureError, PermanentInfrastructureError, JobMatchWorker, } from "./job-match-worker.js";
 export type { WorkerConfig, JobMatchPipelineResolver, WorkerObservabilityHooks, } from "./job-match-worker.js";
+export { calculateTrialExpiration, TrialEligibility, TrialGrant, TrialService, } from "./trial.js";
+export type { TrialState, TrialIdentitySignals, TrialGrantProperties, TrialGrantPersistenceContract, } from "./trial.js";
+export { PricingRegionResolver, Plan, PlanCatalog, EU_COUNTRIES, } from "./plan.js";
+export type { PlanId, PlanLifecycleState, PricingRegion, PlanPrice, PlanProperties, PriceResolutionMetadata, PlanFeature, PlanLimits, UsageLimitValue, UsageLimits, UsagePeriod, UsagePeriodType, } from "./plan.js";
 //# sourceMappingURL=index.d.ts.map

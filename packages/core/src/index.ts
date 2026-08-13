@@ -1052,3 +1052,30 @@ export type {
   JobMatchPipelineResolver,
   WorkerObservabilityHooks,
 } from "./job-match-worker.js";
+
+// Trial and Pricing/Plan exports
+export { calculateTrialExpiration, TrialEligibility, TrialGrant, TrialService } from "./trial.js";
+
+export type {
+  TrialState,
+  TrialIdentitySignals,
+  TrialGrantProperties,
+  TrialGrantPersistenceContract,
+} from "./trial.js";
+
+export { PricingRegionResolver, Plan, PlanCatalog, EU_COUNTRIES } from "./plan.js";
+
+export type {
+  PlanId,
+  PlanLifecycleState,
+  PricingRegion,
+  PlanPrice,
+  PlanProperties,
+  PriceResolutionMetadata,
+  PlanFeature,
+  PlanLimits,
+  UsageLimitValue,
+  UsageLimits,
+  UsagePeriod,
+  UsagePeriodType,
+} from "./plan.js";
