@@ -1,5 +1,6 @@
 import { z } from "zod";
-export const environmentSchema = z.object({
+export const environmentSchema = z
+    .object({
     NODE_ENV: z.enum(["development", "production", "test"]).default("development"),
     API_PORT: z.coerce.number().default(4000),
     DATABASE_URL: z.string().url("DATABASE_URL must be a valid connection string"),
@@ -45,7 +46,8 @@ export const environmentSchema = z.object({
     STRIPE_WEBHOOK_SECRET: z.string().optional(),
     STRIPE_API_VERSION: z.string().default("2023-10-16"),
     STRIPE_TIMEOUT_MS: z.coerce.number().default(10000),
-}).refine((data) => {
+})
+    .refine((data) => {
     if (data.NODE_ENV === "production") {
         if (!data.STRIPE_SECRET_KEY || data.STRIPE_SECRET_KEY.trim() === "") {
             return false;
@@ -57,6 +59,6 @@ export const environmentSchema = z.object({
     return true;
 }, {
     message: "Production Stripe configuration requires a valid production secret key (must not start with sk_test_).",
-    path: ["STRIPE_SECRET_KEY"]
+    path: ["STRIPE_SECRET_KEY"],
 });
 //# sourceMappingURL=schema.js.map

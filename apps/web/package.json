@@ -10,6 +10,7 @@
   "dependencies": {
     "@freelanceos/auth": "*",
     "@freelanceos/config": "*",
+    "@freelanceos/core": "*",
     "@freelanceos/db": "*",
     "@freelanceos/logger": "*"
   }

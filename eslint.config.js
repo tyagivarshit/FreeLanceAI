@@ -10,6 +10,7 @@ export default [
       "**/.next/**",
       "**/.turbo/**",
       "**/migrations/**",
+      "apps/web/server.js",
     ],
   },
 ];

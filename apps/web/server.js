@@ -13,9 +13,83 @@ import {
 } from "@freelanceos/auth";
 import { runtimeConfig } from "@freelanceos/config";
 import { logger } from "@freelanceos/logger";
+import {
+  StripeWebhookProcessor,
+  InMemoryStripeCustomerMappingRepository,
+  InMemoryStripeSubscriptionRepository,
+  InMemoryWebhookEventStore,
+  StripePriceRegistry,
+} from "@freelanceos/core";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
+// Define the standard price catalog configuration
+const priceRegistry = new StripePriceRegistry([
+  {
+    planId: "BASIC",
+    region: "GLOBAL",
+    currency: "USD",
+    interval: "MONTHLY",
+    version: 1,
+    stripePriceId: "stripe_price_basic_global_v1",
+  },
+  {
+    planId: "PRO",
+    region: "GLOBAL",
+    currency: "USD",
+    interval: "MONTHLY",
+    version: 1,
+    stripePriceId: "stripe_price_pro_global_v1",
+  },
+  {
+    planId: "PRO",
+    region: "INDIA",
+    currency: "INR",
+    interval: "MONTHLY",
+    version: 1,
+    stripePriceId: "stripe_price_pro_india_v1",
+  },
+]);
+
+// Instantiate In-Memory Repositories as Singletons for Web Layer
+const customerMappingRepo = new InMemoryStripeCustomerMappingRepository();
+const subscriptionRepo = new InMemoryStripeSubscriptionRepository();
+const eventStore = new InMemoryWebhookEventStore();
+
+// Mock / placeholder PaymentAggregateStore since it's locally mock-defined in tests
+const paymentStore = {
+  save: async (payment) => {
+    logger.info({ message: "Mock Payment Saved", paymentId: payment.id, status: payment.status });
+  },
+  findByReference: async (reference, ownerId) => {
+    logger.info({ message: "Mock Payment findByReference", reference, ownerId });
+    return null;
+  },
+};
+
+// Instantiate the StripeWebhookProcessor
+const webhookProcessor = new StripeWebhookProcessor({
+  stripeSecretKey: runtimeConfig.STRIPE_SECRET_KEY || "mock_secret_key",
+  webhookSecret: runtimeConfig.STRIPE_WEBHOOK_SECRET || "mock_webhook_secret",
+  env: runtimeConfig.NODE_ENV || "development",
+  priceRegistry,
+  customerMappingRepo,
+  subscriptionRepo,
+  paymentStore,
+  eventStore,
+  trialPersistence: {
+    save: async (grant) => {
+      logger.info({
+        message: "Mock Trial Grant Saved",
+        grantId: grant.grantId,
+        status: grant.status,
+      });
+    },
+    findById: async (_id) => null,
+    findByUserId: async (_userId) => [],
+  },
+});
 
 const PORT = runtimeConfig.API_PORT || 4000;
 
@@ -199,6 +273,92 @@ const server = http.createServer(async (req, res) => {
         const httpResponse = mapAuthError(err);
         res.writeHead(httpResponse.statusCode, { "Content-Type": "application/json" });
         res.end(JSON.stringify(httpResponse.body));
+      }
+    });
+    return;
+  }
+
+  // 1D. Stripe Webhook Processing Boundary Hookup
+  if (req.url === "/api/webhooks/stripe" && req.method === "POST") {
+    const signatureHeader = req.headers["stripe-signature"];
+
+    // Size limit protection: 1MB (1024 * 1024 bytes) max to prevent resource exhaustion attacks
+    const MAX_SIZE = 1024 * 1024;
+    let bodyChunks = [];
+    let bodySize = 0;
+    let aborted = false;
+
+    req.on("data", (chunk) => {
+      if (aborted) return;
+      bodySize += chunk.length;
+      if (bodySize > MAX_SIZE) {
+        aborted = true;
+        logger.warn({
+          message: "Stripe webhook rejected: Payload size limit exceeded",
+          size: bodySize,
+        });
+        res.writeHead(413, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ error: "Payload too large" }));
+        req.destroy();
+      } else {
+        bodyChunks.push(chunk);
+      }
+    });
+
+    req.on("end", async () => {
+      if (aborted) return;
+
+      const rawBody = Buffer.concat(bodyChunks).toString("utf8");
+
+      // Timeout control: 10 seconds timeout for webhook processing
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error("Webhook processing timeout")), 10000),
+      );
+
+      try {
+        const processPromise = webhookProcessor.handleWebhook(rawBody, signatureHeader);
+        const result = await Promise.race([processPromise, timeoutPromise]);
+
+        // Success / processed response
+        res.writeHead(200, { "Content-Type": "application/json" });
+        res.end(
+          JSON.stringify({
+            success: true,
+            status: result.status,
+            eventId: result.eventId,
+          }),
+        );
+      } catch (err) {
+        logger.error({
+          message: "Stripe webhook processing failed",
+          error: err instanceof Error ? err : new Error(String(err)),
+        });
+
+        // Determine correct HTTP status code based on error type
+        let statusCode = 400; // default for validation / bad requests
+        let errorCode = "PROCESSING_ERROR";
+
+        if (err && typeof err === "object") {
+          errorCode = err.code || "PROCESSING_ERROR";
+          if (errorCode === "INVALID_SIGNATURE") {
+            statusCode = 400;
+          } else if (errorCode === "INVALID_EVENT") {
+            statusCode = 400;
+          } else if (errorCode === "PERMANENT_PROCESSING_FAILURE") {
+            statusCode = 500;
+          } else if (errorCode === "TRANSIENT_PROCESSING_FAILURE") {
+            statusCode = 500; // triggers retry from Stripe
+          }
+        }
+
+        res.writeHead(statusCode, { "Content-Type": "application/json" });
+        res.end(
+          JSON.stringify({
+            success: false,
+            code: errorCode,
+            message: err instanceof Error ? err.message : String(err),
+          }),
+        );
       }
     });
     return;

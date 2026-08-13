@@ -1097,3 +1097,20 @@ export type {
   StripeSubscriptionInfo,
   StripeCustomerMappingRepository,
 } from "./stripe.js";
+
+// Stripe Webhook exports
+export {
+  StripeWebhookError,
+  InMemoryStripeSubscriptionRepository,
+  InMemoryWebhookEventStore,
+  StripeWebhookProcessor,
+  SUPPORTED_EVENTS,
+} from "./webhook.js";
+
+export type {
+  LocalSubscriptionRecord,
+  StripeSubscriptionRepository,
+  WebhookEventRecord,
+  WebhookEventStore,
+  WebhookProcessorParams,
+} from "./webhook.js";

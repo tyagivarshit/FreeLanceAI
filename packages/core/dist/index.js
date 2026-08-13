@@ -107,4 +107,6 @@ export { calculateTrialExpiration, TrialEligibility, TrialGrant, TrialService } 
 export { PricingRegionResolver, Plan, PlanCatalog, EU_COUNTRIES } from "./plan.js";
 // Stripe Billing exports
 export { StripeBillingError, StripePriceRegistry, InMemoryStripeCustomerMappingRepository, translateStripeError, StripeBillingProviderImpl, } from "./stripe.js";
+// Stripe Webhook exports
+export { StripeWebhookError, InMemoryStripeSubscriptionRepository, InMemoryWebhookEventStore, StripeWebhookProcessor, SUPPORTED_EVENTS, } from "./webhook.js";
 //# sourceMappingURL=index.js.map
