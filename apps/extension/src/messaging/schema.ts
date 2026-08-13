@@ -174,6 +174,25 @@ export function validatePayload(type: string, category: MessageCategory, payload
       break;
     }
 
+    case "GET_DASHBOARD_JOBS":
+    case "REFRESH_JOBS":
+      if (payload !== null && payload !== undefined && typeof payload !== "object") {
+        throw new Error(`${type} payload must be an object.`);
+      }
+      break;
+
+    case "GET_JOB_DETAILS":
+    case "RETRY_MATCH": {
+      if (!payload || typeof payload !== "object" || Array.isArray(payload)) {
+        throw new Error(`${type} payload must be an object.`);
+      }
+      const data = payload as Record<string, unknown>;
+      if (typeof data.jobId !== "string" || data.jobId.trim() === "") {
+        throw new Error(`${type} requires a non-empty string jobId.`);
+      }
+      break;
+    }
+
     default:
       throw new Error(`No schema validator registered for message type: ${type}`);
   }

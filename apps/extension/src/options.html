@@ -2,10 +2,725 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>FreelanceOS Matcher Options</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FreelanceOS Matcher Dashboard</title>
+  <style>
+    /* Reset & Core variables */
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    :root {
+      --bg-primary: #0f172a;
+      --bg-secondary: #1e293b;
+      --bg-tertiary: #334155;
+      --text-primary: #f8fafc;
+      --text-secondary: #94a3b8;
+      --text-muted: #64748b;
+      --accent-color: #3b82f6;
+      --accent-hover: #2563eb;
+      --success: #10b981;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+      --border-color: #475569;
+      --border-radius: 8px;
+      --font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    }
+
+    body {
+      background-color: var(--bg-primary);
+      color: var(--text-primary);
+      font-family: var(--font-family);
+      line-height: 1.5;
+      padding: 1.5rem;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Top bar */
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1.5rem;
+      border-bottom: 1px solid var(--border-color);
+      padding-bottom: 1rem;
+    }
+
+    .brand-section {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .brand-logo {
+      background: linear-gradient(135deg, var(--accent-color), var(--success));
+      width: 32px;
+      height: 32px;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      color: white;
+    }
+
+    h1 {
+      font-size: 1.5rem;
+      font-weight: 700;
+    }
+
+    .status-panel {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .status-badge {
+      font-size: 0.75rem;
+      font-weight: 600;
+      padding: 0.25rem 0.5rem;
+      border-radius: 4px;
+      background-color: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      gap: 0.25rem;
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background-color: var(--success);
+    }
+
+    .status-dot.stale {
+      background-color: var(--warning);
+    }
+
+    .status-dot.offline {
+      background-color: var(--danger);
+    }
+
+    .btn-icon {
+      background: none;
+      border: 1px solid var(--border-color);
+      color: var(--text-primary);
+      cursor: pointer;
+      padding: 0.5rem;
+      border-radius: var(--border-radius);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background-color: var(--bg-secondary);
+      transition: all 0.2s ease;
+    }
+
+    .btn-icon:hover {
+      background-color: var(--bg-tertiary);
+      border-color: var(--accent-color);
+    }
+
+    /* Layout structure */
+    .dashboard-container {
+      display: grid;
+      grid-template-columns: 380px 1fr;
+      gap: 1.5rem;
+      flex-grow: 1;
+    }
+
+    @media (max-width: 900px) {
+      .dashboard-container {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* Left Panel: Job List section */
+    .list-panel {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      height: calc(100vh - 100px);
+      overflow: hidden;
+    }
+
+    .search-filter-section {
+      background-color: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: var(--border-radius);
+      padding: 1rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    .search-box {
+      width: 100%;
+      background-color: var(--bg-primary);
+      border: 1px solid var(--border-color);
+      color: var(--text-primary);
+      padding: 0.5rem 0.75rem;
+      border-radius: var(--border-radius);
+      font-size: 0.875rem;
+    }
+
+    .search-box:focus {
+      outline: none;
+      border-color: var(--accent-color);
+    }
+
+    .filter-tabs {
+      display: flex;
+      gap: 0.5rem;
+    }
+
+    .filter-tab {
+      flex: 1;
+      background: none;
+      border: 1px solid var(--border-color);
+      color: var(--text-secondary);
+      padding: 0.4rem;
+      border-radius: var(--border-radius);
+      cursor: pointer;
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-align: center;
+      transition: all 0.2s;
+    }
+
+    .filter-tab:hover {
+      background-color: var(--bg-tertiary);
+    }
+
+    .filter-tab.active {
+      background-color: var(--accent-color);
+      color: white;
+      border-color: var(--accent-color);
+    }
+
+    .jobs-scroll-area {
+      flex-grow: 1;
+      overflow-y: auto;
+      border: 1px solid var(--border-color);
+      border-radius: var(--border-radius);
+      background-color: var(--bg-secondary);
+    }
+
+    /* Job list items styling */
+    .job-card {
+      padding: 1rem;
+      border-bottom: 1px solid var(--border-color);
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      user-select: none;
+    }
+
+    .job-card:last-child {
+      border-bottom: none;
+    }
+
+    .job-card:hover {
+      background-color: var(--bg-tertiary);
+    }
+
+    .job-card.selected {
+      border-left: 4px solid var(--accent-color);
+      background-color: rgba(59, 130, 246, 0.15);
+    }
+
+    .job-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 0.5rem;
+    }
+
+    .job-card-title {
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      /* Clamp text */
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    .platform-badge {
+      font-size: 0.65rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      padding: 0.15rem 0.35rem;
+      border-radius: 4px;
+      color: white;
+    }
+
+    .platform-badge.upwork {
+      background-color: #37a000;
+    }
+
+    .platform-badge.linkedin {
+      background-color: #0077b5;
+    }
+
+    .job-card-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+    }
+
+    .job-card-meta-item {
+      display: flex;
+      align-items: center;
+      gap: 0.25rem;
+    }
+
+    .match-score-badge {
+      font-size: 0.75rem;
+      font-weight: 700;
+      padding: 0.2rem 0.5rem;
+      border-radius: 12px;
+      color: white;
+      text-align: center;
+      align-self: flex-start;
+    }
+
+    .match-score-badge.high {
+      background-color: var(--success);
+    }
+
+    .match-score-badge.medium {
+      background-color: var(--warning);
+    }
+
+    .match-score-badge.low {
+      background-color: var(--danger);
+    }
+
+    .match-score-badge.none {
+      background-color: var(--text-muted);
+    }
+
+    /* Right Panel: Detail View */
+    .detail-panel {
+      background-color: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: var(--border-radius);
+      padding: 1.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+      height: calc(100vh - 100px);
+      overflow-y: auto;
+    }
+
+    .detail-header {
+      border-bottom: 1px solid var(--border-color);
+      padding-bottom: 1rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 1rem;
+    }
+
+    .detail-title-section {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .detail-title {
+      font-size: 1.3rem;
+      font-weight: 700;
+    }
+
+    .detail-meta-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+    }
+
+    .detail-meta-item {
+      display: flex;
+      align-items: center;
+      gap: 0.3rem;
+    }
+
+    .btn-primary {
+      background-color: var(--accent-color);
+      color: white;
+      border: none;
+      cursor: pointer;
+      padding: 0.5rem 1rem;
+      border-radius: var(--border-radius);
+      font-weight: 600;
+      font-size: 0.85rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      transition: background-color 0.2s;
+      text-decoration: none;
+    }
+
+    .btn-primary:hover {
+      background-color: var(--accent-hover);
+    }
+
+    .btn-secondary {
+      background-color: var(--bg-primary);
+      color: var(--text-primary);
+      border: 1px solid var(--border-color);
+      cursor: pointer;
+      padding: 0.5rem 1rem;
+      border-radius: var(--border-radius);
+      font-weight: 600;
+      font-size: 0.85rem;
+      transition: background-color 0.2s;
+    }
+
+    .btn-secondary:hover {
+      background-color: var(--bg-tertiary);
+    }
+
+    .detail-actions {
+      display: flex;
+      gap: 0.5rem;
+      align-self: flex-start;
+    }
+
+    .detail-section-title {
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      border-left: 3px solid var(--accent-color);
+      padding-left: 0.5rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .detail-description {
+      font-size: 0.9rem;
+      color: var(--text-secondary);
+      white-space: pre-wrap;
+      max-height: 300px;
+      overflow-y: auto;
+      border: 1px solid var(--border-color);
+      border-radius: var(--border-radius);
+      padding: 1rem;
+      background-color: var(--bg-primary);
+    }
+
+    .skills-container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+
+    .skill-tag {
+      font-size: 0.75rem;
+      font-weight: 600;
+      padding: 0.25rem 0.5rem;
+      border-radius: 4px;
+      background-color: var(--bg-tertiary);
+      border: 1px solid var(--border-color);
+    }
+
+    .skill-tag.matched {
+      background-color: rgba(16, 185, 129, 0.15);
+      border-color: var(--success);
+      color: #34d399;
+    }
+
+    .skill-tag.missing {
+      background-color: rgba(239, 68, 68, 0.15);
+      border-color: var(--danger);
+      color: #f87171;
+    }
+
+    .match-details-box {
+      border: 1px solid var(--border-color);
+      border-radius: var(--border-radius);
+      padding: 1rem;
+      background-color: var(--bg-primary);
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    .match-metric-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px dashed var(--border-color);
+      padding-bottom: 0.4rem;
+      font-size: 0.85rem;
+    }
+
+    .match-metric-row:last-child {
+      border-bottom: none;
+      padding-bottom: 0;
+    }
+
+    .match-metric-label {
+      color: var(--text-secondary);
+    }
+
+    .match-metric-value {
+      font-weight: 600;
+    }
+
+    .match-metric-value.compatible {
+      color: var(--success);
+    }
+
+    .match-metric-value.partial {
+      color: var(--warning);
+    }
+
+    .match-metric-value.incompatible {
+      color: var(--danger);
+    }
+
+    .explanation-text {
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+      line-height: 1.4;
+      background-color: rgba(59, 130, 246, 0.05);
+      border-left: 3px solid var(--accent-color);
+      padding: 0.75rem;
+      border-radius: 0 var(--border-radius) var(--border-radius) 0;
+    }
+
+    /* Skeleton States */
+    .skeleton {
+      background: linear-gradient(90deg, var(--bg-tertiary) 25%, var(--border-color) 50%, var(--bg-tertiary) 75%);
+      background-size: 200% 100%;
+      animation: loading-pulse 1.5s infinite;
+      border-radius: 4px;
+    }
+
+    .skeleton-text {
+      height: 12px;
+      margin-bottom: 0.5rem;
+    }
+
+    .skeleton-title {
+      height: 18px;
+      width: 80%;
+      margin-bottom: 0.75rem;
+    }
+
+    .skeleton-badge {
+      height: 20px;
+      width: 60px;
+    }
+
+    @keyframes loading-pulse {
+      0% {
+        background-position: 200% 0;
+      }
+      100% {
+        background-position: -200% 0;
+      }
+    }
+
+    /* State messages overlay */
+    .panel-message {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 3rem 1.5rem;
+      gap: 1rem;
+      color: var(--text-secondary);
+      height: 100%;
+    }
+
+    .panel-message-title {
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    .hidden {
+      display: none !important;
+    }
+  </style>
 </head>
 <body>
-  <h2>Configuration Settings</h2>
-  <script src="options.js"></script>
+  <!-- Header Bar -->
+  <header>
+    <div class="brand-section">
+      <div class="brand-logo">F</div>
+      <h1>FreelanceOS Matcher Dashboard</h1>
+    </div>
+    <div class="status-panel">
+      <div id="connection-status" class="status-badge">
+        <span class="status-dot"></span>
+        <span id="connection-status-text">Connected</span>
+      </div>
+      <button id="global-refresh-btn" class="btn-icon" aria-label="Refresh job list" title="Refresh job list">
+        Refresh
+      </button>
+    </div>
+  </header>
+
+  <!-- Main View Area -->
+  <main class="dashboard-container">
+    <!-- Left column: Listing & Filters -->
+    <section class="list-panel">
+      <div class="search-filter-section">
+        <input type="text" id="search-input" class="search-box" placeholder="Search by title, skills or client..." aria-label="Search jobs">
+        <div class="filter-tabs" role="tablist" aria-label="Filter by Platform">
+          <button id="filter-all" class="filter-tab active" role="tab" aria-selected="true">All</button>
+          <button id="filter-upwork" class="filter-tab" role="tab" aria-selected="false">Upwork</button>
+          <button id="filter-linkedin" class="filter-tab" role="tab" aria-selected="false">LinkedIn</button>
+        </div>
+      </div>
+
+      <div class="jobs-scroll-area">
+        <!-- Loading Skeleton container -->
+        <div id="list-skeleton" class="hidden">
+          <div class="job-card">
+            <div class="job-card-header">
+              <div class="skeleton skeleton-title"></div>
+              <div class="skeleton skeleton-badge"></div>
+            </div>
+            <div class="skeleton skeleton-text" style="width: 40%"></div>
+            <div class="skeleton skeleton-text" style="width: 60%"></div>
+          </div>
+          <div class="job-card">
+            <div class="job-card-header">
+              <div class="skeleton skeleton-title"></div>
+              <div class="skeleton skeleton-badge"></div>
+            </div>
+            <div class="skeleton skeleton-text" style="width: 50%"></div>
+            <div class="skeleton skeleton-text" style="width: 30%"></div>
+          </div>
+        </div>
+
+        <!-- Job List items wrapper -->
+        <div id="job-list-items"></div>
+
+        <!-- Empty list indicator -->
+        <div id="list-empty-state" class="panel-message hidden">
+          <div class="panel-message-title">No Jobs Detected Yet</div>
+          <p>Please browse job postings on Upwork or LinkedIn to import them automatically.</p>
+        </div>
+
+        <!-- Load Error indicator -->
+        <div id="list-error-state" class="panel-message hidden">
+          <div class="panel-message-title" id="list-error-title">Failed to load jobs</div>
+          <p id="list-error-message">Check connection to the background service worker.</p>
+          <button id="list-retry-btn" class="btn-secondary">Retry Loading</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Right column: Selection Details -->
+    <section class="detail-panel" id="detail-panel">
+      <!-- Unselected placeholder state -->
+      <div id="detail-placeholder" class="panel-message">
+        <div class="panel-message-title">No Job Selected</div>
+        <p>Choose a job from the list on the left to see match details, skill analysis, and explanation.</p>
+      </div>
+
+      <!-- Loaded Details view -->
+      <div id="detail-content" class="hidden" style="display: flex; flex-direction: column; gap: 1.25rem;">
+        <div class="detail-header">
+          <div class="detail-title-section">
+            <h2 id="job-detail-title" class="detail-title"></h2>
+            <div class="detail-meta-row">
+              <div class="detail-meta-item">
+                <strong>Platform:</strong> <span id="job-detail-platform" class="platform-badge"></span>
+              </div>
+              <div class="detail-meta-item">
+                <strong>Client location:</strong> <span id="job-detail-location"></span>
+              </div>
+              <div class="detail-meta-item">
+                <strong>Budget/Salary:</strong> <span id="job-detail-budget"></span>
+              </div>
+            </div>
+          </div>
+          <div id="job-detail-score" class="match-score-badge" style="font-size: 1.1rem; padding: 0.4rem 0.8rem; border-radius: 16px;"></div>
+        </div>
+
+        <div class="detail-actions">
+          <a id="job-source-link" class="btn-primary" target="_blank" rel="noopener noreferrer">
+            Open Original Page
+          </a>
+          <button id="job-retry-match-btn" class="btn-secondary">Re-evaluate Match</button>
+        </div>
+
+        <div>
+          <h3 class="detail-section-title">Match Explanation</h3>
+          <p id="job-match-explanation" class="explanation-text"></p>
+        </div>
+
+        <div>
+          <h3 class="detail-section-title">Compatibility Signals</h3>
+          <div class="match-details-box">
+            <div class="match-metric-row">
+              <span class="match-metric-label">Skills Coverage</span>
+              <span id="metric-skills-coverage" class="match-metric-value"></span>
+            </div>
+            <div class="match-metric-row">
+              <span class="match-metric-label">Experience Match</span>
+              <span id="metric-experience-match" class="match-metric-value"></span>
+            </div>
+            <div class="match-metric-row">
+              <span class="match-metric-label">Budget Fit</span>
+              <span id="metric-budget-fit" class="match-metric-value"></span>
+            </div>
+            <div class="match-metric-row">
+              <span class="match-metric-label">Location Fit</span>
+              <span id="metric-location-fit" class="match-metric-value"></span>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <h3 class="detail-section-title">Required Skills</h3>
+          <div id="job-skills-container" class="skills-container"></div>
+        </div>
+
+        <div>
+          <h3 class="detail-section-title">Job Description</h3>
+          <div id="job-detail-description" class="detail-description"></div>
+        </div>
+      </div>
+
+      <!-- Detail Loading Skeleton -->
+      <div id="detail-skeleton" class="hidden">
+        <div class="detail-header">
+          <div class="skeleton skeleton-title" style="width: 60%; height: 28px;"></div>
+          <div class="skeleton skeleton-badge" style="width: 80px; height: 30px; border-radius: 15px;"></div>
+        </div>
+        <div class="skeleton skeleton-text" style="width: 40%"></div>
+        <div class="skeleton skeleton-text" style="width: 30%; margin-bottom: 2rem;"></div>
+        <div class="skeleton skeleton-title" style="width: 25%"></div>
+        <div class="skeleton skeleton-text" style="width: 90%; height: 80px;"></div>
+      </div>
+
+      <!-- Detail Error State -->
+      <div id="detail-error-state" class="panel-message hidden">
+        <div class="panel-message-title">Failed to load details</div>
+        <p>The details for this job could not be retrieved from the background worker.</p>
+      </div>
+    </section>
+  </main>
+
+  <script src="../dist/src/options.js" type="module"></script>
 </body>
 </html>

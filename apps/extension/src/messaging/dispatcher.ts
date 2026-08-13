@@ -57,6 +57,34 @@ const MESSAGE_REGISTRY: Record<string, MessageDefinition> = {
     allowedReceivers: ["SERVICE_WORKER"],
     timeoutMs: 10000,
   },
+  GET_DASHBOARD_JOBS: {
+    type: "GET_DASHBOARD_JOBS",
+    category: "REQUEST",
+    allowedSenders: ["EXTENSION_UI"],
+    allowedReceivers: ["SERVICE_WORKER"],
+    timeoutMs: 5000,
+  },
+  GET_JOB_DETAILS: {
+    type: "GET_JOB_DETAILS",
+    category: "REQUEST",
+    allowedSenders: ["EXTENSION_UI"],
+    allowedReceivers: ["SERVICE_WORKER"],
+    timeoutMs: 5000,
+  },
+  RETRY_MATCH: {
+    type: "RETRY_MATCH",
+    category: "REQUEST",
+    allowedSenders: ["EXTENSION_UI"],
+    allowedReceivers: ["SERVICE_WORKER"],
+    timeoutMs: 5000,
+  },
+  REFRESH_JOBS: {
+    type: "REFRESH_JOBS",
+    category: "REQUEST",
+    allowedSenders: ["EXTENSION_UI"],
+    allowedReceivers: ["SERVICE_WORKER"],
+    timeoutMs: 5000,
+  },
 };
 
 export class MessageDispatcher {
