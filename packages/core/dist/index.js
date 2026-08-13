@@ -103,6 +103,8 @@ export { MemoryCacheStore, CacheKeyBuilder, JobMatchCacheManager } from "./job-m
 export { JobMatchWorkItemSnapshot, JobMatchWorkItem } from "./job-match-work-item.js";
 export { ValidationError, TenantError, VersionError, DomainError, CancellationError, TransientInfrastructureError, PermanentInfrastructureError, JobMatchWorker, } from "./job-match-worker.js";
 // Trial and Pricing/Plan exports
-export { calculateTrialExpiration, TrialEligibility, TrialGrant, TrialService, } from "./trial.js";
-export { PricingRegionResolver, Plan, PlanCatalog, EU_COUNTRIES, } from "./plan.js";
+export { calculateTrialExpiration, TrialEligibility, TrialGrant, TrialService } from "./trial.js";
+export { PricingRegionResolver, Plan, PlanCatalog, EU_COUNTRIES } from "./plan.js";
+// Stripe Billing exports
+export { StripeBillingError, StripePriceRegistry, InMemoryStripeCustomerMappingRepository, translateStripeError, StripeBillingProviderImpl, } from "./stripe.js";
 //# sourceMappingURL=index.js.map

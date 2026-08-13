@@ -26,7 +26,12 @@ export declare function loadRuntimeConfig(): Readonly<{
     CONFIG_LOCKOUT_DURATION_SEC: number;
     CONFIG_MAX_CONCURRENT_SESSIONS: number;
     CONFIG_CONCURRENT_SESSION_STRATEGY: "revoke_oldest" | "deny_access";
+    STRIPE_API_VERSION: string;
+    STRIPE_TIMEOUT_MS: number;
     SESSION_COOKIE_DOMAIN?: string | undefined;
+    STRIPE_SECRET_KEY?: string | undefined;
+    STRIPE_PUBLISHABLE_KEY?: string | undefined;
+    STRIPE_WEBHOOK_SECRET?: string | undefined;
 }>;
 export declare const runtimeConfig: Readonly<{
     NODE_ENV: "development" | "production" | "test";
@@ -56,6 +61,11 @@ export declare const runtimeConfig: Readonly<{
     CONFIG_LOCKOUT_DURATION_SEC: number;
     CONFIG_MAX_CONCURRENT_SESSIONS: number;
     CONFIG_CONCURRENT_SESSION_STRATEGY: "revoke_oldest" | "deny_access";
+    STRIPE_API_VERSION: string;
+    STRIPE_TIMEOUT_MS: number;
     SESSION_COOKIE_DOMAIN?: string | undefined;
+    STRIPE_SECRET_KEY?: string | undefined;
+    STRIPE_PUBLISHABLE_KEY?: string | undefined;
+    STRIPE_WEBHOOK_SECRET?: string | undefined;
 }>;
 //# sourceMappingURL=config.d.ts.map

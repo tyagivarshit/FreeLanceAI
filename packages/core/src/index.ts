@@ -1079,3 +1079,21 @@ export type {
   UsagePeriod,
   UsagePeriodType,
 } from "./plan.js";
+
+// Stripe Billing exports
+export {
+  StripeBillingError,
+  StripePriceRegistry,
+  InMemoryStripeCustomerMappingRepository,
+  translateStripeError,
+  StripeBillingProviderImpl,
+} from "./stripe.js";
+
+export type {
+  StripePriceMapping,
+  StripeCustomerMapping,
+  CheckoutSessionResult,
+  PortalSessionResult,
+  StripeSubscriptionInfo,
+  StripeCustomerMappingRepository,
+} from "./stripe.js";

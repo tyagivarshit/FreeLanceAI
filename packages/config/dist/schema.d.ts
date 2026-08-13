@@ -1,5 +1,5 @@
 import { z } from "zod";
-export declare const environmentSchema: z.ZodObject<{
+export declare const environmentSchema: z.ZodEffects<z.ZodObject<{
     NODE_ENV: z.ZodDefault<z.ZodEnum<["development", "production", "test"]>>;
     API_PORT: z.ZodDefault<z.ZodNumber>;
     DATABASE_URL: z.ZodString;
@@ -28,6 +28,11 @@ export declare const environmentSchema: z.ZodObject<{
     CONFIG_LOCKOUT_DURATION_SEC: z.ZodDefault<z.ZodNumber>;
     CONFIG_MAX_CONCURRENT_SESSIONS: z.ZodDefault<z.ZodNumber>;
     CONFIG_CONCURRENT_SESSION_STRATEGY: z.ZodDefault<z.ZodEnum<["revoke_oldest", "deny_access"]>>;
+    STRIPE_SECRET_KEY: z.ZodOptional<z.ZodString>;
+    STRIPE_PUBLISHABLE_KEY: z.ZodOptional<z.ZodString>;
+    STRIPE_WEBHOOK_SECRET: z.ZodOptional<z.ZodString>;
+    STRIPE_API_VERSION: z.ZodDefault<z.ZodString>;
+    STRIPE_TIMEOUT_MS: z.ZodDefault<z.ZodNumber>;
 }, "strip", z.ZodTypeAny, {
     NODE_ENV: "development" | "production" | "test";
     API_PORT: number;
@@ -56,7 +61,12 @@ export declare const environmentSchema: z.ZodObject<{
     CONFIG_LOCKOUT_DURATION_SEC: number;
     CONFIG_MAX_CONCURRENT_SESSIONS: number;
     CONFIG_CONCURRENT_SESSION_STRATEGY: "revoke_oldest" | "deny_access";
+    STRIPE_API_VERSION: string;
+    STRIPE_TIMEOUT_MS: number;
     SESSION_COOKIE_DOMAIN?: string | undefined;
+    STRIPE_SECRET_KEY?: string | undefined;
+    STRIPE_PUBLISHABLE_KEY?: string | undefined;
+    STRIPE_WEBHOOK_SECRET?: string | undefined;
 }, {
     DATABASE_URL: string;
     REDIS_URL: string;
@@ -86,6 +96,79 @@ export declare const environmentSchema: z.ZodObject<{
     CONFIG_LOCKOUT_DURATION_SEC?: number | undefined;
     CONFIG_MAX_CONCURRENT_SESSIONS?: number | undefined;
     CONFIG_CONCURRENT_SESSION_STRATEGY?: "revoke_oldest" | "deny_access" | undefined;
+    STRIPE_SECRET_KEY?: string | undefined;
+    STRIPE_PUBLISHABLE_KEY?: string | undefined;
+    STRIPE_WEBHOOK_SECRET?: string | undefined;
+    STRIPE_API_VERSION?: string | undefined;
+    STRIPE_TIMEOUT_MS?: number | undefined;
+}>, {
+    NODE_ENV: "development" | "production" | "test";
+    API_PORT: number;
+    DATABASE_URL: string;
+    REDIS_URL: string;
+    JWT_SECRET: string;
+    ACCESS_TOKEN_LIFETIME_SEC: number;
+    REFRESH_TOKEN_LIFETIME_SEC: number;
+    ROTATION_GRACE_PERIOD_SEC: number;
+    SESSION_COOKIE_NAME: string;
+    SESSION_COOKIE_SAMESITE: "lax" | "strict" | "none";
+    SESSION_COOKIE_SECURE: boolean;
+    SESSION_COOKIE_HTTPONLY: boolean;
+    SESSION_COOKIE_PATH: string;
+    CONFIG_PASSWORD_MIN_LENGTH: number;
+    CONFIG_PASSWORD_MAX_LENGTH: number;
+    CONFIG_PASSWORD_COMPLEXITY_REQUIRED: boolean;
+    CONFIG_PASSWORD_HASH_ALGORITHM: "pbkdf2" | "scrypt";
+    CONFIG_PASSWORD_HASH_ROUNDS: number;
+    CONFIG_EMAIL_STRIP_SUBADDRESS: boolean;
+    CONFIG_EMAIL_STRIP_DOTS: boolean;
+    CONFIG_SIGNUP_ANTI_ENUMERATION_ENABLED: boolean;
+    CONFIG_REQUIRE_VERIFICATION_FOR_SESSION: boolean;
+    CONFIG_EMAIL_VERIFICATION_LIFETIME_SEC: number;
+    CONFIG_MAX_LOGIN_ATTEMPTS: number;
+    CONFIG_LOCKOUT_DURATION_SEC: number;
+    CONFIG_MAX_CONCURRENT_SESSIONS: number;
+    CONFIG_CONCURRENT_SESSION_STRATEGY: "revoke_oldest" | "deny_access";
+    STRIPE_API_VERSION: string;
+    STRIPE_TIMEOUT_MS: number;
+    SESSION_COOKIE_DOMAIN?: string | undefined;
+    STRIPE_SECRET_KEY?: string | undefined;
+    STRIPE_PUBLISHABLE_KEY?: string | undefined;
+    STRIPE_WEBHOOK_SECRET?: string | undefined;
+}, {
+    DATABASE_URL: string;
+    REDIS_URL: string;
+    NODE_ENV?: "development" | "production" | "test" | undefined;
+    API_PORT?: number | undefined;
+    JWT_SECRET?: string | undefined;
+    ACCESS_TOKEN_LIFETIME_SEC?: number | undefined;
+    REFRESH_TOKEN_LIFETIME_SEC?: number | undefined;
+    ROTATION_GRACE_PERIOD_SEC?: number | undefined;
+    SESSION_COOKIE_NAME?: string | undefined;
+    SESSION_COOKIE_SAMESITE?: "lax" | "strict" | "none" | undefined;
+    SESSION_COOKIE_SECURE?: boolean | undefined;
+    SESSION_COOKIE_HTTPONLY?: boolean | undefined;
+    SESSION_COOKIE_PATH?: string | undefined;
+    SESSION_COOKIE_DOMAIN?: string | undefined;
+    CONFIG_PASSWORD_MIN_LENGTH?: number | undefined;
+    CONFIG_PASSWORD_MAX_LENGTH?: number | undefined;
+    CONFIG_PASSWORD_COMPLEXITY_REQUIRED?: boolean | undefined;
+    CONFIG_PASSWORD_HASH_ALGORITHM?: "pbkdf2" | "scrypt" | undefined;
+    CONFIG_PASSWORD_HASH_ROUNDS?: number | undefined;
+    CONFIG_EMAIL_STRIP_SUBADDRESS?: boolean | undefined;
+    CONFIG_EMAIL_STRIP_DOTS?: boolean | undefined;
+    CONFIG_SIGNUP_ANTI_ENUMERATION_ENABLED?: boolean | undefined;
+    CONFIG_REQUIRE_VERIFICATION_FOR_SESSION?: boolean | undefined;
+    CONFIG_EMAIL_VERIFICATION_LIFETIME_SEC?: number | undefined;
+    CONFIG_MAX_LOGIN_ATTEMPTS?: number | undefined;
+    CONFIG_LOCKOUT_DURATION_SEC?: number | undefined;
+    CONFIG_MAX_CONCURRENT_SESSIONS?: number | undefined;
+    CONFIG_CONCURRENT_SESSION_STRATEGY?: "revoke_oldest" | "deny_access" | undefined;
+    STRIPE_SECRET_KEY?: string | undefined;
+    STRIPE_PUBLISHABLE_KEY?: string | undefined;
+    STRIPE_WEBHOOK_SECRET?: string | undefined;
+    STRIPE_API_VERSION?: string | undefined;
+    STRIPE_TIMEOUT_MS?: number | undefined;
 }>;
 export type Environment = z.infer<typeof environmentSchema>;
 //# sourceMappingURL=schema.d.ts.map

@@ -39,5 +39,24 @@ export const environmentSchema = z.object({
     CONFIG_CONCURRENT_SESSION_STRATEGY: z
         .enum(["revoke_oldest", "deny_access"])
         .default("revoke_oldest"),
+    // Stripe Configuration
+    STRIPE_SECRET_KEY: z.string().optional(),
+    STRIPE_PUBLISHABLE_KEY: z.string().optional(),
+    STRIPE_WEBHOOK_SECRET: z.string().optional(),
+    STRIPE_API_VERSION: z.string().default("2023-10-16"),
+    STRIPE_TIMEOUT_MS: z.coerce.number().default(10000),
+}).refine((data) => {
+    if (data.NODE_ENV === "production") {
+        if (!data.STRIPE_SECRET_KEY || data.STRIPE_SECRET_KEY.trim() === "") {
+            return false;
+        }
+        if (data.STRIPE_SECRET_KEY.startsWith("sk_test_")) {
+            return false;
+        }
+    }
+    return true;
+}, {
+    message: "Production Stripe configuration requires a valid production secret key (must not start with sk_test_).",
+    path: ["STRIPE_SECRET_KEY"]
 });
 //# sourceMappingURL=schema.js.map
