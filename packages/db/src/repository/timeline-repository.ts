@@ -86,7 +86,7 @@ export class PostgresTimelineRepository implements TimelineAggregateStore {
       .innerJoin(clientTimelines, eq(timelineEntries.timelineId, clientTimelines.id))
       .where(eq(clientTimelines.ownerId, ownerId));
 
-    const total = countResult[0]?.count || 0;
+    const total = Number(countResult[0]?.count || 0);
 
     const rows = await db
       .select({

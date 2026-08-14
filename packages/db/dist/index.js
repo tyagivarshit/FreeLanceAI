@@ -105,9 +105,9 @@ export { tenantIdColumn, primaryKeyColumn, auditTimestamps } from "./schema/help
 // Export Authentication Domain Schemas and Relations
 export { users, userStatusEnum, userPasswordHashes, sessions, emailVerifications, passwordResets, usersRelations, userPasswordHashesRelations, sessionsRelations, emailVerificationsRelations, passwordResetsRelations, } from "./schema/auth.js";
 // Export Jobs Domain Schemas
-export { jobImports, jobImportStatusEnum, } from "./schema/jobs.js";
+export { jobImports, jobImportStatusEnum } from "./schema/jobs.js";
 // Export Matches Domain Schemas
-export { jobMatches, jobMatchLifecycleEnum, } from "./schema/matches.js";
+export { jobMatches, jobMatchLifecycleEnum } from "./schema/matches.js";
 // Export Timelines Domain Schemas
 export { clientTimelines, timelineEntries, timelineStatusEnum, timelineEventCategoryEnum, visibilityClassificationEnum, } from "./schema/timeline.js";
 // Export Repositories
