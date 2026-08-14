@@ -10,6 +10,7 @@ import {
   issueSessionCookie,
   logoutUser,
   issueClearSessionCookie,
+  authenticateRequest,
 } from "@freelanceos/auth";
 import { runtimeConfig } from "@freelanceos/config";
 import { logger } from "@freelanceos/logger";
@@ -19,6 +20,10 @@ import {
   InMemoryStripeSubscriptionRepository,
   InMemoryWebhookEventStore,
   StripePriceRegistry,
+  EntitlementResolver,
+  PlanCatalog,
+  Plan,
+  InMemoryUsageRepository,
 } from "@freelanceos/core";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -56,6 +61,7 @@ const priceRegistry = new StripePriceRegistry([
 const customerMappingRepo = new InMemoryStripeCustomerMappingRepository();
 const subscriptionRepo = new InMemoryStripeSubscriptionRepository();
 const eventStore = new InMemoryWebhookEventStore();
+const usageRepo = new InMemoryUsageRepository();
 
 // Mock / placeholder PaymentAggregateStore since it's locally mock-defined in tests
 const paymentStore = {
@@ -68,6 +74,34 @@ const paymentStore = {
   },
 };
 
+// Shared Mock Trial Grant Persistence Contract
+const trialPersistence = {
+  save: async (grant) => {
+    logger.info({
+      message: "Mock Trial Grant Saved",
+      grantId: grant.grantId,
+      status: grant.status,
+    });
+  },
+  findById: async (_id) => null,
+  findByUserId: async (_userId) => [],
+  findBySignal: async (_signalType, _signalValue) => [],
+};
+
+const planCatalog = new PlanCatalog([
+  Plan.createStarter(),
+  Plan.createPro(),
+  Plan.createPowerBidder(),
+]);
+
+const entitlementResolver = new EntitlementResolver({
+  planCatalog,
+  trialPersistence,
+  customerMappingRepo,
+  subscriptionRepo,
+  usageRepo,
+});
+
 // Instantiate the StripeWebhookProcessor
 const webhookProcessor = new StripeWebhookProcessor({
   stripeSecretKey: runtimeConfig.STRIPE_SECRET_KEY || "mock_secret_key",
@@ -78,17 +112,7 @@ const webhookProcessor = new StripeWebhookProcessor({
   subscriptionRepo,
   paymentStore,
   eventStore,
-  trialPersistence: {
-    save: async (grant) => {
-      logger.info({
-        message: "Mock Trial Grant Saved",
-        grantId: grant.grantId,
-        status: grant.status,
-      });
-    },
-    findById: async (_id) => null,
-    findByUserId: async (_userId) => [],
-  },
+  trialPersistence,
 });
 
 const PORT = runtimeConfig.API_PORT || 4000;
@@ -361,6 +385,142 @@ const server = http.createServer(async (req, res) => {
         );
       }
     });
+    return;
+  }
+
+  // 1E. Authentication & Entitlements API & Redirects
+  const cookieHeader = req.headers.cookie || "";
+  const cookieName = runtimeConfig.SESSION_COOKIE_NAME;
+  const refreshToken = getCookie(cookieHeader, cookieName);
+
+  // Authenticate user check helper
+  async function checkAuthentication() {
+    if (!refreshToken) return null;
+    try {
+      const authResult = await authenticateRequest({
+        credentialToken: refreshToken,
+        routePolicy: "Protected",
+        ipAddress: req.socket.remoteAddress || "127.0.0.1",
+      });
+      if (authResult.status === "Authenticated") {
+        return authResult;
+      }
+    } catch (err) {
+      logger.error({ message: "Authentication helper failure", error: err });
+    }
+    return null;
+  }
+
+  // Redirect authenticated users away from signup/login pages to dashboard
+  if (req.url === "/" || req.url === "/index.html" || req.url === "/login.html") {
+    const auth = await checkAuthentication();
+    if (auth) {
+      res.writeHead(302, { Location: "/dashboard.html" });
+      res.end();
+      return;
+    }
+  }
+
+  // Protect dashboard routes
+  if (req.url === "/dashboard.html" || req.url === "/dashboard") {
+    const auth = await checkAuthentication();
+    if (!auth) {
+      res.writeHead(302, { Location: "/login.html" });
+      res.end();
+      return;
+    }
+    // Clean rewrite if requested without extension
+    if (req.url === "/dashboard") {
+      req.url = "/dashboard.html";
+    }
+  }
+
+  // Get active user session info API
+  if (req.url === "/api/session" && req.method === "GET") {
+    const auth = await checkAuthentication();
+    if (!auth) {
+      res.writeHead(401, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({ success: false, error: "Unauthorized" }));
+      return;
+    }
+
+    res.writeHead(200, { "Content-Type": "application/json" });
+    res.end(
+      JSON.stringify({
+        success: true,
+        user: {
+          email: auth.context.identity.email,
+          userId: auth.context.identity.userId,
+        },
+      }),
+    );
+    return;
+  }
+
+  // Get active entitlements & usage API
+  if (req.url === "/api/entitlements" && req.method === "GET") {
+    const auth = await checkAuthentication();
+    if (!auth) {
+      res.writeHead(401, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({ success: false, error: "Unauthorized" }));
+      return;
+    }
+
+    const userId = auth.context.identity.userId;
+    const tenantId = `tenant_${userId}`;
+    const now = new Date();
+
+    try {
+      const effectivePlanResult = await entitlementResolver.resolveEffectivePlan(
+        tenantId,
+        userId,
+        now,
+      );
+      const plan = effectivePlanResult.plan;
+      const period = effectivePlanResult.period;
+      const source = effectivePlanResult.source;
+
+      // Construct usage key for AI proposals
+      const usageKey = `usage:${tenantId}:AI_PROPOSAL:${period.startedAt.getTime()}:${period.endsAt.getTime()}`;
+      const proposalsUsed = await usageRepo.getUsage(usageKey);
+
+      // Construct limits structure
+      const limits = {
+        aiProposals: plan.limits.aiProposals,
+        jobScans: plan.limits.jobScans,
+        maxWorkspaces: plan.limits.maxWorkspaces,
+      };
+
+      const payload = {
+        success: true,
+        planId: plan.planId,
+        source: source,
+        period: {
+          type: period.type,
+          startedAt: period.startedAt.toISOString(),
+          endsAt: period.endsAt.toISOString(),
+        },
+        limits,
+        usage: {
+          aiProposals: proposalsUsed,
+        },
+      };
+
+      if (source === "TRIAL") {
+        const timeDiff = period.endsAt.getTime() - now.getTime();
+        const daysRemaining = Math.max(0, Math.ceil(timeDiff / (1000 * 60 * 60 * 24)));
+        payload.trialDaysRemaining = daysRemaining;
+      }
+
+      res.writeHead(200, { "Content-Type": "application/json" });
+      res.end(JSON.stringify(payload));
+    } catch (err) {
+      logger.error({ message: "Failed to resolve entitlements API", error: err });
+      res.writeHead(500, { "Content-Type": "application/json" });
+      res.end(
+        JSON.stringify({ success: false, message: "Internal server error resolving entitlements" }),
+      );
+    }
     return;
   }
 

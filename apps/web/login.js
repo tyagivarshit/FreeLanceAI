@@ -133,6 +133,11 @@ document.addEventListener("DOMContentLoaded", () => {
     const successMsg = document.getElementById("success-message");
     successMsg.textContent = `Welcome back! You have successfully established a secure session as ${user.email}.`;
     logoutButton.focus();
+
+    // Redirect to dashboard after brief delay
+    setTimeout(() => {
+      window.location.href = "/dashboard.html";
+    }, 800);
   }
 
   function hideSuccess() {

@@ -85,5 +85,5 @@ export type { StripePriceMapping, StripeCustomerMapping, CheckoutSessionResult, 
 export { StripeWebhookError, InMemoryStripeSubscriptionRepository, InMemoryWebhookEventStore, StripeWebhookProcessor, SUPPORTED_EVENTS, WEBHOOK_PROCESSING_TIMEOUT_MS, } from "./webhook.js";
 export type { LocalSubscriptionRecord, StripeSubscriptionRepository, WebhookEventRecord, WebhookEventStore, WebhookProcessorParams, } from "./webhook.js";
 export { EntitlementResolver, EntitlementEnforcer, InMemoryUsageRepository, getLimitKeyForFeature, getSubscriptionPeriod, } from "./entitlements.js";
-export type { EntitlementDecision, UsageRepository, } from "./entitlements.js";
+export type { EntitlementDecision, UsageRepository } from "./entitlements.js";
 //# sourceMappingURL=index.d.ts.map

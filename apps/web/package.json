@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "node --env-file=../../.env server.js",
-    "start": "node --env-file=../../.env server.js"
+    "start": "node --env-file=../../.env server.js",
+    "test": "node --test *.test.js"
   },
   "dependencies": {
     "@freelanceos/auth": "*",
