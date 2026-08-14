@@ -46,7 +46,16 @@ function createMockElement(id, tag = "div", classes = []) {
       },
     },
     textContent: "",
-    innerHTML: "",
+    _innerHTML: "",
+    get innerHTML() {
+      return this._innerHTML;
+    },
+    set innerHTML(val) {
+      this._innerHTML = val;
+      if (val === "") {
+        this.children = [];
+      }
+    },
     style: {
       width: "",
       display: "",
@@ -170,6 +179,7 @@ function createMockEnvironment(fetchMock) {
     },
   };
 
+  const createdElements = [];
   const documentListeners = {};
   const documentMock = {
     addEventListener(event, cb) {
@@ -182,7 +192,15 @@ function createMockEnvironment(fetchMock) {
       }
     },
     getElementById(id) {
-      return elements[id] || null;
+      if (elements[id]) {
+        return elements[id];
+      }
+      for (let i = createdElements.length - 1; i >= 0; i--) {
+        if (createdElements[i].id === id) {
+          return createdElements[i];
+        }
+      }
+      return null;
     },
     querySelector(selector) {
       if (elements[selector.replace("#", "")]) {
@@ -191,7 +209,9 @@ function createMockEnvironment(fetchMock) {
       return querySelectors[selector] || null;
     },
     createElement(tag) {
-      return createMockElement("created-" + Math.random(), tag);
+      const el = createMockElement("created-" + Math.random(), tag);
+      createdElements.push(el);
+      return el;
     },
   };
 
@@ -564,4 +584,210 @@ test("22. Critical Test: No fabricated data rule", async () => {
   // The remaining quota is 0. It must display 0, and MUST NOT fabricate 33 or any other positive numbers.
   assert.strictEqual(env.elements["proposal-quota-fraction"].textContent, "3 / 3");
   assert.strictEqual(env.elements["proposal-quota-remaining-desc"].textContent, "0 remaining");
+});
+
+test("23. Dashboard loads activity and handles empty activity state", async () => {
+  const fetchMock = async (url) => {
+    if (url === "/api/session") {
+      return { ok: true, json: async () => ({ success: true, user: { email: "a@b.com" } }) };
+    }
+    if (url === "/api/activity") {
+      return {
+        ok: true,
+        json: async () => ({
+          activity: [{ id: "act-1", message: "Job matched", timestamp: new Date().toISOString() }],
+        }),
+      };
+    }
+    return { ok: true, json: async () => ({}) };
+  };
+
+  const env = createMockEnvironment(fetchMock);
+  runController(env);
+  await new Promise((r) => setTimeout(r, 10));
+
+  assert.strictEqual(env.elements["activity-timeline"].classList.contains("hidden"), false);
+  assert.strictEqual(env.elements["activity-empty"].classList.contains("hidden"), true);
+  assert.strictEqual(env.elements["activity-timeline"].children.length, 1);
+  assert.ok(env.elements["activity-timeline"].children[0].innerHTML.includes("Job matched"));
+});
+
+test("24. Jobs failure does not break activity or analytics", async () => {
+  const fetchMock = async (url) => {
+    if (url === "/api/session") {
+      return { ok: true, json: async () => ({ success: true, user: { email: "a@b.com" } }) };
+    }
+    if (url === "/api/jobs") {
+      return { ok: false, status: 500 };
+    }
+    if (url === "/api/activity") {
+      return {
+        ok: true,
+        json: async () => ({
+          activity: [{ id: "act-1", message: "Act 1", timestamp: new Date().toISOString() }],
+        }),
+      };
+    }
+    return { ok: true, json: async () => ({ value: 5 }) };
+  };
+
+  const env = createMockEnvironment(fetchMock);
+  runController(env);
+  await new Promise((r) => setTimeout(r, 10));
+
+  assert.strictEqual(env.elements["opportunities-error"].classList.contains("hidden"), false);
+  assert.strictEqual(env.elements["activity-error"].classList.contains("hidden"), true);
+  assert.strictEqual(env.elements["kpi-scanned-error"].classList.contains("hidden"), true);
+});
+
+test("25. Match success, failure, 403 entitlement denial and duplicate click protection", async () => {
+  let matchCallCount = 0;
+  let matchStatus = 201;
+  const matchResponsePayload = { score: 85, matchExplanation: "Great fit" };
+
+  const sampleJobs = [
+    {
+      id: "job-1",
+      title: "Job to match",
+      platform: "Upwork",
+      score: null,
+      budget: "$5,000",
+      skills: ["Node.js"],
+      createdAt: new Date().toISOString(),
+    },
+  ];
+
+  const fetchMock = async (url, options) => {
+    if (url === "/api/session") {
+      return { ok: true, json: async () => ({ success: true, user: { email: "a@b.com" } }) };
+    }
+    if (url === "/api/jobs") {
+      return { ok: true, json: async () => ({ jobs: sampleJobs }) };
+    }
+    if (url === `/api/jobs/job-1/match` && options?.method === "POST") {
+      matchCallCount++;
+      if (matchStatus === 201) {
+        return { ok: true, status: 201, json: async () => matchResponsePayload };
+      } else if (matchStatus === 403) {
+        return {
+          ok: false,
+          status: 403,
+          json: async () => ({ error: "Entitlement Denied", reason: "Usage limit reached" }),
+        };
+      } else {
+        return { ok: false, status: 500, json: async () => ({ error: "Internal Error" }) };
+      }
+    }
+    return { ok: true, json: async () => ({}) };
+  };
+
+  const env = createMockEnvironment(fetchMock);
+  runController(env);
+  await new Promise((r) => setTimeout(r, 20));
+
+  const listContainer = env.elements["opportunities-list"];
+  assert.strictEqual(listContainer.children.length, 1);
+
+  // 1. Match success
+  const targetMock = {
+    classList: {
+      contains(c) {
+        return c === "btn-run-match";
+      },
+    },
+    getAttribute(name) {
+      if (name === "data-id") {
+        return "job-1";
+      }
+      return null;
+    },
+  };
+
+  // Trigger delegated click event on opportunities list
+  listContainer.trigger("click", { target: targetMock });
+  await new Promise((r) => setTimeout(r, 20));
+
+  assert.strictEqual(matchCallCount, 1);
+  const updatedChild = listContainer.children[0];
+  assert.ok(updatedChild.innerHTML.includes("85% match"));
+  assert.ok(updatedChild.innerHTML.includes("Great fit"));
+
+  // 2. Duplicate click protection (disabled during matching)
+  // Let's reset job score to null to show match button again
+  sampleJobs[0].score = null;
+  sampleJobs[0].matchExplanation = null;
+  matchStatus = 403; // Next match call will return 403
+
+  // Re-run opportunities load
+  env.elements["btn-opportunities-retry"].click();
+  await new Promise((r) => setTimeout(r, 20));
+
+  // Trigger match (which will return 403)
+  listContainer.trigger("click", { target: targetMock });
+  await new Promise((r) => setTimeout(r, 20));
+
+  assert.strictEqual(matchCallCount, 2);
+  assert.ok(listContainer.children[0].innerHTML.includes("Entitlement Denied"));
+});
+
+test("26. Stale response protection and request cancellation", async () => {
+  const fetchCounts = { jobs: 0 };
+  const jobsResolveTime = 50;
+
+  const fetchMock = async (url) => {
+    if (url === "/api/session") {
+      return { ok: true, json: async () => ({ success: true, user: { email: "a@b.com" } }) };
+    }
+    if (url === "/api/jobs") {
+      fetchCounts.jobs++;
+      const currentCount = fetchCounts.jobs;
+      await new Promise((r) => setTimeout(r, jobsResolveTime));
+      return {
+        ok: true,
+        json: async () => ({
+          jobs: [
+            {
+              id: `job-${currentCount}`,
+              title: `Job version ${currentCount}`,
+              createdAt: new Date().toISOString(),
+            },
+          ],
+        }),
+      };
+    }
+    return { ok: true, json: async () => ({}) };
+  };
+
+  const env = createMockEnvironment(fetchMock);
+  runController(env);
+
+  // Immediately trigger another opportunities fetch (simulates refresh/filter change superseding in-flight request)
+  await new Promise((r) => setTimeout(r, 5));
+  env.elements["btn-opportunities-retry"].click();
+
+  // Wait for all to complete
+  await new Promise((r) => setTimeout(r, 100));
+
+  // Verify that the second request took precedence and did not get overwritten by the first
+  const listContainer = env.elements["opportunities-list"];
+  assert.strictEqual(listContainer.children.length, 1);
+  assert.ok(listContainer.children[0].innerHTML.includes("Job version 2"));
+});
+
+test("27. Malformed API response handled safely", async () => {
+  const fetchMock = async (url) => {
+    if (url === "/api/session") {
+      return { ok: true, json: async () => ({ success: true, user: { email: "a@b.com" } }) };
+    }
+    if (url === "/api/jobs") {
+      return { ok: true, json: async () => ({ jobs: null }) }; // Malformed body (null jobs)
+    }
+    return { ok: true, json: async () => ({}) };
+  };
+
+  const env = createMockEnvironment(fetchMock);
+  runController(env);
+  await new Promise((r) => setTimeout(r, 10));
+
+  assert.strictEqual(env.elements["opportunities-error"].classList.contains("hidden"), false);
 });

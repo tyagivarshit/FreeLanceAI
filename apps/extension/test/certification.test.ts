@@ -448,7 +448,7 @@ describe("Chapter 9H — Final Extension Integration & Certification", () => {
 
       // Unknown platform resolution
       const unknownCtx = createPlatformContext("https://github.com", 1, 0);
-      assert.throws(() => registry.resolve(unknownCtx), /No adapter found/);
+      assert.throws(() => registry.resolve(unknownCtx), /UNKNOWN_PLATFORM/);
 
       // Verify adapter canHandle failure isolation
       const faultyAdapter = {

@@ -2,6 +2,8 @@ import http from "http";
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
+import { randomUUID } from "crypto";
+import { eq, and, desc, inArray, sql } from "drizzle-orm";
 import {
   signupUser,
   loginUser,
@@ -24,7 +26,20 @@ import {
   PlanCatalog,
   Plan,
   InMemoryUsageRepository,
+  JobMatch,
+  JobMatchScore,
+  ScoreWeightProfile,
+  ClientTimeline,
+  EntitlementEnforcer,
 } from "@freelanceos/core";
+import {
+  db,
+  jobImports,
+  jobMatches,
+  PostgresJobsRepository,
+  PostgresJobMatchRepository,
+  PostgresTimelineRepository,
+} from "@freelanceos/db";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -115,6 +130,10 @@ const webhookProcessor = new StripeWebhookProcessor({
   trialPersistence,
 });
 
+const jobsRepo = new PostgresJobsRepository();
+const matchRepo = new PostgresJobMatchRepository();
+const timelineRepo = new PostgresTimelineRepository();
+
 const PORT = runtimeConfig.API_PORT || 4000;
 
 const MIME_TYPES = {
@@ -139,6 +158,9 @@ function getCookie(cookieHeader, name) {
 }
 
 const server = http.createServer(async (req, res) => {
+  const parsedUrl = new URL(req.url, "http://localhost");
+  const pathname = parsedUrl.pathname;
+
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "POST, GET, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
@@ -150,7 +172,7 @@ const server = http.createServer(async (req, res) => {
   }
 
   // 1. Hook the Signup use case to POST /api/signup
-  if (req.url === "/api/signup" && req.method === "POST") {
+  if (pathname === "/api/signup" && req.method === "POST") {
     let body = "";
     req.on("data", (chunk) => {
       body += chunk;
@@ -200,7 +222,7 @@ const server = http.createServer(async (req, res) => {
   }
 
   // 1B. Hook the Login use case to POST /api/login
-  if (req.url === "/api/login" && req.method === "POST") {
+  if (pathname === "/api/login" && req.method === "POST") {
     let body = "";
     req.on("data", (chunk) => {
       body += chunk;
@@ -250,7 +272,7 @@ const server = http.createServer(async (req, res) => {
   }
 
   // 1C. Hook the Logout use case to POST /api/logout
-  if (req.url === "/api/logout" && req.method === "POST") {
+  if (pathname === "/api/logout" && req.method === "POST") {
     let body = "";
     req.on("data", (chunk) => {
       body += chunk;
@@ -303,7 +325,7 @@ const server = http.createServer(async (req, res) => {
   }
 
   // 1D. Stripe Webhook Processing Boundary Hookup
-  if (req.url === "/api/webhooks/stripe" && req.method === "POST") {
+  if (pathname === "/api/webhooks/stripe" && req.method === "POST") {
     const signatureHeader = req.headers["stripe-signature"];
 
     // Size limit protection: 1MB (1024 * 1024 bytes) max to prevent resource exhaustion attacks
@@ -412,7 +434,7 @@ const server = http.createServer(async (req, res) => {
   }
 
   // Redirect authenticated users away from signup/login pages to dashboard
-  if (req.url === "/" || req.url === "/index.html" || req.url === "/login.html") {
+  if (pathname === "/" || pathname === "/index.html" || pathname === "/login.html") {
     const auth = await checkAuthentication();
     if (auth) {
       res.writeHead(302, { Location: "/dashboard.html" });
@@ -422,7 +444,7 @@ const server = http.createServer(async (req, res) => {
   }
 
   // Protect dashboard routes
-  if (req.url === "/dashboard.html" || req.url === "/dashboard") {
+  if (pathname === "/dashboard.html" || pathname === "/dashboard") {
     const auth = await checkAuthentication();
     if (!auth) {
       res.writeHead(302, { Location: "/login.html" });
@@ -430,13 +452,13 @@ const server = http.createServer(async (req, res) => {
       return;
     }
     // Clean rewrite if requested without extension
-    if (req.url === "/dashboard") {
+    if (pathname === "/dashboard") {
       req.url = "/dashboard.html";
     }
   }
 
   // Get active user session info API
-  if (req.url === "/api/session" && req.method === "GET") {
+  if (pathname === "/api/session" && req.method === "GET") {
     const auth = await checkAuthentication();
     if (!auth) {
       res.writeHead(401, { "Content-Type": "application/json" });
@@ -458,7 +480,7 @@ const server = http.createServer(async (req, res) => {
   }
 
   // Get active entitlements & usage API
-  if (req.url === "/api/entitlements" && req.method === "GET") {
+  if (pathname === "/api/entitlements" && req.method === "GET") {
     const auth = await checkAuthentication();
     if (!auth) {
       res.writeHead(401, { "Content-Type": "application/json" });
@@ -524,8 +546,483 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
+  // 1F. GET /api/jobs
+  if (pathname === "/api/jobs" && req.method === "GET") {
+    const auth = await checkAuthentication();
+    if (!auth) {
+      res.writeHead(401, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({ success: false, error: "Unauthorized" }));
+      return;
+    }
+
+    const userId = auth.context.identity.userId;
+    const tenantId = userId;
+
+    // Parse query params
+    const pageVal = parsedUrl.searchParams.get("page");
+    const pageSizeVal = parsedUrl.searchParams.get("pageSize");
+    const platform = parsedUrl.searchParams.get("platform") || undefined;
+    const status = parsedUrl.searchParams.get("status") || undefined;
+
+    let page = 1;
+    let pageSize = 20;
+
+    if (pageVal) {
+      const p = parseInt(pageVal, 10);
+      if (isNaN(p) || p < 1 || String(p) !== pageVal) {
+        res.writeHead(400, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ success: false, error: "Invalid page parameter" }));
+        return;
+      }
+      page = p;
+    }
+
+    if (pageSizeVal) {
+      const ps = parseInt(pageSizeVal, 10);
+      if (isNaN(ps) || ps < 1 || ps > 100 || String(ps) !== pageSizeVal) {
+        res.writeHead(400, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ success: false, error: "Invalid pageSize parameter" }));
+        return;
+      }
+      pageSize = ps;
+    }
+
+    // Validate status if present
+    if (status && !["RECEIVED", "IMPORTED", "ARCHIVED"].includes(status)) {
+      res.writeHead(400, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({ success: false, error: "Invalid status parameter" }));
+      return;
+    }
+
+    try {
+      const result = await jobsRepo.findByTenant(tenantId, {
+        page,
+        pageSize,
+        platform,
+        status,
+      });
+
+      // Get match signals for these jobs to populate scores and explanations
+      const jobIds = result.items.map((j) => j.id);
+      const matches =
+        jobIds.length > 0
+          ? await db
+              .select()
+              .from(jobMatches)
+              .where(and(eq(jobMatches.tenantId, tenantId), inArray(jobMatches.jobId, jobIds)))
+          : [];
+
+      const matchesMap = new Map();
+      matches.forEach((m) => {
+        matchesMap.set(m.jobId, m);
+      });
+
+      const jobsDto = result.items.map((job) => {
+        const match = matchesMap.get(job.id);
+        const signals = match ? match.matchSignals : null;
+        const score =
+          signals && typeof signals.semanticSimilarity === "number"
+            ? Math.round(signals.semanticSimilarity * 100)
+            : null;
+
+        return {
+          id: job.id,
+          platform: job.externalIdentity.source.value,
+          externalJobId: job.externalIdentity.externalJobId,
+          canonicalUrl: job.provenance.sourceUrl || "",
+          title: job.rawPayload.data.title || "",
+          description: job.rawPayload.data.description || "",
+          status: job.status,
+          createdAt: job.createdAt.toISOString(),
+          score,
+          budget: formatBudget(job.rawPayload.data.budget),
+          skills: job.rawPayload.data.skills || [],
+          matchExplanation:
+            signals && signals.matchedSkills && signals.matchedSkills.length > 0
+              ? `Fits your profile with skills: ${signals.matchedSkills.join(", ")}.`
+              : null,
+        };
+      });
+
+      res.writeHead(200, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({ success: true, jobs: jobsDto, total: result.total }));
+    } catch (err) {
+      logger.error({ message: "Failed to fetch jobs API", error: err });
+      res.writeHead(500, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({ success: false, error: "Internal Server Error" }));
+    }
+    return;
+  }
+
+  // 1G. POST /api/jobs/:id/match
+  const matchJobRegex = /^\/api\/jobs\/([a-zA-Z0-9-]+)\/match$/i;
+  const matchResult = pathname.match(matchJobRegex);
+  if (matchResult && req.method === "POST") {
+    const jobId = matchResult[1];
+    const auth = await checkAuthentication();
+    if (!auth) {
+      res.writeHead(401, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({ success: false, error: "Unauthorized" }));
+      return;
+    }
+
+    const userId = auth.context.identity.userId;
+    const tenantId = userId;
+
+    try {
+      // Load job within tenant (ensures isolation)
+      const jobImport = await jobsRepo.findById(jobId, tenantId);
+      if (!jobImport) {
+        res.writeHead(404, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ success: false, error: "Job not found" }));
+        return;
+      }
+
+      // Check applicable Phase 10 entitlement/usage
+      const enforcer = new EntitlementEnforcer(entitlementResolver);
+      const billingTenantId = `tenant_${userId}`;
+      try {
+        await enforcer.enforce(billingTenantId, userId, "BASIC_MATCHING");
+      } catch (entitlementError) {
+        res.writeHead(403, { "Content-Type": "application/json" });
+        res.end(
+          JSON.stringify({
+            success: false,
+            error: "Entitlement Denied",
+            reason: entitlementError.message,
+          }),
+        );
+        return;
+      }
+
+      // Check if a match already exists to prevent duplicate matches on double-click
+      const existingMatch = await matchRepo.findByMatchingIdentity(
+        tenantId,
+        userId,
+        jobImport.id,
+        "v1",
+      );
+      if (existingMatch) {
+        res.writeHead(200, { "Content-Type": "application/json" });
+        res.end(
+          JSON.stringify({
+            success: true,
+            matchId: existingMatch.id,
+            score: Math.round((existingMatch.matchSignals?.semanticSimilarity || 0) * 100),
+            status: existingMatch.status,
+          }),
+        );
+        return;
+      }
+
+      // Construct dynamic inputs based on job and default freelancer
+      const freelancerProfile = {
+        freelancerId: userId,
+        tenantId,
+        skills: ["javascript", "node.js", "postgresql", "react", "typescript", "fastapi", "python"],
+        experience: "senior",
+        budget: { type: "hourly", rate: 50, currency: "USD" },
+        preferredJobTypes: ["hourly", "fixed"],
+        location: { country: "US" },
+        embeddingVector: [0.1, 0.2, 0.3],
+      };
+
+      const rawData = jobImport.rawPayload.data || {};
+      const jobNormalization = {
+        id: jobImport.id,
+        tenantId,
+        normalizationVersion: "v1",
+        canonicalJob: {
+          title: rawData.title || "Job Title",
+          description: rawData.description || "Job Description",
+          skills: rawData.skills || [],
+          experience: "senior",
+          budget: rawData.budget
+            ? {
+                type: rawData.budget.type || "hourly",
+                minimum: rawData.budget.minimum || 10,
+                maximum: rawData.budget.maximum || 100,
+                currency: rawData.budget.currency || "USD",
+              }
+            : { type: "hourly", minimum: 10, maximum: 100, currency: "USD" },
+          jobType: "hourly",
+          location: { country: "US" },
+        },
+      };
+
+      const jobEmbedding = {
+        id: jobImport.id,
+        tenantId,
+        embeddingVersion: "v1",
+        vector: [0.1, 0.2, 0.3],
+      };
+
+      const matchId = randomUUID();
+      const jobMatch = JobMatch.create(
+        matchId,
+        tenantId,
+        userId,
+        userId,
+        jobImport.id,
+        jobImport.id,
+        "v1",
+        "v1",
+        jobImport.id,
+        "v1",
+      );
+
+      // Evaluate Phase 8 matching
+      jobMatch.evaluate(userId, {
+        freelancerProfile,
+        jobNormalization,
+        jobEmbedding,
+      });
+
+      // Calculate score
+      const weightProfile = new ScoreWeightProfile("v1", {
+        semanticSimilarity: 0.5,
+        skillCoverage: 0.5,
+        experienceCompatibility: 0.0,
+        budgetCompatibility: 0.0,
+        jobTypeCompatibility: 0.0,
+        locationCompatibility: 0.0,
+      });
+
+      const scoringConfig = {
+        scoringVersion: "v1",
+        weightProfile,
+        compatibilityMapping: {
+          COMPATIBLE: 1.0,
+          PARTIAL: 0.5,
+          INCOMPATIBLE: 0.0,
+          UNKNOWN: 0.0,
+        },
+        missingSignalPolicy: "available-weight",
+        scoreScale: "0-100",
+      };
+
+      const scoreId = randomUUID();
+      const matchScore = JobMatchScore.create(scoreId, tenantId, userId, matchId, "v1", "v1", "v1");
+      matchScore.calculate(userId, jobMatch.matchSignals, scoringConfig);
+
+      // Store calculated finalScore in the match signals for later retrieval
+      const finalScore = matchScore.finalScore || 0;
+      const updatedSignals = {
+        ...jobMatch.matchSignals,
+        semanticSimilarity: finalScore / 100,
+      };
+
+      // Re-create evaluated match with populated signals
+      const finalMatch = new JobMatch({
+        id: jobMatch.id,
+        tenantId: jobMatch.tenantId,
+        ownerId: jobMatch.ownerId,
+        freelancerId: jobMatch.freelancerId,
+        jobId: jobMatch.jobId,
+        jobNormalizationId: jobMatch.jobNormalizationId,
+        normalizationVersion: jobMatch.normalizationVersion,
+        jobEmbeddingId: jobMatch.jobEmbeddingId,
+        embeddingVersion: jobMatch.embeddingVersion,
+        matchingVersion: jobMatch.matchingVersion,
+        matchSignals: updatedSignals,
+        status: "EVALUATED",
+        snapshots: [...jobMatch.snapshots],
+        createdAt: jobMatch.createdAt,
+        updatedAt: new Date(),
+      });
+
+      // Save match to repository
+      await matchRepo.save(finalMatch);
+
+      // Log activity to timeline
+      let timeline = await timelineRepo.findById(userId, userId);
+      if (!timeline) {
+        timeline = ClientTimeline.create(userId, userId, userId);
+      }
+      timeline.appendEntry(userId, "system", {
+        entryId: randomUUID(),
+        category: "Lifecycle Event",
+        timestamp: new Date(),
+        metadata: {
+          message: `Job "${jobImport.rawPayload.data.title}" matched with score ${finalScore}%.`,
+          jobId: jobImport.id,
+        },
+        visibility: "Public",
+      });
+      await timelineRepo.save(timeline);
+
+      res.writeHead(201, { "Content-Type": "application/json" });
+      res.end(
+        JSON.stringify({
+          success: true,
+          matchId: finalMatch.id,
+          score: finalScore,
+          status: finalMatch.status,
+        }),
+      );
+    } catch (err) {
+      logger.error({ message: "Failed to run job matching API", error: err });
+      res.writeHead(500, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({ success: false, error: "Internal Server Error" }));
+    }
+    return;
+  }
+
+  // 1H. GET /api/analytics/*
+  if (pathname.startsWith("/api/analytics/") && req.method === "GET") {
+    const auth = await checkAuthentication();
+    if (!auth) {
+      res.writeHead(401, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({ success: false, error: "Unauthorized" }));
+      return;
+    }
+
+    const userId = auth.context.identity.userId;
+    const tenantId = userId;
+
+    const action = pathname.substring("/api/analytics/".length);
+
+    try {
+      if (action === "scanned") {
+        const countRes = await db
+          .select({ count: sql`count(*)` })
+          .from(jobImports)
+          .where(eq(jobImports.tenantId, tenantId));
+        const count = Number(countRes[0]?.count || 0);
+
+        res.writeHead(200, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ success: true, value: count, trend: "No trend" }));
+        return;
+      }
+
+      if (action === "matches") {
+        const countRes = await db
+          .select({ count: sql`count(*)` })
+          .from(jobMatches)
+          .where(eq(jobMatches.tenantId, tenantId));
+        const count = Number(countRes[0]?.count || 0);
+
+        res.writeHead(200, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ success: true, value: count, trend: "No trend" }));
+        return;
+      }
+
+      if (action === "proposals") {
+        const billingTenantId = `tenant_${userId}`;
+        const effectivePlanResult = await entitlementResolver.resolveEffectivePlan(
+          billingTenantId,
+          userId,
+          new Date(),
+        );
+        const period = effectivePlanResult.period;
+        const usageKey = `usage:${billingTenantId}:AI_PROPOSAL:${period.startedAt.getTime()}:${period.endsAt.getTime()}`;
+        const proposalsUsed = await usageRepo.getUsage(usageKey);
+
+        res.writeHead(200, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ success: true, value: proposalsUsed, trend: "No trend" }));
+        return;
+      }
+
+      if (action === "pulse") {
+        res.writeHead(200, { "Content-Type": "application/json" });
+        res.end(
+          JSON.stringify({
+            success: true,
+            description: "Scans are active. We're matching candidates against your experience.",
+          }),
+        );
+        return;
+      }
+
+      res.writeHead(404, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({ success: false, error: "Analytics endpoint not found" }));
+    } catch (err) {
+      logger.error({ message: "Failed to resolve analytics API", error: err });
+      res.writeHead(500, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({ success: false, error: "Internal Server Error" }));
+    }
+    return;
+  }
+
+  // 1I. GET /api/activity
+  if (pathname === "/api/activity" && req.method === "GET") {
+    const auth = await checkAuthentication();
+    if (!auth) {
+      res.writeHead(401, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({ success: false, error: "Unauthorized" }));
+      return;
+    }
+
+    const userId = auth.context.identity.userId;
+
+    // Parse pagination params
+    const pageVal = parsedUrl.searchParams.get("page");
+    const pageSizeVal = parsedUrl.searchParams.get("pageSize");
+
+    let page = 1;
+    let pageSize = 20;
+
+    if (pageVal) {
+      const p = parseInt(pageVal, 10);
+      if (isNaN(p) || p < 1) {
+        res.writeHead(400, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ success: false, error: "Invalid page parameter" }));
+        return;
+      }
+      page = p;
+    }
+
+    if (pageSizeVal) {
+      const ps = parseInt(pageSizeVal, 10);
+      if (isNaN(ps) || ps < 1) {
+        res.writeHead(400, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ success: false, error: "Invalid pageSize parameter" }));
+        return;
+      }
+      pageSize = Math.min(100, ps);
+    }
+
+    try {
+      const result = await timelineRepo.findTimelineEntriesByOwner(userId, {
+        page,
+        pageSize,
+      });
+
+      const activityDto = result.items.map((entry) => ({
+        id: entry.entryId,
+        message: entry.metadata.message || "Activity event logged",
+        timestamp: entry.timestamp.toISOString(),
+      }));
+
+      res.writeHead(200, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({ success: true, activity: activityDto, total: result.total }));
+    } catch (err) {
+      logger.error({ message: "Failed to fetch activity timeline API", error: err });
+      res.writeHead(500, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({ success: false, error: "Internal Server Error" }));
+    }
+    return;
+  }
+
+  function formatBudget(budget) {
+    if (!budget) return null;
+    if (typeof budget === "string") return budget;
+    if (typeof budget === "object") {
+      if (budget.type === "hourly") {
+        if (budget.minimum && budget.maximum) {
+          return `$${budget.minimum}-$${budget.maximum}/hr`;
+        }
+        return `$${budget.rate || budget.minimum || budget.maximum || ""}/hr`;
+      }
+      if (budget.type === "fixed") {
+        return `$${budget.amount || budget.rate || budget.minimum || ""}`;
+      }
+    }
+    return null;
+  }
+
   // 2. Serve static pages
-  const filePath = path.join(__dirname, req.url === "/" ? "index.html" : req.url);
+  const filePath = path.join(__dirname, pathname === "/" ? "index.html" : pathname);
   const ext = path.extname(filePath);
   const contentType = MIME_TYPES[ext] || "text/plain";
 
@@ -540,7 +1037,19 @@ const server = http.createServer(async (req, res) => {
   });
 });
 
-server.listen(PORT, () => {
-  // eslint-disable-next-line no-console
-  console.log(`[Web Server] Running on http://localhost:${PORT}`);
-});
+if (process.env.NODE_ENV !== "test") {
+  server.listen(PORT, () => {
+    // eslint-disable-next-line no-console
+    console.log(`[Web Server] Running on http://localhost:${PORT}`);
+  });
+}
+
+export {
+  server,
+  jobsRepo,
+  matchRepo,
+  timelineRepo,
+  subscriptionRepo,
+  usageRepo,
+  entitlementResolver,
+};

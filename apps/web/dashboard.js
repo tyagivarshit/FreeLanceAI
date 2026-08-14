@@ -83,6 +83,25 @@ document.addEventListener("DOMContentLoaded", () => {
   // State
   let userSession = null;
   let isSidebarCollapsed = localStorage.getItem("sidebar-collapsed") === "true";
+  let currentJobs = [];
+
+  const activeControllers = {
+    scanned: null,
+    matches: null,
+    proposals: null,
+    pulse: null,
+    opportunities: null,
+    usage: null,
+    activity: null,
+  };
+
+  function getAbortSignal(section) {
+    if (activeControllers[section]) {
+      activeControllers[section].abort();
+    }
+    activeControllers[section] = new AbortController();
+    return activeControllers[section].signal;
+  }
 
   // Check user session immediately
   checkAuth();
@@ -189,11 +208,19 @@ document.addEventListener("DOMContentLoaded", () => {
     kpiElement.valWrap.classList.add("hidden");
     kpiElement.error.classList.add("hidden");
 
+    const signal = getAbortSignal(type);
+
     // Artificial tiny delay for progressive loading transition smoothness
-    await new Promise((r) => setTimeout(r, 450));
+    await new Promise((r, reject) => {
+      const t = setTimeout(r, 450);
+      signal.addEventListener("abort", () => {
+        clearTimeout(t);
+        reject(new DOMException("Aborted", "AbortError"));
+      });
+    });
 
     try {
-      const response = await fetch(url);
+      const response = await fetch(url, { signal });
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
@@ -206,6 +233,9 @@ document.addEventListener("DOMContentLoaded", () => {
       kpiElement.skeleton.classList.add("hidden");
       kpiElement.valWrap.classList.remove("hidden");
     } catch (err) {
+      if (err.name === "AbortError") {
+        return;
+      }
       console.warn(`[Dashboard] KPI ${type} load failed (MISSING BACKEND CONTRACT):`, err.message);
       kpiElement.skeleton.classList.add("hidden");
       kpiElement.error.classList.remove("hidden");
@@ -218,10 +248,18 @@ document.addEventListener("DOMContentLoaded", () => {
     pulse.desc.classList.add("hidden");
     pulse.error.classList.add("hidden");
 
-    await new Promise((r) => setTimeout(r, 500));
+    const signal = getAbortSignal("pulse");
+
+    await new Promise((r, reject) => {
+      const t = setTimeout(r, 500);
+      signal.addEventListener("abort", () => {
+        clearTimeout(t);
+        reject(new DOMException("Aborted", "AbortError"));
+      });
+    });
 
     try {
-      const response = await fetch("/api/analytics/pulse");
+      const response = await fetch("/api/analytics/pulse", { signal });
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
@@ -232,6 +270,9 @@ document.addEventListener("DOMContentLoaded", () => {
       pulse.skeleton.classList.add("hidden");
       pulse.desc.classList.remove("hidden");
     } catch (err) {
+      if (err.name === "AbortError") {
+        return;
+      }
       console.warn("[Dashboard] Pulse load failed (MISSING BACKEND CONTRACT):", err.message);
       pulse.skeleton.classList.add("hidden");
       pulse.error.classList.remove("hidden");
@@ -245,10 +286,18 @@ document.addEventListener("DOMContentLoaded", () => {
     opps.empty.classList.add("hidden");
     opps.error.classList.add("hidden");
 
-    await new Promise((r) => setTimeout(r, 600));
+    const signal = getAbortSignal("opportunities");
+
+    await new Promise((r, reject) => {
+      const t = setTimeout(r, 600);
+      signal.addEventListener("abort", () => {
+        clearTimeout(t);
+        reject(new DOMException("Aborted", "AbortError"));
+      });
+    });
 
     try {
-      const response = await fetch("/api/jobs");
+      const response = await fetch("/api/jobs", { signal });
       if (response.status === 404) {
         throw new Error("Missing backend API contract: GET /api/jobs is not implemented.");
       }
@@ -256,8 +305,12 @@ document.addEventListener("DOMContentLoaded", () => {
         throw new Error(`Server returned HTTP ${response.status}`);
       }
       const data = await response.json();
-      const jobs = data.jobs || [];
+      if (!data || !Array.isArray(data.jobs)) {
+        throw new Error("Malformed API response: jobs array is required");
+      }
+      const jobs = data.jobs;
 
+      currentJobs = jobs;
       opps.skeleton.classList.add("hidden");
 
       if (jobs.length === 0) {
@@ -269,6 +322,9 @@ document.addEventListener("DOMContentLoaded", () => {
         opps.countBadge.textContent = `${jobs.length} found`;
       }
     } catch (err) {
+      if (err.name === "AbortError") {
+        return;
+      }
       console.warn(
         "[Dashboard] Opportunities load failed (MISSING BACKEND CONTRACT):",
         err.message,
@@ -286,10 +342,18 @@ document.addEventListener("DOMContentLoaded", () => {
     usage.details.classList.add("hidden");
     usage.error.classList.add("hidden");
 
-    await new Promise((r) => setTimeout(r, 400));
+    const signal = getAbortSignal("usage");
+
+    await new Promise((r, reject) => {
+      const t = setTimeout(r, 400);
+      signal.addEventListener("abort", () => {
+        clearTimeout(t);
+        reject(new DOMException("Aborted", "AbortError"));
+      });
+    });
 
     try {
-      const response = await fetch("/api/entitlements");
+      const response = await fetch("/api/entitlements", { signal });
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
@@ -340,6 +404,9 @@ document.addEventListener("DOMContentLoaded", () => {
       usage.skeleton.classList.add("hidden");
       usage.details.classList.remove("hidden");
     } catch (err) {
+      if (err.name === "AbortError") {
+        return;
+      }
       console.warn("[Dashboard] Usage load failed (MISSING BACKEND CONTRACT):", err.message);
       usage.skeleton.classList.add("hidden");
       usage.error.classList.remove("hidden");
@@ -353,15 +420,26 @@ document.addEventListener("DOMContentLoaded", () => {
     activity.empty.classList.add("hidden");
     activity.error.classList.add("hidden");
 
-    await new Promise((r) => setTimeout(r, 550));
+    const signal = getAbortSignal("activity");
+
+    await new Promise((r, reject) => {
+      const t = setTimeout(r, 550);
+      signal.addEventListener("abort", () => {
+        clearTimeout(t);
+        reject(new DOMException("Aborted", "AbortError"));
+      });
+    });
 
     try {
-      const response = await fetch("/api/activity");
+      const response = await fetch("/api/activity", { signal });
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
       const data = await response.json();
-      const logs = data.activity || [];
+      if (!data || !Array.isArray(data.activity)) {
+        throw new Error("Malformed API response: activity array is required");
+      }
+      const logs = data.activity;
 
       activity.skeleton.classList.add("hidden");
 
@@ -372,6 +450,9 @@ document.addEventListener("DOMContentLoaded", () => {
         activity.timeline.classList.remove("hidden");
       }
     } catch (err) {
+      if (err.name === "AbortError") {
+        return;
+      }
       console.warn("[Dashboard] Activity load failed (MISSING BACKEND CONTRACT):", err.message);
       activity.skeleton.classList.add("hidden");
       activity.error.classList.remove("hidden");
@@ -384,40 +465,60 @@ document.addEventListener("DOMContentLoaded", () => {
     jobs.forEach((job) => {
       const card = document.createElement("div");
       card.className = "opportunity-card";
-
-      const scoreHtml = job.score
-        ? `<div class="match-score-pill score-${getScoreRangeClass(job.score)}">${job.score}% match</div>`
-        : "";
-
-      const budgetHtml = job.budget ? `<span class="opp-budget">${job.budget}</span>` : "";
-
-      const skillsHtml = (job.skills || [])
-        .map((skill) => `<span class="skill-badge">${skill}</span>`)
-        .join("");
-
-      const explanationHtml = job.matchExplanation
-        ? `<div class="opp-explanation"><strong>Why it fits:</strong> ${job.matchExplanation}</div>`
-        : "";
-
-      card.innerHTML = `
-        <div class="opp-card-header">
-          <div>
-            <h4 class="opp-title font-display">${escapeHtml(job.title)}</h4>
-            <span class="opp-meta">${escapeHtml(job.platform || "Upwork")} &middot; ${getRelativeTime(job.createdAt)}</span>
-          </div>
-          ${scoreHtml}
-        </div>
-        <div class="opp-body">
-          <div class="skills-wrap">${skillsHtml}</div>
-          ${explanationHtml}
-          <div class="opp-footer">
-            ${budgetHtml}
-            <a href="/matching.html?jobId=${job.id}" class="btn btn-secondary btn-sm">View match details</a>
-          </div>
-        </div>
-      `;
+      card.id = `opp-card-${job.id}`;
+      updateOpportunityCardHTML(card, job);
       opps.list.appendChild(card);
     });
+  }
+
+  function updateOpportunityCardHTML(card, job, matchState = "idle", errorMsg = null) {
+    const hasScore = typeof job.score === "number" && job.score !== null;
+
+    const scoreHtml = hasScore
+      ? `<div class="match-score-pill score-${getScoreRangeClass(job.score)}">${job.score}% match</div>`
+      : "";
+
+    const budgetHtml = job.budget ? `<span class="opp-budget">${job.budget}</span>` : "";
+
+    const skillsHtml = (job.skills || [])
+      .map((skill) => `<span class="skill-badge">${skill}</span>`)
+      .join("");
+
+    const explanationHtml = job.matchExplanation
+      ? `<div class="opp-explanation"><strong>Why it fits:</strong> ${job.matchExplanation}</div>`
+      : "";
+
+    let footerActionHtml = "";
+    if (hasScore) {
+      footerActionHtml = `<a href="/matching.html?jobId=${job.id}" class="btn btn-secondary btn-sm">View match details</a>`;
+    } else if (matchState === "matching") {
+      footerActionHtml = `<button class="btn btn-secondary btn-sm" disabled>Matching...</button>`;
+    } else {
+      footerActionHtml = `<button class="btn btn-primary btn-sm btn-run-match" data-id="${job.id}">Run Match</button>`;
+    }
+
+    const errorHtml = errorMsg
+      ? `<div class="opp-card-error" style="color: var(--error-500, #ef4444); font-size: 0.875rem; margin-top: 0.5rem;">${escapeHtml(errorMsg)}</div>`
+      : "";
+
+    card.innerHTML = `
+      <div class="opp-card-header">
+        <div>
+          <h4 class="opp-title font-display">${escapeHtml(job.title)}</h4>
+          <span class="opp-meta">${escapeHtml(job.platform || "Upwork")} &middot; ${getRelativeTime(job.createdAt)}</span>
+        </div>
+        ${scoreHtml}
+      </div>
+      <div class="opp-body">
+        <div class="skills-wrap">${skillsHtml}</div>
+        ${explanationHtml}
+        ${errorHtml}
+        <div class="opp-footer">
+          ${budgetHtml}
+          ${footerActionHtml}
+        </div>
+      </div>
+    `;
   }
 
   // Render Activity Timeline HTML
@@ -515,4 +616,59 @@ document.addEventListener("DOMContentLoaded", () => {
   opps.retryBtn.addEventListener("click", loadOpportunities);
   usage.retryBtn.addEventListener("click", loadUsage);
   activity.retryBtn.addEventListener("click", loadActivity);
+
+  // Hook run-match actions via event delegation
+  opps.list.addEventListener("click", async (e) => {
+    if (e.target.classList.contains("btn-run-match")) {
+      const jobId = e.target.getAttribute("data-id");
+      const card = document.getElementById(`opp-card-${jobId}`);
+      if (!card) {
+        return;
+      }
+
+      const job = currentJobs.find((j) => j.id === jobId);
+      if (!job) {
+        return;
+      }
+
+      updateOpportunityCardHTML(card, job, "matching");
+
+      try {
+        const response = await fetch(`/api/jobs/${jobId}/match`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        });
+
+        if (response.status === 401) {
+          window.location.href = "/login.html";
+          return;
+        }
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          let errMsg = data.error || "Match failed";
+          if (response.status === 403) {
+            errMsg = `Entitlement Denied: ${data.reason || "plan limit exceeded"}`;
+          }
+          updateOpportunityCardHTML(card, job, "error", errMsg);
+          return;
+        }
+
+        job.score = data.score;
+        job.matchExplanation = data.matchExplanation || `Matched with score ${data.score}%.`;
+
+        updateOpportunityCardHTML(card, job, "success");
+
+        // Reload Usage/Activity and KPI stats
+        loadUsage();
+        loadActivity();
+        loadKPI("matches", "/api/analytics/matches");
+      } catch (err) {
+        updateOpportunityCardHTML(card, job, "error", err.message || "Network error");
+      }
+    }
+  });
 });
