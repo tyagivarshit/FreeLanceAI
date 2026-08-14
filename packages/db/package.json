@@ -22,7 +22,7 @@
   "dependencies": {
     "@freelanceos/config": "*",
     "@freelanceos/core": "*",
-    "drizzle-orm": "0.32.1",
+    "drizzle-orm": "0.45.2",
     "pg": "8.12.0"
   },
   "devDependencies": {
