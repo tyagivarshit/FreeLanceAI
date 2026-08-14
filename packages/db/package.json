@@ -15,10 +15,13 @@
   "scripts": {
     "build": "tsc",
     "typecheck": "tsc --noEmit",
+    "test": "node --env-file=../../.env.test --test dist/repository/*.test.js",
+    "test:unit": "node --env-file=../../.env.test --test dist/repository/*.test.js",
     "clean": "node -e \"const fs = require('fs'); fs.rmSync('dist', { recursive: true, force: true }); fs.rmSync('tsconfig.tsbuildinfo', { force: true });\""
   },
   "dependencies": {
     "@freelanceos/config": "*",
+    "@freelanceos/core": "*",
     "drizzle-orm": "0.32.1",
     "pg": "8.12.0"
   },

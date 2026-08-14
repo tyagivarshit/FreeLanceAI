@@ -15,6 +15,13 @@
       "when": 1786036102760,
       "tag": "0001_yellow_nova",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1786694681631,
+      "tag": "0002_illegal_mandarin",
+      "breakpoints": true
     }
   ]
 }
