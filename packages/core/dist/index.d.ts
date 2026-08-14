@@ -82,6 +82,8 @@ export { PricingRegionResolver, Plan, PlanCatalog, EU_COUNTRIES } from "./plan.j
 export type { PlanId, PlanLifecycleState, PricingRegion, PlanPrice, PlanProperties, PriceResolutionMetadata, PlanFeature, PlanLimits, UsageLimitValue, UsageLimits, UsagePeriod, UsagePeriodType, } from "./plan.js";
 export { StripeBillingError, StripePriceRegistry, InMemoryStripeCustomerMappingRepository, translateStripeError, StripeBillingProviderImpl, } from "./stripe.js";
 export type { StripePriceMapping, StripeCustomerMapping, CheckoutSessionResult, PortalSessionResult, StripeSubscriptionInfo, StripeCustomerMappingRepository, } from "./stripe.js";
-export { StripeWebhookError, InMemoryStripeSubscriptionRepository, InMemoryWebhookEventStore, StripeWebhookProcessor, SUPPORTED_EVENTS, } from "./webhook.js";
+export { StripeWebhookError, InMemoryStripeSubscriptionRepository, InMemoryWebhookEventStore, StripeWebhookProcessor, SUPPORTED_EVENTS, WEBHOOK_PROCESSING_TIMEOUT_MS, } from "./webhook.js";
 export type { LocalSubscriptionRecord, StripeSubscriptionRepository, WebhookEventRecord, WebhookEventStore, WebhookProcessorParams, } from "./webhook.js";
+export { EntitlementResolver, EntitlementEnforcer, InMemoryUsageRepository, getLimitKeyForFeature, getSubscriptionPeriod, } from "./entitlements.js";
+export type { EntitlementDecision, UsageRepository, } from "./entitlements.js";
 //# sourceMappingURL=index.d.ts.map

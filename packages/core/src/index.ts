@@ -1105,6 +1105,7 @@ export {
   InMemoryWebhookEventStore,
   StripeWebhookProcessor,
   SUPPORTED_EVENTS,
+  WEBHOOK_PROCESSING_TIMEOUT_MS,
 } from "./webhook.js";
 
 export type {
@@ -1114,3 +1115,14 @@ export type {
   WebhookEventStore,
   WebhookProcessorParams,
 } from "./webhook.js";
+
+// Entitlement and Usage exports
+export {
+  EntitlementResolver,
+  EntitlementEnforcer,
+  InMemoryUsageRepository,
+  getLimitKeyForFeature,
+  getSubscriptionPeriod,
+} from "./entitlements.js";
+
+export type { EntitlementDecision, UsageRepository } from "./entitlements.js";

@@ -108,5 +108,7 @@ export { PricingRegionResolver, Plan, PlanCatalog, EU_COUNTRIES } from "./plan.j
 // Stripe Billing exports
 export { StripeBillingError, StripePriceRegistry, InMemoryStripeCustomerMappingRepository, translateStripeError, StripeBillingProviderImpl, } from "./stripe.js";
 // Stripe Webhook exports
-export { StripeWebhookError, InMemoryStripeSubscriptionRepository, InMemoryWebhookEventStore, StripeWebhookProcessor, SUPPORTED_EVENTS, } from "./webhook.js";
+export { StripeWebhookError, InMemoryStripeSubscriptionRepository, InMemoryWebhookEventStore, StripeWebhookProcessor, SUPPORTED_EVENTS, WEBHOOK_PROCESSING_TIMEOUT_MS, } from "./webhook.js";
+// Entitlement and Usage exports
+export { EntitlementResolver, EntitlementEnforcer, InMemoryUsageRepository, getLimitKeyForFeature, getSubscriptionPeriod, } from "./entitlements.js";
 //# sourceMappingURL=index.js.map

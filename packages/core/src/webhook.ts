@@ -8,6 +8,7 @@ import {
 } from "./stripe.js";
 import { Payment, Money, PaymentAggregateStore } from "./payment.js";
 import { logger } from "@freelanceos/logger";
+import { CacheStore } from "./job-match-cache.js";
 
 // Failure Classification Error
 export class StripeWebhookError extends Error {
@@ -90,14 +91,22 @@ export interface WebhookEventStore {
   get(eventId: string): Promise<WebhookEventRecord | null>;
 }
 
+export const WEBHOOK_PROCESSING_TIMEOUT_MS = 5 * 60 * 1000;
+
 export class InMemoryWebhookEventStore implements WebhookEventStore {
   private readonly _records = new Map<string, WebhookEventRecord>();
 
   public async claim(eventId: string, eventType: string): Promise<boolean> {
     const existing = this._records.get(eventId);
     if (existing) {
-      if (existing.status === "PROCESSED" || existing.status === "PROCESSING") {
+      if (existing.status === "PROCESSED") {
         return false;
+      }
+      if (existing.status === "PROCESSING") {
+        const isStale = Date.now() - existing.receivedAt.getTime() > WEBHOOK_PROCESSING_TIMEOUT_MS;
+        if (!isStale) {
+          return false;
+        }
       }
     }
     this._records.set(eventId, {
@@ -151,6 +160,7 @@ export interface WebhookProcessorParams {
   eventStore: WebhookEventStore;
   stripeClientMock?: unknown;
   toleranceSeconds?: number;
+  cacheStore?: CacheStore | undefined;
 }
 
 export class StripeWebhookProcessor {
@@ -163,6 +173,7 @@ export class StripeWebhookProcessor {
   private readonly _eventStore: WebhookEventStore;
   private readonly _stripeClient: Stripe;
   private readonly _toleranceSeconds: number;
+  private readonly _cacheStore?: CacheStore | undefined;
 
   constructor(params: WebhookProcessorParams) {
     if (params.env === "production") {
@@ -182,6 +193,7 @@ export class StripeWebhookProcessor {
     this._trialPersistence = params.trialPersistence;
     this._eventStore = params.eventStore;
     this._toleranceSeconds = params.toleranceSeconds ?? 300;
+    this._cacheStore = params.cacheStore;
 
     this._stripeClient =
       (params.stripeClientMock as Stripe) ??
@@ -540,12 +552,22 @@ export class StripeWebhookProcessor {
     // Save Synchronized State
     await this._subscriptionRepo.save(subscriptionInfo, eventCreated);
 
+    if (this._cacheStore) {
+      try {
+        await this._cacheStore.delete(`entitlement:${mapping.tenantId}`);
+        logger.info({
+          message: "entitlement_cache_invalidated",
+          tenantId: mapping.tenantId,
+        });
+      } catch {
+        // Safe fallback if cache eviction fails
+      }
+    }
+
     // Trial-to-Paid Synchronization: confirmed via webhook
     if (subscriptionInfo.status === "active") {
       const grants = await this._trialPersistence.findByUserId(mapping.ownerId);
-      const activeTrial = grants.find(
-        (g) => g.planId === subscriptionInfo.planId && g.status === "ACTIVE",
-      );
+      const activeTrial = grants.find((g) => g.status === "ACTIVE");
       if (activeTrial) {
         activeTrial.transitionTo("CONVERTED");
         await this._trialPersistence.save(activeTrial);
