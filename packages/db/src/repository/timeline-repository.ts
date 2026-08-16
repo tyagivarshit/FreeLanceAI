@@ -122,6 +122,71 @@ export class PostgresTimelineRepository implements TimelineAggregateStore {
     return { items, total };
   }
 
+  public async findTimelineEntriesByClientId(
+    clientId: string,
+    ownerId: string,
+    options: {
+      page: number;
+      pageSize: number;
+    },
+  ): Promise<{
+    timelineId: string | null;
+    status: ClientTimeline["status"] | null;
+    items: TimelineEntry[];
+    total: number;
+  }> {
+    const parent = await db
+      .select()
+      .from(clientTimelines)
+      .where(and(eq(clientTimelines.clientId, clientId), eq(clientTimelines.ownerId, ownerId)))
+      .limit(1);
+
+    if (parent.length === 0) {
+      return { timelineId: null, status: null, items: [], total: 0 };
+    }
+
+    const offset = (options.page - 1) * options.pageSize;
+
+    const countResult = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(timelineEntries)
+      .where(eq(timelineEntries.timelineId, parent[0]!.id));
+
+    const total = Number(countResult[0]?.count || 0);
+
+    const rows = await db
+      .select({
+        id: timelineEntries.id,
+        timelineId: timelineEntries.timelineId,
+        eventRef: timelineEntries.eventRef,
+        category: timelineEntries.category,
+        timestamp: timelineEntries.timestamp,
+        metadata: timelineEntries.metadata,
+        actorRef: timelineEntries.actorRef,
+        visibility: timelineEntries.visibility,
+      })
+      .from(timelineEntries)
+      .where(eq(timelineEntries.timelineId, parent[0]!.id))
+      .orderBy(desc(timelineEntries.timestamp), desc(timelineEntries.id))
+      .limit(options.pageSize)
+      .offset(offset);
+
+    const items = rows.map(
+      (row) =>
+        new TimelineEntry({
+          entryId: row.id,
+          eventRef: row.eventRef || undefined,
+          category: row.category,
+          timestamp: row.timestamp,
+          metadata: row.metadata as Record<string, unknown>,
+          actorRef: row.actorRef,
+          visibility: row.visibility,
+        }),
+    );
+
+    return { timelineId: parent[0]!.id, status: parent[0]!.status, items, total };
+  }
+
   private async loadTimelineWithEntries(
     parent: typeof clientTimelines.$inferSelect,
   ): Promise<ClientTimeline> {

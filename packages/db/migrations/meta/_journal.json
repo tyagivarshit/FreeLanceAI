@@ -22,6 +22,13 @@
       "when": 1786694681631,
       "tag": "0002_illegal_mandarin",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1786780000000,
+      "tag": "0003_client_domain_foundation",
+      "breakpoints": true
     }
   ]
 }

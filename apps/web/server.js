@@ -31,6 +31,7 @@ import {
   ScoreWeightProfile,
   ClientTimeline,
   EntitlementEnforcer,
+  Client,
 } from "@freelanceos/core";
 import {
   db,
@@ -39,6 +40,7 @@ import {
   PostgresJobsRepository,
   PostgresJobMatchRepository,
   PostgresTimelineRepository,
+  PostgresClientRepository,
 } from "@freelanceos/db";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -133,6 +135,7 @@ const webhookProcessor = new StripeWebhookProcessor({
 const jobsRepo = new PostgresJobsRepository();
 const matchRepo = new PostgresJobMatchRepository();
 const timelineRepo = new PostgresTimelineRepository();
+const clientRepo = new PostgresClientRepository();
 
 const PORT = runtimeConfig.API_PORT || 4000;
 
@@ -160,9 +163,10 @@ function getCookie(cookieHeader, name) {
 const server = http.createServer(async (req, res) => {
   const parsedUrl = new URL(req.url, "http://localhost");
   const pathname = parsedUrl.pathname;
+  let staticPathname = pathname;
 
   res.setHeader("Access-Control-Allow-Origin", "*");
-  res.setHeader("Access-Control-Allow-Methods", "POST, GET, OPTIONS");
+  res.setHeader("Access-Control-Allow-Methods", "POST, GET, PATCH, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
 
   if (req.method === "OPTIONS") {
@@ -433,6 +437,423 @@ const server = http.createServer(async (req, res) => {
     return null;
   }
 
+  function sendJson(statusCode, payload) {
+    res.writeHead(statusCode, { "Content-Type": "application/json" });
+    res.end(JSON.stringify(payload));
+  }
+
+  async function readJsonBody() {
+    const MAX_SIZE = 64 * 1024;
+    let body = "";
+    let bodySize = 0;
+
+    for await (const chunk of req) {
+      bodySize += chunk.length;
+      if (bodySize > MAX_SIZE) {
+        const err = new Error("Payload too large");
+        err.statusCode = 413;
+        throw err;
+      }
+      body += chunk;
+    }
+
+    if (!body.trim()) {
+      return {};
+    }
+
+    try {
+      return JSON.parse(body);
+    } catch {
+      const err = new Error("Malformed JSON body");
+      err.statusCode = 400;
+      throw err;
+    }
+  }
+
+  function requireAuthenticatedOwner(auth) {
+    if (!auth?.context?.identity?.userId) {
+      sendJson(401, { success: false, error: "Unauthorized" });
+      return null;
+    }
+    return auth.context.identity.userId;
+  }
+
+  const CLIENT_STATUSES = ["Lead", "Active", "Suspended", "Archived", "Closed"];
+
+  function isPlainObject(value) {
+    return value !== null && typeof value === "object" && !Array.isArray(value);
+  }
+
+  function throwValidationError(message) {
+    const err = new Error(message);
+    err.statusCode = 400;
+    throw err;
+  }
+
+  function rejectUnknownFields(input, allowed, context) {
+    for (const key of Object.keys(input)) {
+      if (!allowed.includes(key)) {
+        throwValidationError(`Unknown ${context} field: ${key}`);
+      }
+    }
+  }
+
+  function rejectNulls(value, path = "body") {
+    if (value === null) {
+      throwValidationError(`${path} cannot be null`);
+    }
+    if (Array.isArray(value)) {
+      throwValidationError(`${path} cannot be an array`);
+    }
+    if (isPlainObject(value)) {
+      for (const [key, child] of Object.entries(value)) {
+        rejectNulls(child, `${path}.${key}`);
+      }
+    }
+  }
+
+  function assertString(value, field, { min = 1, max = 255, optional = false } = {}) {
+    if (value === undefined) {
+      if (optional) return undefined;
+      throwValidationError(`${field} is required`);
+    }
+    if (value === null || typeof value !== "string") {
+      throwValidationError(`${field} must be a string`);
+    }
+    const trimmed = value.trim();
+    if (trimmed.length < min || trimmed.length > max) {
+      throwValidationError(`${field} must be between ${min} and ${max} characters`);
+    }
+    return trimmed;
+  }
+
+  function assertEmail(value, field, optional = false) {
+    const email = assertString(value, field, { min: 3, max: 254, optional });
+    if (email === undefined) return undefined;
+    if (!/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(email)) {
+      throwValidationError(`${field} must be a valid email address`);
+    }
+    return email;
+  }
+
+  function assertUrl(value, field, optional = false) {
+    const url = assertString(value, field, { min: 1, max: 2048, optional });
+    if (url === undefined) return undefined;
+    try {
+      const parsed = new URL(url);
+      if (!["http:", "https:"].includes(parsed.protocol)) {
+        throw new Error("Invalid protocol");
+      }
+      return url;
+    } catch {
+      throwValidationError(`${field} must be a valid URL`);
+    }
+  }
+
+  function parsePagination(searchParams) {
+    const pageVal = searchParams.get("page");
+    const pageSizeVal = searchParams.get("pageSize");
+    let page = 1;
+    let pageSize = 20;
+
+    if (pageVal) {
+      const parsedPage = parseInt(pageVal, 10);
+      if (isNaN(parsedPage) || parsedPage < 1 || String(parsedPage) !== pageVal) {
+        throwValidationError("Invalid page parameter");
+      }
+      page = parsedPage;
+    }
+
+    if (pageSizeVal) {
+      const parsedPageSize = parseInt(pageSizeVal, 10);
+      if (
+        isNaN(parsedPageSize) ||
+        parsedPageSize < 1 ||
+        parsedPageSize > 100 ||
+        String(parsedPageSize) !== pageSizeVal
+      ) {
+        throwValidationError("Invalid pageSize parameter");
+      }
+      pageSize = parsedPageSize;
+    }
+
+    return { page, pageSize };
+  }
+
+  function parseClientProfile(payload, existingProfile = {}, requireName = false) {
+    const profileInput = isPlainObject(payload.profile) ? payload.profile : {};
+    if (payload.profile !== undefined && !isPlainObject(payload.profile)) {
+      throwValidationError("profile must be an object");
+    }
+    rejectUnknownFields(profileInput, ["name", "website", "phone"], "profile");
+
+    const source = { ...existingProfile, ...profileInput };
+    if (payload.name !== undefined) source.name = payload.name;
+    if (payload.website !== undefined) source.website = payload.website;
+    if (payload.phone !== undefined) source.phone = payload.phone;
+
+    const profile = {};
+    if (source.name !== undefined || requireName) {
+      profile.name = assertString(source.name, "name", { min: 2, max: 100 });
+    }
+    if (source.website !== undefined) {
+      profile.website = assertUrl(source.website, "website", true);
+    }
+    if (source.phone !== undefined) {
+      profile.phone = assertString(source.phone, "phone", { min: 3, max: 40, optional: true });
+    }
+    return profile;
+  }
+
+  function parsePrimaryContact(payload, existingContact = {}) {
+    const contactInput = isPlainObject(payload.primaryContact) ? payload.primaryContact : {};
+    if (payload.primaryContact !== undefined && !isPlainObject(payload.primaryContact)) {
+      throwValidationError("primaryContact must be an object");
+    }
+    rejectUnknownFields(contactInput, ["firstName", "lastName", "email"], "primaryContact");
+
+    const contact = { ...existingContact, ...contactInput };
+    if (payload.email !== undefined) contact.email = payload.email;
+
+    const result = {};
+    if (contact.firstName !== undefined) {
+      result.firstName = assertString(contact.firstName, "primaryContact.firstName", {
+        min: 1,
+        max: 100,
+      });
+    }
+    if (contact.lastName !== undefined) {
+      result.lastName = assertString(contact.lastName, "primaryContact.lastName", {
+        min: 1,
+        max: 100,
+      });
+    }
+    if (contact.email !== undefined) {
+      result.email = assertEmail(contact.email, "email");
+    }
+    return Object.keys(result).length > 0 ? result : undefined;
+  }
+
+  function parseBillingDetails(payload, existingBilling = undefined) {
+    if (payload.billingDetails === undefined) {
+      return existingBilling;
+    }
+    if (!isPlainObject(payload.billingDetails)) {
+      throwValidationError("billingDetails must be an object");
+    }
+    rejectUnknownFields(
+      payload.billingDetails,
+      ["taxRegistrationId", "currency", "billingAddress"],
+      "billingDetails",
+    );
+
+    const billing = { ...(existingBilling ?? {}), ...payload.billingDetails };
+    const result = {};
+    if (billing.taxRegistrationId !== undefined) {
+      result.taxRegistrationId = assertString(
+        billing.taxRegistrationId,
+        "billingDetails.taxRegistrationId",
+        { min: 1, max: 80 },
+      );
+    }
+    if (billing.currency !== undefined) {
+      result.currency = assertString(billing.currency, "billingDetails.currency", {
+        min: 3,
+        max: 3,
+      });
+      if (!/^[A-Z]{3}$/.test(result.currency)) {
+        throwValidationError("billingDetails.currency must be a 3-letter uppercase ISO code");
+      }
+    }
+    if (billing.billingAddress !== undefined) {
+      if (!isPlainObject(billing.billingAddress)) {
+        throwValidationError("billingDetails.billingAddress must be an object");
+      }
+      rejectUnknownFields(
+        billing.billingAddress,
+        ["street", "city", "state", "postalCode", "country"],
+        "billingAddress",
+      );
+      result.billingAddress = {
+        street: assertString(billing.billingAddress.street, "billingAddress.street", {
+          min: 1,
+          max: 200,
+        }),
+        city: assertString(billing.billingAddress.city, "billingAddress.city", {
+          min: 1,
+          max: 100,
+        }),
+        state: assertString(billing.billingAddress.state, "billingAddress.state", {
+          min: 1,
+          max: 100,
+        }),
+        postalCode: assertString(billing.billingAddress.postalCode, "billingAddress.postalCode", {
+          min: 1,
+          max: 10,
+        }),
+        country: assertString(billing.billingAddress.country, "billingAddress.country", {
+          min: 2,
+          max: 2,
+        }),
+      };
+      if (!/^[A-Z]{2}$/.test(result.billingAddress.country)) {
+        throwValidationError("billingAddress.country must be a 2-letter uppercase ISO code");
+      }
+    }
+    return Object.keys(result).length > 0 ? result : undefined;
+  }
+
+  function parseCreateClientBody(payload, ownerId) {
+    if (!isPlainObject(payload)) {
+      throwValidationError("Request body must be an object");
+    }
+    rejectNulls(payload);
+    rejectUnknownFields(
+      payload,
+      [
+        "name",
+        "website",
+        "phone",
+        "email",
+        "profile",
+        "primaryContact",
+        "billingDetails",
+        "status",
+        "ownerId",
+        "tenantId",
+      ],
+      "client",
+    );
+
+    if (payload.status !== undefined && payload.status !== "Lead") {
+      throwValidationError("status must be Lead on create");
+    }
+
+    return Client.create(
+      randomUUID(),
+      ownerId,
+      parseClientProfile(payload, {}, true),
+      parseBillingDetails(payload),
+      parsePrimaryContact(payload),
+    );
+  }
+
+  function parsePatchClientBody(payload, existing, ownerId) {
+    if (!isPlainObject(payload)) {
+      throwValidationError("Request body must be an object");
+    }
+    rejectNulls(payload);
+    rejectUnknownFields(
+      payload,
+      [
+        "name",
+        "website",
+        "phone",
+        "email",
+        "profile",
+        "primaryContact",
+        "billingDetails",
+        "status",
+        "ownerId",
+        "tenantId",
+      ],
+      "client",
+    );
+
+    const client = new Client({
+      id: existing.id,
+      ownerId,
+      status: existing.status,
+      profile: existing.profile,
+      billingDetails: existing.billingDetails,
+      primaryContact: existing.primaryContact,
+      systemMetadata: existing.systemMetadata,
+    });
+
+    const hasMutableFields = [
+      "name",
+      "website",
+      "phone",
+      "email",
+      "profile",
+      "primaryContact",
+      "billingDetails",
+    ].some((field) => payload[field] !== undefined);
+
+    if (hasMutableFields) {
+      client.updateProfile(
+        ownerId,
+        parseClientProfile(payload, existing.profile, true),
+        parseBillingDetails(payload, existing.billingDetails),
+        parsePrimaryContact(payload, existing.primaryContact),
+      );
+    }
+
+    if (payload.status !== undefined) {
+      if (!CLIENT_STATUSES.includes(payload.status)) {
+        throwValidationError("Invalid status");
+      }
+      client.transitionTo(payload.status, ownerId);
+    }
+
+    return client;
+  }
+
+  function clientDto(client) {
+    return {
+      id: client.id,
+      name: client.profile.name,
+      website: client.profile.website ?? null,
+      phone: client.profile.phone ?? null,
+      email: client.primaryContact?.email ?? null,
+      status: client.status,
+      primaryContact: client.primaryContact
+        ? {
+            firstName: client.primaryContact.firstName ?? null,
+            lastName: client.primaryContact.lastName ?? null,
+            email: client.primaryContact.email ?? null,
+          }
+        : null,
+      billingDetails: client.billingDetails
+        ? {
+            taxRegistrationId: client.billingDetails.taxRegistrationId ?? null,
+            currency: client.billingDetails.currency ?? null,
+            billingAddress: client.billingDetails.billingAddress ?? null,
+          }
+        : null,
+      createdAt: client.systemMetadata.createdAt.toISOString(),
+      updatedAt: client.systemMetadata.updatedAt.toISOString(),
+    };
+  }
+
+  function handleClientApiError(err) {
+    const message = err instanceof Error ? err.message : String(err);
+    const statusCode = err && typeof err === "object" && err.statusCode ? err.statusCode : null;
+
+    if (statusCode && statusCode < 500) {
+      sendJson(statusCode, { success: false, error: message });
+      return;
+    }
+
+    if (/duplicate client identity|duplicate key/i.test(message)) {
+      sendJson(409, { success: false, error: "Client identity already exists" });
+      return;
+    }
+
+    if (
+      /invalid|must|required|cannot|ownership validation failed|lifecycle transition/i.test(message)
+    ) {
+      sendJson(400, { success: false, error: message });
+      return;
+    }
+
+    logger.error({
+      message: "Client API request failed",
+      error: err instanceof Error ? err : new Error(String(err)),
+    });
+    sendJson(500, { success: false, error: "Internal Server Error" });
+  }
+
   // Redirect authenticated users away from signup/login pages to dashboard
   if (pathname === "/" || pathname === "/index.html" || pathname === "/login.html") {
     const auth = await checkAuthentication();
@@ -443,8 +864,17 @@ const server = http.createServer(async (req, res) => {
     }
   }
 
-  // Protect dashboard routes
-  if (pathname === "/dashboard.html" || pathname === "/dashboard") {
+  // Protect authenticated app routes
+  const clientDetailRouteMatch = pathname.match(/^\/clients\/([a-zA-Z0-9-]+)$/);
+
+  if (
+    pathname === "/dashboard.html" ||
+    pathname === "/dashboard" ||
+    pathname === "/clients.html" ||
+    pathname === "/clients" ||
+    pathname === "/client-detail.html" ||
+    clientDetailRouteMatch
+  ) {
     const auth = await checkAuthentication();
     if (!auth) {
       res.writeHead(302, { Location: "/login.html" });
@@ -453,7 +883,13 @@ const server = http.createServer(async (req, res) => {
     }
     // Clean rewrite if requested without extension
     if (pathname === "/dashboard") {
-      req.url = "/dashboard.html";
+      staticPathname = "/dashboard.html";
+    }
+    if (pathname === "/clients") {
+      staticPathname = "/clients.html";
+    }
+    if (clientDetailRouteMatch) {
+      staticPathname = "/client-detail.html";
     }
   }
 
@@ -476,6 +912,155 @@ const server = http.createServer(async (req, res) => {
         },
       }),
     );
+    return;
+  }
+
+  function timelineEntryDto(entry) {
+    const message = safeTimelineMessage(entry.metadata?.message);
+    return {
+      id: entry.entryId,
+      eventRef: entry.eventRef ?? null,
+      category: entry.category,
+      timestamp: entry.timestamp.toISOString(),
+      message,
+      visibility: entry.visibility,
+    };
+  }
+
+  function safeTimelineMessage(value) {
+    if (typeof value !== "string" || !value.trim()) {
+      return "Timeline event recorded";
+    }
+    const message = value.trim();
+    if (
+      /(password|token|cookie|credential|secret|stripe|postgres|database|db_|sql|stack trace|traceback)/i.test(
+        message,
+      )
+    ) {
+      return "Timeline event recorded";
+    }
+    return message;
+  }
+
+  // 1F. Client API contracts
+  const clientIdMatch = pathname.match(/^\/api\/clients\/([a-zA-Z0-9-]+)$/);
+  const clientTimelineMatch = pathname.match(/^\/api\/clients\/([a-zA-Z0-9-]+)\/timeline$/);
+
+  if (pathname === "/api/clients" && req.method === "GET") {
+    const auth = await checkAuthentication();
+    const ownerId = requireAuthenticatedOwner(auth);
+    if (!ownerId) return;
+
+    try {
+      const { page, pageSize } = parsePagination(parsedUrl.searchParams);
+      const status = parsedUrl.searchParams.get("status") || undefined;
+      if (status && !CLIENT_STATUSES.includes(status)) {
+        throwValidationError("Invalid status parameter");
+      }
+
+      const result = await clientRepo.list(ownerId, { page, pageSize, status });
+      sendJson(200, {
+        success: true,
+        clients: result.items.map(clientDto),
+        total: result.total,
+        page: result.page,
+        pageSize: result.pageSize,
+      });
+    } catch (err) {
+      handleClientApiError(err);
+    }
+    return;
+  }
+
+  if (clientIdMatch && req.method === "GET") {
+    const auth = await checkAuthentication();
+    const ownerId = requireAuthenticatedOwner(auth);
+    if (!ownerId) return;
+
+    try {
+      const client = await clientRepo.findById(clientIdMatch[1], ownerId);
+      if (!client) {
+        sendJson(404, { success: false, error: "Client not found" });
+        return;
+      }
+      sendJson(200, { success: true, client: clientDto(client) });
+    } catch (err) {
+      handleClientApiError(err);
+    }
+    return;
+  }
+
+  if (clientTimelineMatch && req.method === "GET") {
+    const auth = await checkAuthentication();
+    const ownerId = requireAuthenticatedOwner(auth);
+    if (!ownerId) return;
+
+    try {
+      const { page, pageSize } = parsePagination(parsedUrl.searchParams);
+      const client = await clientRepo.findById(clientTimelineMatch[1], ownerId);
+      if (!client) {
+        sendJson(404, { success: false, error: "Client not found" });
+        return;
+      }
+
+      const timelinePage = await timelineRepo.findTimelineEntriesByClientId(client.id, ownerId, {
+        page,
+        pageSize,
+      });
+
+      sendJson(200, {
+        success: true,
+        timeline: {
+          id: timelinePage.timelineId,
+          clientId: client.id,
+          status: timelinePage.status ?? "Initialized",
+          entries: timelinePage.items.map(timelineEntryDto),
+          total: timelinePage.total,
+          page,
+          pageSize,
+        },
+      });
+    } catch (err) {
+      handleClientApiError(err);
+    }
+    return;
+  }
+
+  if (pathname === "/api/clients" && req.method === "POST") {
+    const auth = await checkAuthentication();
+    const ownerId = requireAuthenticatedOwner(auth);
+    if (!ownerId) return;
+
+    try {
+      const payload = await readJsonBody();
+      const client = parseCreateClientBody(payload, ownerId);
+      await clientRepo.create(client);
+      sendJson(201, { success: true, client: clientDto(client) });
+    } catch (err) {
+      handleClientApiError(err);
+    }
+    return;
+  }
+
+  if (clientIdMatch && req.method === "PATCH") {
+    const auth = await checkAuthentication();
+    const ownerId = requireAuthenticatedOwner(auth);
+    if (!ownerId) return;
+
+    try {
+      const existing = await clientRepo.findById(clientIdMatch[1], ownerId);
+      if (!existing) {
+        sendJson(404, { success: false, error: "Client not found" });
+        return;
+      }
+
+      const payload = await readJsonBody();
+      const updated = parsePatchClientBody(payload, existing, ownerId);
+      await clientRepo.update(updated, ownerId);
+      sendJson(200, { success: true, client: clientDto(updated) });
+    } catch (err) {
+      handleClientApiError(err);
+    }
     return;
   }
 
@@ -1022,7 +1607,7 @@ const server = http.createServer(async (req, res) => {
   }
 
   // 2. Serve static pages
-  const filePath = path.join(__dirname, pathname === "/" ? "index.html" : pathname);
+  const filePath = path.join(__dirname, staticPathname === "/" ? "index.html" : staticPathname);
   const ext = path.extname(filePath);
   const contentType = MIME_TYPES[ext] || "text/plain";
 
@@ -1049,6 +1634,7 @@ export {
   jobsRepo,
   matchRepo,
   timelineRepo,
+  clientRepo,
   subscriptionRepo,
   usageRepo,
   entitlementResolver,

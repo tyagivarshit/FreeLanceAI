@@ -126,6 +126,10 @@ export { jobImports, jobImportStatusEnum } from "./schema/jobs.js";
 // Export Matches Domain Schemas
 export { jobMatches, jobMatchLifecycleEnum } from "./schema/matches.js";
 
+// Export Clients Domain Schemas
+export { clients, clientStatusEnum } from "./schema/clients.js";
+export type { ClientRow, ClientInsert } from "./schema/clients.js";
+
 // Export Timelines Domain Schemas
 export {
   clientTimelines,
@@ -139,3 +143,9 @@ export {
 export { PostgresJobsRepository } from "./repository/jobs-repository.js";
 export { PostgresJobMatchRepository } from "./repository/match-repository.js";
 export { PostgresTimelineRepository } from "./repository/timeline-repository.js";
+export { PostgresClientRepository } from "./repository/client-repository.js";
+export type {
+  ClientExternalIdentity,
+  ClientListOptions,
+  ClientListResult,
+} from "./repository/client-repository.js";

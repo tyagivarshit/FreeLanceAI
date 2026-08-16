@@ -9,8 +9,10 @@ import {
   index,
   jsonb,
   unique,
+  foreignKey,
 } from "drizzle-orm/pg-core";
 import { users } from "./auth.js";
+import { clients } from "./clients.js";
 import { auditTimestamps } from "./helpers.js";
 
 // 1. Job Import Status Lifecycle Enum
@@ -31,6 +33,7 @@ export const jobImports = pgTable(
     ownerId: uuid("owner_id")
       .references(() => users.id, { onDelete: "cascade" })
       .notNull(),
+    clientId: uuid("client_id"),
     source: varchar("source", { length: 50 }).notNull(),
     externalJobId: varchar("external_job_id", { length: 255 }).notNull(),
     sourceUrl: text("source_url"),
@@ -51,8 +54,13 @@ export const jobImports = pgTable(
       ),
       // Composite unique constraint to support composite foreign key checks from dependent entities
       idTenantUnique: unique("job_imports_id_tenant_unique").on(table.id, table.tenantId),
+      tenantClientRelationFk: foreignKey({
+        columns: [table.clientId, table.tenantId],
+        foreignColumns: [clients.id, clients.tenantId],
+      }).onDelete("restrict"),
       // Bounded indexes for fast dashboard lookups and filters
       tenantIdx: index("job_imports_tenant_idx").on(table.tenantId),
+      tenantClientIdx: index("job_imports_tenant_client_idx").on(table.tenantId, table.clientId),
       tenantCreatedAtIdx: index("job_imports_tenant_created_at_idx").on(
         table.tenantId,
         table.createdAt,

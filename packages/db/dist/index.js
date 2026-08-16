@@ -108,10 +108,13 @@ export { users, userStatusEnum, userPasswordHashes, sessions, emailVerifications
 export { jobImports, jobImportStatusEnum } from "./schema/jobs.js";
 // Export Matches Domain Schemas
 export { jobMatches, jobMatchLifecycleEnum } from "./schema/matches.js";
+// Export Clients Domain Schemas
+export { clients, clientStatusEnum } from "./schema/clients.js";
 // Export Timelines Domain Schemas
 export { clientTimelines, timelineEntries, timelineStatusEnum, timelineEventCategoryEnum, visibilityClassificationEnum, } from "./schema/timeline.js";
 // Export Repositories
 export { PostgresJobsRepository } from "./repository/jobs-repository.js";
 export { PostgresJobMatchRepository } from "./repository/match-repository.js";
 export { PostgresTimelineRepository } from "./repository/timeline-repository.js";
+export { PostgresClientRepository } from "./repository/client-repository.js";
 //# sourceMappingURL=index.js.map

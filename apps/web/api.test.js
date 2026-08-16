@@ -8,6 +8,7 @@ import {
   jobsRepo,
   matchRepo,
   timelineRepo,
+  clientRepo,
   subscriptionRepo,
   usageRepo,
   entitlementResolver,
@@ -22,6 +23,7 @@ import {
   JobMatch,
   ClientTimeline,
   TimelineEntry,
+  Client,
 } from "@freelanceos/core";
 
 // Capture original behaviors to restore after test run
@@ -36,6 +38,11 @@ const originalMatchSave = matchRepo.save;
 const originalTimelineFindById = timelineRepo.findById;
 const originalTimelineSave = timelineRepo.save;
 const originalTimelineFindEntries = timelineRepo.findTimelineEntriesByOwner;
+const originalTimelineFindEntriesByClient = timelineRepo.findTimelineEntriesByClientId;
+const originalClientList = clientRepo.list;
+const originalClientFindById = clientRepo.findById;
+const originalClientCreate = clientRepo.create;
+const originalClientUpdate = clientRepo.update;
 
 // Test variables to control mocks dynamically
 let currentUserId = "user-123";
@@ -46,9 +53,12 @@ let mockScannedCount = 0;
 let mockMatchesCount = 0;
 
 let mockJobs = [];
+let mockClients = [];
 let mockTimelineEntries = [];
 let savedMatches = [];
 let savedTimelines = [];
+let savedClients = [];
+let updatedClients = [];
 
 // Helper to start/stop the test server on an ephemeral port
 let serverPort = 0;
@@ -77,6 +87,11 @@ test.after(() => {
       timelineRepo.findById = originalTimelineFindById;
       timelineRepo.save = originalTimelineSave;
       timelineRepo.findTimelineEntriesByOwner = originalTimelineFindEntries;
+      timelineRepo.findTimelineEntriesByClientId = originalTimelineFindEntriesByClient;
+      clientRepo.list = originalClientList;
+      clientRepo.findById = originalClientFindById;
+      clientRepo.create = originalClientCreate;
+      clientRepo.update = originalClientUpdate;
       resolve();
     });
   });
@@ -91,9 +106,12 @@ test.beforeEach(async () => {
   mockMatchesCount = 0;
 
   mockJobs = [];
+  mockClients = [];
   mockTimelineEntries = [];
   savedMatches = [];
   savedTimelines = [];
+  savedClients = [];
+  updatedClients = [];
 
   if (usageRepo && typeof usageRepo.reset === "function") {
     await usageRepo.reset();
@@ -204,6 +222,75 @@ test.beforeEach(async () => {
     );
     return { items, total: items.length };
   };
+
+  timelineRepo.findTimelineEntriesByClientId = async (clientId, ownerId, options) => {
+    const clientTimeline = savedTimelines.find(
+      (timeline) => timeline.clientId === clientId && timeline.ownerId === ownerId,
+    );
+    if (!clientTimeline) {
+      return { timelineId: null, status: null, items: [], total: 0 };
+    }
+    const entries = clientTimeline.entries.slice().reverse();
+    const offset = (options.page - 1) * options.pageSize;
+    return {
+      timelineId: clientTimeline.timelineId,
+      status: clientTimeline.status,
+      items: entries.slice(offset, offset + options.pageSize),
+      total: entries.length,
+    };
+  };
+
+  clientRepo.list = async (ownerId, options = {}) => {
+    const page = options.page ?? 1;
+    const pageSize = options.pageSize ?? 20;
+    const filtered = mockClients
+      .filter((client) => client.ownerId === ownerId)
+      .filter((client) => (options.status ? client.status === options.status : true))
+      .sort(
+        (a, b) =>
+          b.systemMetadata.createdAt.getTime() - a.systemMetadata.createdAt.getTime() ||
+          b.id.localeCompare(a.id),
+      );
+    const offset = (page - 1) * pageSize;
+    return {
+      items: filtered.slice(offset, offset + pageSize),
+      total: filtered.length,
+      page,
+      pageSize,
+    };
+  };
+
+  clientRepo.findById = async (id, ownerId) => {
+    return mockClients.find((client) => client.id === id && client.ownerId === ownerId) || null;
+  };
+
+  clientRepo.create = async (client) => {
+    const duplicate = mockClients.find(
+      (existing) =>
+        existing.ownerId === client.ownerId &&
+        existing.primaryContact?.email?.trim().toLowerCase() ===
+          client.primaryContact?.email?.trim().toLowerCase(),
+    );
+    if (duplicate) {
+      throw new Error("Duplicate client identity: email already exists for this tenant.");
+    }
+    savedClients.push(client);
+    mockClients.push(client);
+  };
+
+  clientRepo.update = async (client, ownerId) => {
+    if (client.ownerId !== ownerId) {
+      throw new Error("Ownership validation failed.");
+    }
+    const index = mockClients.findIndex(
+      (existing) => existing.id === client.id && existing.ownerId === ownerId,
+    );
+    if (index === -1) {
+      throw new Error("Client not found.");
+    }
+    updatedClients.push(client);
+    mockClients[index] = client;
+  };
 });
 
 // Database result resolver for session/user/counts queries
@@ -277,10 +364,14 @@ function makeRequest(path, method = "GET", headers = {}, body = null) {
         responseBody += chunk;
       });
       res.on("end", () => {
+        const contentType = String(res.headers["content-type"] || "");
         resolve({
           statusCode: res.statusCode,
           headers: res.headers,
-          body: responseBody ? JSON.parse(responseBody) : null,
+          body:
+            responseBody && contentType.includes("application/json")
+              ? JSON.parse(responseBody)
+              : responseBody || null,
         });
       });
     });
@@ -331,9 +422,457 @@ function buildTestJobImport({
   });
 }
 
+function buildTestClient({
+  id,
+  ownerId,
+  name,
+  email = "client@example.com",
+  status = "Lead",
+  createdAt = new Date("2026-08-16T10:00:00.000Z"),
+}) {
+  return new Client({
+    id,
+    ownerId,
+    status,
+    profile: { name, website: "https://example.com" },
+    primaryContact: { firstName: "Casey", lastName: "Client", email },
+    systemMetadata: {
+      createdAt,
+      updatedAt: createdAt,
+    },
+  });
+}
+
 // -------------------------------------------------------------
 // PART 15 - SECURITY & PART 16 - FUNCTIONAL INTEGRATION TESTS
 // -------------------------------------------------------------
+
+test("client API: unauthenticated list returns 401", async () => {
+  const res = await makeRequest("/api/clients");
+  assert.strictEqual(res.statusCode, 401);
+  assert.strictEqual(res.body.success, false);
+  assert.strictEqual(res.body.error, "Unauthorized");
+});
+
+test("client API: authenticated list is owner isolated, paginated, and deterministic", async () => {
+  const cookie = getSessionCookie("user-123", "user@example.com");
+  mockClients = [
+    buildTestClient({
+      id: "client-a",
+      ownerId: "user-123",
+      name: "Alpha Client",
+      createdAt: new Date("2026-08-14T10:00:00.000Z"),
+    }),
+    buildTestClient({
+      id: "client-b",
+      ownerId: "user-123",
+      name: "Beta Client",
+      createdAt: new Date("2026-08-15T10:00:00.000Z"),
+    }),
+    buildTestClient({
+      id: "client-c",
+      ownerId: "user-456",
+      name: "Other Owner Client",
+      createdAt: new Date("2026-08-16T10:00:00.000Z"),
+    }),
+  ];
+
+  const res = await makeRequest("/api/clients?page=1&pageSize=1&tenantId=user-456", "GET", {
+    Cookie: cookie,
+  });
+
+  assert.strictEqual(res.statusCode, 200);
+  assert.strictEqual(res.body.success, true);
+  assert.strictEqual(res.body.total, 2);
+  assert.strictEqual(res.body.page, 1);
+  assert.strictEqual(res.body.pageSize, 1);
+  assert.strictEqual(res.body.clients.length, 1);
+  assert.strictEqual(res.body.clients[0].id, "client-b");
+  assert.strictEqual(JSON.stringify(res.body).includes("user-456"), false);
+});
+
+test("client API: invalid list query parameters return 400", async () => {
+  const cookie = getSessionCookie("user-123", "user@example.com");
+
+  const badPage = await makeRequest("/api/clients?page=0", "GET", { Cookie: cookie });
+  assert.strictEqual(badPage.statusCode, 400);
+
+  const badPageSize = await makeRequest("/api/clients?pageSize=101", "GET", { Cookie: cookie });
+  assert.strictEqual(badPageSize.statusCode, 400);
+
+  const badStatus = await makeRequest("/api/clients?status=Deleted", "GET", { Cookie: cookie });
+  assert.strictEqual(badStatus.statusCode, 400);
+});
+
+test("client API: get own client succeeds and cross-owner get returns 404", async () => {
+  const cookie = getSessionCookie("user-123", "user@example.com");
+  mockClients = [
+    buildTestClient({ id: "client-a", ownerId: "user-123", name: "Own Client" }),
+    buildTestClient({ id: "client-b", ownerId: "user-456", name: "Other Client" }),
+  ];
+
+  const own = await makeRequest("/api/clients/client-a", "GET", { Cookie: cookie });
+  assert.strictEqual(own.statusCode, 200);
+  assert.strictEqual(own.body.client.name, "Own Client");
+  assert.strictEqual(own.body.client.ownerId, undefined);
+
+  const other = await makeRequest("/api/clients/client-b", "GET", { Cookie: cookie });
+  assert.strictEqual(other.statusCode, 404);
+  assert.strictEqual(other.body.error, "Client not found");
+});
+
+test("client API: valid create ignores forged ownership and returns safe DTO", async () => {
+  const cookie = getSessionCookie("user-123", "user@example.com");
+  const res = await makeRequest(
+    "/api/clients",
+    "POST",
+    { Cookie: cookie },
+    {
+      ownerId: "user-456",
+      tenantId: "user-456",
+      name: "New Client",
+      email: "new@example.com",
+      primaryContact: { firstName: "New", lastName: "Client" },
+    },
+  );
+
+  assert.strictEqual(res.statusCode, 201);
+  assert.strictEqual(savedClients.length, 1);
+  assert.strictEqual(savedClients[0].ownerId, "user-123");
+  assert.strictEqual(res.body.client.name, "New Client");
+  assert.strictEqual(res.body.client.email, "new@example.com");
+  assert.strictEqual(res.body.client.ownerId, undefined);
+  assert.strictEqual(JSON.stringify(res.body).includes("user-456"), false);
+});
+
+test("client API: invalid create, unknown fields, and duplicate identity fail safely", async () => {
+  const cookie = getSessionCookie("user-123", "user@example.com");
+  mockClients = [
+    buildTestClient({
+      id: "client-a",
+      ownerId: "user-123",
+      name: "Existing Client",
+      email: "dupe@example.com",
+    }),
+  ];
+
+  const badEmail = await makeRequest(
+    "/api/clients",
+    "POST",
+    { Cookie: cookie },
+    { name: "Bad Client", email: "not-an-email" },
+  );
+  assert.strictEqual(badEmail.statusCode, 400);
+
+  const unknown = await makeRequest(
+    "/api/clients",
+    "POST",
+    { Cookie: cookie },
+    { name: "Bad Client", password: "secret" },
+  );
+  assert.strictEqual(unknown.statusCode, 400);
+
+  const duplicate = await makeRequest(
+    "/api/clients",
+    "POST",
+    { Cookie: cookie },
+    { name: "Duplicate Client", email: "DUPE@example.com" },
+  );
+  assert.strictEqual(duplicate.statusCode, 409);
+  assert.strictEqual(duplicate.body.error, "Client identity already exists");
+});
+
+test("client API: valid update is owner scoped and rejects cross-owner update", async () => {
+  const cookie = getSessionCookie("user-123", "user@example.com");
+  mockClients = [
+    buildTestClient({ id: "client-a", ownerId: "user-123", name: "Old Name" }),
+    buildTestClient({ id: "client-b", ownerId: "user-456", name: "Other Client" }),
+  ];
+
+  const updated = await makeRequest(
+    "/api/clients/client-a",
+    "PATCH",
+    { Cookie: cookie },
+    { name: "Updated Name", ownerId: "user-456", tenantId: "user-456" },
+  );
+  assert.strictEqual(updated.statusCode, 200);
+  assert.strictEqual(updated.body.client.name, "Updated Name");
+  assert.strictEqual(updatedClients.length, 1);
+  assert.strictEqual(updatedClients[0].ownerId, "user-123");
+
+  const other = await makeRequest(
+    "/api/clients/client-b",
+    "PATCH",
+    { Cookie: cookie },
+    { name: "Forbidden Update" },
+  );
+  assert.strictEqual(other.statusCode, 404);
+});
+
+test("client API: malformed update and unsafe repository errors are sanitized", async () => {
+  const cookie = getSessionCookie("user-123", "user@example.com");
+  mockClients = [buildTestClient({ id: "client-a", ownerId: "user-123", name: "Client A" })];
+
+  const badUrl = await makeRequest(
+    "/api/clients/client-a",
+    "PATCH",
+    { Cookie: cookie },
+    { website: "ftp://example.com" },
+  );
+  assert.strictEqual(badUrl.statusCode, 400);
+
+  clientRepo.update = async () => {
+    throw new Error("Sensitive SQL failed at /var/lib/postgres/private.js with password=secret");
+  };
+
+  const failed = await makeRequest(
+    "/api/clients/client-a",
+    "PATCH",
+    { Cookie: cookie },
+    { name: "Still Safe" },
+  );
+  assert.strictEqual(failed.statusCode, 500);
+  assert.strictEqual(failed.body.error, "Internal Server Error");
+  assert.strictEqual(JSON.stringify(failed.body).includes("password"), false);
+  assert.strictEqual(JSON.stringify(failed.body).includes("/var/lib"), false);
+});
+
+test("client API: response schema excludes sensitive fields", async () => {
+  const cookie = getSessionCookie("user-123", "user@example.com");
+  mockClients = [buildTestClient({ id: "client-a", ownerId: "user-123", name: "Safe Client" })];
+
+  const res = await makeRequest("/api/clients/client-a", "GET", { Cookie: cookie });
+  const body = JSON.stringify(res.body);
+
+  assert.strictEqual(res.statusCode, 200);
+  assert.strictEqual(body.includes("password"), false);
+  assert.strictEqual(body.includes("accessToken"), false);
+  assert.strictEqual(body.includes("refreshToken"), false);
+  assert.strictEqual(body.includes("session"), false);
+  assert.strictEqual(body.includes("stripe"), false);
+});
+
+test("client detail route: authenticated static route serves Client Detail shell", async () => {
+  const cookie = getSessionCookie("user-123", "user@example.com");
+  const res = await makeRequest("/clients/client-a", "GET", { Cookie: cookie });
+
+  assert.strictEqual(res.statusCode, 200);
+  assert.ok(String(res.headers["content-type"]).includes("text/html"));
+  assert.ok(res.body.includes("Client Detail"));
+  assert.ok(res.body.includes("/client-detail.js"));
+});
+
+test("client timeline API: unauthenticated access returns 401", async () => {
+  const res = await makeRequest("/api/clients/client-a/timeline");
+  assert.strictEqual(res.statusCode, 401);
+  assert.strictEqual(res.body.success, false);
+});
+
+test("client timeline API: cross-owner access returns safe not-found", async () => {
+  const cookie = getSessionCookie("user-123", "user@example.com");
+  mockClients = [buildTestClient({ id: "client-b", ownerId: "user-456", name: "Other Client" })];
+
+  const res = await makeRequest("/api/clients/client-b/timeline", "GET", { Cookie: cookie });
+
+  assert.strictEqual(res.statusCode, 404);
+  assert.strictEqual(res.body.error, "Client not found");
+});
+
+test("client timeline API: 403 repository authorization failure is safe", async () => {
+  const cookie = getSessionCookie("user-123", "user@example.com");
+  const originalFind = clientRepo.findById;
+  const forbidden = new Error("Forbidden");
+  forbidden.statusCode = 403;
+  clientRepo.findById = async () => {
+    throw forbidden;
+  };
+
+  try {
+    const res = await makeRequest("/api/clients/client-a/timeline", "GET", { Cookie: cookie });
+    assert.strictEqual(res.statusCode, 403);
+    assert.strictEqual(res.body.error, "Forbidden");
+  } finally {
+    clientRepo.findById = originalFind;
+  }
+});
+
+test("client timeline API: empty timeline returns bounded empty page without fabricated events", async () => {
+  const cookie = getSessionCookie("user-123", "user@example.com");
+  mockClients = [buildTestClient({ id: "client-a", ownerId: "user-123", name: "Own Client" })];
+
+  const res = await makeRequest("/api/clients/client-a/timeline?page=1&pageSize=20", "GET", {
+    Cookie: cookie,
+  });
+
+  assert.strictEqual(res.statusCode, 200);
+  assert.strictEqual(res.body.success, true);
+  assert.strictEqual(res.body.timeline.clientId, "client-a");
+  assert.deepStrictEqual(res.body.timeline.entries, []);
+  assert.strictEqual(res.body.timeline.total, 0);
+  assert.strictEqual(JSON.stringify(res.body).includes("Client created"), false);
+});
+
+test("client timeline API: populated timeline is owner scoped, bounded, and deterministically ordered", async () => {
+  const cookie = getSessionCookie("user-123", "user@example.com");
+  mockClients = [buildTestClient({ id: "client-a", ownerId: "user-123", name: "Own Client" })];
+  const timeline = ClientTimeline.create("timeline-a", "client-a", "user-123");
+  timeline.appendEntry("user-123", "user-123", {
+    entryId: "entry-old",
+    category: "Lifecycle Event",
+    timestamp: new Date("2026-08-14T10:00:00.000Z"),
+    metadata: { message: "Older event" },
+    visibility: "Public",
+  });
+  timeline.appendEntry("user-123", "user-123", {
+    entryId: "entry-new",
+    category: "Status Event",
+    timestamp: new Date("2026-08-15T10:00:00.000Z"),
+    metadata: { message: "Newer event" },
+    visibility: "Internal",
+  });
+  savedTimelines = [timeline];
+
+  const res = await makeRequest("/api/clients/client-a/timeline?page=1&pageSize=1", "GET", {
+    Cookie: cookie,
+  });
+
+  assert.strictEqual(res.statusCode, 200);
+  assert.strictEqual(res.body.timeline.id, "timeline-a");
+  assert.strictEqual(res.body.timeline.total, 2);
+  assert.strictEqual(res.body.timeline.pageSize, 1);
+  assert.strictEqual(res.body.timeline.entries.length, 1);
+  assert.strictEqual(res.body.timeline.entries[0].id, "entry-new");
+  assert.strictEqual(res.body.timeline.entries[0].message, "Newer event");
+  assert.strictEqual(res.body.timeline.entries[0].actorRef, undefined);
+  assert.strictEqual(res.body.timeline.entries[0].metadata, undefined);
+});
+
+test("client timeline API: invalid pagination and sensitive metadata messages are sanitized", async () => {
+  const cookie = getSessionCookie("user-123", "user@example.com");
+  mockClients = [buildTestClient({ id: "client-a", ownerId: "user-123", name: "Own Client" })];
+
+  const invalid = await makeRequest("/api/clients/client-a/timeline?pageSize=101", "GET", {
+    Cookie: cookie,
+  });
+  assert.strictEqual(invalid.statusCode, 400);
+
+  const timeline = ClientTimeline.create("timeline-safe", "client-a", "user-123");
+  timeline.appendEntry("user-123", "user-123", {
+    entryId: "entry-sensitive",
+    category: "Audit Event",
+    timestamp: new Date("2026-08-14T10:00:00.000Z"),
+    metadata: { message: "password=secret stack trace with raw SQL" },
+    visibility: "Internal",
+  });
+  savedTimelines = [timeline];
+
+  const res = await makeRequest("/api/clients/client-a/timeline", "GET", { Cookie: cookie });
+  const body = JSON.stringify(res.body);
+  assert.strictEqual(res.statusCode, 200);
+  assert.strictEqual(res.body.timeline.entries[0].message, "Timeline event recorded");
+  assert.strictEqual(body.includes("password"), false);
+  assert.strictEqual(body.includes("secret"), false);
+  assert.strictEqual(body.includes("SQL"), false);
+});
+
+test("client live integration: list, detail, timeline, jobs, and update stay tenant isolated", async () => {
+  const cookieA = getSessionCookie("user-A", "a@example.com", "session-A");
+  const cookieB = getSessionCookie("user-B", "b@example.com", "session-B");
+  const clientA = buildTestClient({ id: "client-a", ownerId: "user-A", name: "Tenant A Client" });
+  const clientB = buildTestClient({ id: "client-b", ownerId: "user-B", name: "Tenant B Client" });
+  mockClients = [clientA, clientB];
+  mockJobs = [
+    buildTestJobImport({ id: "job-a", tenantId: "user-A", title: "Tenant A Job" }),
+    buildTestJobImport({ id: "job-b", tenantId: "user-B", title: "Tenant B Job" }),
+  ];
+
+  const timelineA = ClientTimeline.create("timeline-a", "client-a", "user-A");
+  timelineA.appendEntry("user-A", "user-A", {
+    entryId: "entry-a",
+    category: "Lifecycle Event",
+    timestamp: new Date("2026-08-14T10:00:00.000Z"),
+    metadata: { message: "Tenant A event" },
+    visibility: "Internal",
+  });
+  const timelineB = ClientTimeline.create("timeline-b", "client-b", "user-B");
+  timelineB.appendEntry("user-B", "user-B", {
+    entryId: "entry-b",
+    category: "Lifecycle Event",
+    timestamp: new Date("2026-08-14T10:00:00.000Z"),
+    metadata: { message: "Tenant B event" },
+    visibility: "Internal",
+  });
+  savedTimelines = [timelineA, timelineB];
+
+  currentUserId = "user-A";
+  currentUserEmail = "a@example.com";
+  currentSessionId = "session-A";
+
+  const listA = await makeRequest("/api/clients", "GET", { Cookie: cookieA });
+  assert.strictEqual(listA.statusCode, 200);
+  assert.deepStrictEqual(
+    listA.body.clients.map((client) => client.id),
+    ["client-a"],
+  );
+  assert.strictEqual(JSON.stringify(listA.body).includes("client-b"), false);
+
+  const detailA = await makeRequest("/api/clients/client-a", "GET", { Cookie: cookieA });
+  assert.strictEqual(detailA.statusCode, 200);
+  assert.strictEqual(detailA.body.client.name, "Tenant A Client");
+
+  const detailBFromA = await makeRequest("/api/clients/client-b", "GET", { Cookie: cookieA });
+  assert.strictEqual(detailBFromA.statusCode, 404);
+
+  const timelineARes = await makeRequest("/api/clients/client-a/timeline", "GET", {
+    Cookie: cookieA,
+  });
+  assert.strictEqual(timelineARes.statusCode, 200);
+  assert.strictEqual(timelineARes.body.timeline.id, "timeline-a");
+  assert.strictEqual(timelineARes.body.timeline.entries[0].message, "Tenant A event");
+  assert.strictEqual(JSON.stringify(timelineARes.body).includes("Tenant B event"), false);
+
+  const timelineBFromA = await makeRequest("/api/clients/client-b/timeline", "GET", {
+    Cookie: cookieA,
+  });
+  assert.strictEqual(timelineBFromA.statusCode, 404);
+
+  const updateBFromA = await makeRequest(
+    "/api/clients/client-b",
+    "PATCH",
+    { Cookie: cookieA },
+    { name: "Cross Tenant Edit" },
+  );
+  assert.strictEqual(updateBFromA.statusCode, 404);
+
+  const jobsA = await makeRequest("/api/jobs", "GET", { Cookie: cookieA });
+  assert.strictEqual(jobsA.statusCode, 200);
+  assert.deepStrictEqual(
+    jobsA.body.jobs.map((job) => job.title),
+    ["Tenant A Job"],
+  );
+  assert.strictEqual(JSON.stringify(jobsA.body).includes("Tenant B Job"), false);
+
+  currentUserId = "user-B";
+  currentUserEmail = "b@example.com";
+  currentSessionId = "session-B";
+
+  const listB = await makeRequest("/api/clients", "GET", { Cookie: cookieB });
+  assert.strictEqual(listB.statusCode, 200);
+  assert.deepStrictEqual(
+    listB.body.clients.map((client) => client.id),
+    ["client-b"],
+  );
+
+  const detailAFromB = await makeRequest("/api/clients/client-a", "GET", { Cookie: cookieB });
+  assert.strictEqual(detailAFromB.statusCode, 404);
+
+  const timelineBRes = await makeRequest("/api/clients/client-b/timeline", "GET", {
+    Cookie: cookieB,
+  });
+  assert.strictEqual(timelineBRes.statusCode, 200);
+  assert.strictEqual(timelineBRes.body.timeline.id, "timeline-b");
+  assert.strictEqual(timelineBRes.body.timeline.entries[0].message, "Tenant B event");
+});
 
 test("1. unauthenticated GET /api/jobs returns 401", async () => {
   const res = await makeRequest("/api/jobs");

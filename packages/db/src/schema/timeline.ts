@@ -1,5 +1,15 @@
-import { pgTable, varchar, timestamp, pgEnum, uuid, index, jsonb } from "drizzle-orm/pg-core";
+import {
+  pgTable,
+  varchar,
+  timestamp,
+  pgEnum,
+  uuid,
+  index,
+  jsonb,
+  foreignKey,
+} from "drizzle-orm/pg-core";
 import { users } from "./auth.js";
+import { clients } from "./clients.js";
 import { auditTimestamps } from "./helpers.js";
 
 // 1. Timeline Status Enum
@@ -34,6 +44,10 @@ export const clientTimelines = pgTable(
   },
   (table) => {
     return {
+      ownerClientRelationFk: foreignKey({
+        columns: [table.clientId, table.ownerId],
+        foreignColumns: [clients.id, clients.ownerId],
+      }).onDelete("restrict"),
       ownerIdx: index("client_timelines_owner_idx").on(table.ownerId),
       clientOwnerIdx: index("client_timelines_client_owner_idx").on(table.clientId, table.ownerId),
     };
