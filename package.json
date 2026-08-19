@@ -2,6 +2,7 @@
   "name": "freelanceos",
   "version": "0.1.0",
   "private": true,
+  "type": "module",
   "description": "Root workspace package configuration for FreelanceOS Modular Monorepo",
   "workspaces": [
     "apps/*",

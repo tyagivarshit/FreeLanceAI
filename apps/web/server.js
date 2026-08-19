@@ -32,6 +32,18 @@ import {
   ClientTimeline,
   EntitlementEnforcer,
   Client,
+  BrainAnalysisRequest,
+  BrainContext,
+  BrainDomainError,
+  BrainExecutionService,
+  BrainFailure,
+  BrainRequestMetadata,
+  BrainScope,
+  BrainResult,
+  parseBrainAnalysisType,
+  HeuristicBrainEngine,
+  BrainContextOrchestrator,
+  BrainDecisionDeriver,
 } from "@freelanceos/core";
 import {
   db,
@@ -41,6 +53,7 @@ import {
   PostgresJobMatchRepository,
   PostgresTimelineRepository,
   PostgresClientRepository,
+  PostgresBrainAnalysisRepository,
 } from "@freelanceos/db";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -136,6 +149,35 @@ const jobsRepo = new PostgresJobsRepository();
 const matchRepo = new PostgresJobMatchRepository();
 const timelineRepo = new PostgresTimelineRepository();
 const clientRepo = new PostgresClientRepository();
+const brainAnalysisRepo = new PostgresBrainAnalysisRepository();
+const brainEntitlementGateway = {
+  canUseBrain: async (scope, _analysisType) => {
+    const decision = await entitlementResolver.resolveEntitlement(
+      `tenant_${scope.ownerId}`,
+      scope.actorId,
+      "AI_PROPOSAL",
+    );
+    return {
+      allowed: decision.allowed,
+      feature: "AI_PROPOSAL",
+      reason: decision.allowed ? "ALLOWED" : "DENIED",
+    };
+  },
+};
+const brainEngine = new HeuristicBrainEngine();
+const brainContextOrchestrator = new BrainContextOrchestrator({
+  clientRepo,
+  jobsRepo,
+  matchRepo,
+  timelineRepo,
+});
+const brainDecisionDeriver = new BrainDecisionDeriver();
+const brainExecutionService = new BrainExecutionService({
+  engine: brainEngine,
+  entitlementGateway: brainEntitlementGateway,
+  repository: brainAnalysisRepo,
+  defaultTimeoutMs: 5000,
+});
 
 const PORT = runtimeConfig.API_PORT || 4000;
 
@@ -942,6 +984,472 @@ const server = http.createServer(async (req, res) => {
     return message;
   }
 
+  const BRAIN_ANALYSIS_STATUSES = [
+    "REQUESTED",
+    "RUNNING",
+    "COMPLETED",
+    "FAILED",
+    "TIMEOUT",
+    "INSUFFICIENT_CONTEXT",
+  ];
+  const brainDetailMatch = pathname.match(/^\/api\/brain\/analyses\/([a-zA-Z0-9-]+)$/);
+
+  function assertIdArray(value, field, { optional = true, max = 25 } = {}) {
+    if (value === undefined) {
+      if (optional) return [];
+      throwValidationError(`${field} is required`);
+    }
+    if (!Array.isArray(value)) {
+      throwValidationError(`${field} must be an array`);
+    }
+    if (value.length > max) {
+      throwValidationError(`${field} cannot contain more than ${max} IDs`);
+    }
+    return value.map((item, index) => {
+      const id = assertString(item, `${field}[${index}]`, { min: 1, max: 128 });
+      if (!/^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$/.test(id)) {
+        throwValidationError(`${field}[${index}] has an invalid ID format`);
+      }
+      return id;
+    });
+  }
+
+  function parseBrainConstraints(value) {
+    if (value === undefined) {
+      return undefined;
+    }
+    if (!isPlainObject(value)) {
+      throwValidationError("constraints must be an object");
+    }
+    rejectUnknownFields(
+      value,
+      ["maxRecommendations", "maxInsights", "responseFormat"],
+      "constraints",
+    );
+    const constraints = {};
+    for (const field of ["maxRecommendations", "maxInsights"]) {
+      if (value[field] !== undefined) {
+        if (!Number.isInteger(value[field]) || value[field] < 1 || value[field] > 10) {
+          throwValidationError(`${field} must be between 1 and 10`);
+        }
+        constraints[field] = value[field];
+      }
+    }
+    if (value.responseFormat !== undefined) {
+      if (value.responseFormat !== "structured") {
+        throwValidationError("responseFormat must be structured");
+      }
+      constraints.responseFormat = value.responseFormat;
+    }
+    return constraints;
+  }
+
+  function parseBrainCreateBody(payload) {
+    if (!isPlainObject(payload)) {
+      throwValidationError("Request body must be an object");
+    }
+    rejectUnknownFields(
+      payload,
+      ["analysisType", "context", "constraints", "idempotencyKey", "ownerId", "tenantId"],
+      "brain analysis",
+    );
+
+    const analysisType = parseBrainAnalysisType(
+      assertString(payload.analysisType, "analysisType", { min: 1, max: 64 }),
+    );
+    const idempotencyKey =
+      payload.idempotencyKey === undefined
+        ? undefined
+        : assertString(payload.idempotencyKey, "idempotencyKey", { min: 8, max: 128 });
+    if (idempotencyKey && !/^[A-Za-z0-9][A-Za-z0-9._:-]{7,127}$/.test(idempotencyKey)) {
+      throwValidationError("idempotencyKey has an invalid format");
+    }
+
+    const contextInput = payload.context ?? {};
+    if (!isPlainObject(contextInput)) {
+      throwValidationError("context must be an object");
+    }
+    rejectUnknownFields(
+      contextInput,
+      ["clientIds", "jobIds", "matchIds", "timelineIds", "businessSignals"],
+      "brain context",
+    );
+
+    const businessSignals = contextInput.businessSignals ?? [];
+    if (!Array.isArray(businessSignals)) {
+      throwValidationError("businessSignals must be an array");
+    }
+    if (businessSignals.length > 10) {
+      throwValidationError("businessSignals cannot contain more than 10 signals");
+    }
+    const parsedBusinessSignals = businessSignals.map((signal, index) => {
+      if (!isPlainObject(signal)) {
+        throwValidationError(`businessSignals[${index}] must be an object`);
+      }
+      rejectUnknownFields(signal, ["metric", "value", "unit"], `businessSignals[${index}]`);
+      const metric = assertString(signal.metric, `businessSignals[${index}].metric`, {
+        min: 1,
+        max: 80,
+      });
+      if (!Number.isFinite(signal.value)) {
+        throwValidationError(`businessSignals[${index}].value must be a finite number`);
+      }
+      const unit =
+        signal.unit === undefined
+          ? undefined
+          : assertString(signal.unit, `businessSignals[${index}].unit`, { min: 1, max: 32 });
+      return { metric, value: signal.value, unit };
+    });
+
+    return {
+      analysisType,
+      idempotencyKey,
+      constraints: parseBrainConstraints(payload.constraints),
+      clientIds: assertIdArray(contextInput.clientIds, "context.clientIds"),
+      jobIds: assertIdArray(contextInput.jobIds, "context.jobIds"),
+      matchIds: assertIdArray(contextInput.matchIds, "context.matchIds"),
+      timelineIds: assertIdArray(contextInput.timelineIds, "context.timelineIds"),
+      businessSignals: parsedBusinessSignals,
+    };
+  }
+
+  async function buildBrainContext(input, ownerId) {
+    const scope = new BrainScope({ tenantId: ownerId, ownerId, actorId: ownerId });
+    const clients = [];
+    const jobs = [];
+    const matches = [];
+    const timelines = [];
+    const businessSignals = input.businessSignals.map((signal, index) => ({
+      signalId: `business-${index + 1}`,
+      tenantId: scope.tenantId,
+      ownerId: scope.ownerId,
+      ...signal,
+    }));
+
+    for (const clientId of input.clientIds) {
+      const client = await clientRepo.findById(clientId, ownerId);
+      if (!client) {
+        const err = new Error("Referenced resource not found");
+        err.statusCode = 404;
+        throw err;
+      }
+      clients.push({
+        signalId: `client-${client.id}`,
+        tenantId: scope.tenantId,
+        ownerId: scope.ownerId,
+        clientId: client.id,
+        name: client.profile.name,
+        status: client.status,
+      });
+    }
+
+    for (const jobId of input.jobIds) {
+      const job = await jobsRepo.findById(jobId, ownerId);
+      if (!job) {
+        const err = new Error("Referenced resource not found");
+        err.statusCode = 404;
+        throw err;
+      }
+      jobs.push({
+        signalId: `job-${job.id}`,
+        tenantId: scope.tenantId,
+        ownerId: scope.ownerId,
+        jobId: job.id,
+        title: job.rawPayload.data.title,
+        source: job.externalIdentity.source.value,
+        requiredSkills: Array.isArray(job.rawPayload.data.skills) ? job.rawPayload.data.skills : [],
+      });
+    }
+
+    for (const matchId of input.matchIds) {
+      const match = await matchRepo.findById(matchId, ownerId);
+      if (!match) {
+        const err = new Error("Referenced resource not found");
+        err.statusCode = 404;
+        throw err;
+      }
+      matches.push({
+        signalId: `match-${match.id}`,
+        tenantId: scope.tenantId,
+        ownerId: scope.ownerId,
+        matchId: match.id,
+        jobId: match.jobId,
+        score:
+          typeof match.matchSignals?.semanticSimilarity === "number"
+            ? match.matchSignals.semanticSimilarity
+            : undefined,
+        strengths: Array.isArray(match.matchSignals?.matchedSkills)
+          ? match.matchSignals.matchedSkills
+          : [],
+        risks: [],
+      });
+    }
+
+    for (const timelineId of input.timelineIds) {
+      const timeline = await timelineRepo.findById(timelineId, ownerId);
+      if (!timeline) {
+        const err = new Error("Referenced resource not found");
+        err.statusCode = 404;
+        throw err;
+      }
+      const latest = [...timeline.entries].sort(
+        (a, b) => b.timestamp.getTime() - a.timestamp.getTime(),
+      )[0];
+      timelines.push({
+        signalId: `timeline-${timeline.timelineId}`,
+        tenantId: scope.tenantId,
+        ownerId: scope.ownerId,
+        timelineId: timeline.timelineId,
+        clientId: timeline.clientId,
+        eventCount: timeline.entries.length,
+        latestEventAt: latest?.timestamp,
+      });
+    }
+
+    return new BrainContext({ scope, clients, jobs, matches, timelines, businessSignals });
+  }
+
+  function brainFailureStatus(code) {
+    if (
+      code === "INVALID_REQUEST" ||
+      code === "UNSUPPORTED_ANALYSIS" ||
+      code === "INSUFFICIENT_CONTEXT"
+    ) {
+      return 400;
+    }
+    if (code === "UNAUTHORIZED_CONTEXT") {
+      return 403;
+    }
+    if (code === "ENTITLEMENT_UNAVAILABLE" || code === "PROVIDER_UNAVAILABLE") {
+      return 503;
+    }
+    if (code === "PROVIDER_TIMEOUT") {
+      return 504;
+    }
+    return 500;
+  }
+
+  function brainAnalysisDto(analysis) {
+    let decision = null;
+    if (analysis.status === "COMPLETED") {
+      try {
+        const resultObj = new BrainResult({
+          analysisId: analysis.id,
+          analysisType: analysis.analysisType,
+          status: analysis.status,
+          summary: analysis.summary ?? "",
+          insights: analysis.insights,
+          recommendations: analysis.recommendations,
+          confidence: analysis.confidence,
+          evidence: analysis.evidence,
+          generatedAt: analysis.completedAt ?? analysis.createdAt,
+          scope: analysis.scope,
+        });
+        decision = brainDecisionDeriver.derive(resultObj);
+      } catch {
+        decision = null;
+      }
+    }
+
+    return {
+      analysisId: analysis.id,
+      analysisType: analysis.analysisType,
+      status: analysis.status,
+      summary: analysis.summary ?? null,
+      insights: analysis.insights.map((insight) => ({
+        insightId: insight.insightId,
+        title: insight.title,
+        body: insight.body,
+      })),
+      recommendations: analysis.recommendations.map((recommendation) => ({
+        recommendationId: recommendation.recommendationId,
+        action: recommendation.action,
+        rationale: recommendation.rationale,
+        priority: recommendation.priority,
+      })),
+      confidence: analysis.confidence ? analysis.confidence.toJSON() : null,
+      evidence: analysis.evidence.map((item) => item.toJSON()),
+      decision,
+      failure: analysis.failure
+        ? {
+            code: analysis.failure.code,
+            message: analysis.failure.message,
+            retryable: analysis.failure.retryable,
+          }
+        : null,
+      createdAt: analysis.createdAt.toISOString(),
+      startedAt: analysis.claimedAt ? analysis.claimedAt.toISOString() : null,
+      completedAt: analysis.completedAt ? analysis.completedAt.toISOString() : null,
+    };
+  }
+
+  function brainResultDto(result) {
+    const dto = result.toJSON();
+    let decision = null;
+    if (result.status === "COMPLETED") {
+      try {
+        decision = brainDecisionDeriver.derive(result);
+      } catch {
+        decision = null;
+      }
+    }
+
+    return {
+      analysisId: dto.analysisId,
+      analysisType: dto.analysisType,
+      status: dto.status,
+      summary: dto.summary,
+      insights: dto.insights.map((insight) => ({
+        insightId: insight.insightId,
+        title: insight.title,
+        body: insight.body,
+      })),
+      recommendations: dto.recommendations.map((recommendation) => ({
+        recommendationId: recommendation.recommendationId,
+        action: recommendation.action,
+        rationale: recommendation.rationale,
+        priority: recommendation.priority,
+      })),
+      confidence: dto.confidence.toJSON(),
+      evidence: dto.evidence.map((item) => item.toJSON()),
+      decision,
+      failure: dto.failure
+        ? { code: dto.failure.code, message: dto.failure.message, retryable: dto.failure.retryable }
+        : null,
+      createdAt: dto.generatedAt.toISOString(),
+      startedAt: null,
+      completedAt: dto.status === "COMPLETED" ? dto.generatedAt.toISOString() : null,
+    };
+  }
+
+  function handleBrainApiError(err) {
+    if (err instanceof BrainDomainError) {
+      sendJson(brainFailureStatus(err.code), {
+        success: false,
+        error: err.publicMessage,
+        code: err.code,
+      });
+      return;
+    }
+    if (err instanceof BrainFailure) {
+      sendJson(brainFailureStatus(err.code), {
+        success: false,
+        error: err.message,
+        code: err.code,
+      });
+      return;
+    }
+    const message = err instanceof Error ? err.message : String(err);
+    const statusCode = err && typeof err === "object" && err.statusCode ? err.statusCode : null;
+    if (statusCode && statusCode < 500) {
+      sendJson(statusCode, { success: false, error: message });
+      return;
+    }
+    logger.error({
+      message: "Brain API request failed",
+      error: err instanceof Error ? err : new Error(String(err)),
+    });
+    sendJson(500, { success: false, error: "Internal Server Error" });
+  }
+
+  if (pathname === "/api/brain/analyses" && req.method === "POST") {
+    const auth = await checkAuthentication();
+    const ownerId = requireAuthenticatedOwner(auth);
+    if (!ownerId) return;
+
+    const controller = new AbortController();
+    req.on("aborted", () => controller.abort());
+
+    try {
+      const payload = await readJsonBody();
+      const input = parseBrainCreateBody(payload);
+      const context = await buildBrainContext(input, ownerId);
+      const requestId = randomUUID();
+      const request = new BrainAnalysisRequest({
+        analysisType: input.analysisType,
+        context,
+        metadata: new BrainRequestMetadata({
+          requestId,
+          correlationId: Array.isArray(req.headers["x-request-id"])
+            ? req.headers["x-request-id"][0]
+            : req.headers["x-request-id"] || requestId,
+          requestedAt: new Date(),
+          idempotencyKey: input.idempotencyKey,
+        }),
+        constraints: input.constraints,
+      });
+
+      const result = await brainExecutionService.analyze(request, {
+        timeoutMs: 5000,
+        signal: controller.signal,
+      });
+      const statusCode =
+        result.status === "COMPLETED"
+          ? 201
+          : brainFailureStatus(result.failure?.code ?? "INTERNAL_FAILURE");
+      sendJson(statusCode, {
+        success: result.status === "COMPLETED",
+        analysis: brainResultDto(result),
+      });
+    } catch (err) {
+      handleBrainApiError(err);
+    }
+    return;
+  }
+
+  if (pathname === "/api/brain/analyses" && req.method === "GET") {
+    const auth = await checkAuthentication();
+    const ownerId = requireAuthenticatedOwner(auth);
+    if (!ownerId) return;
+
+    try {
+      const { page, pageSize } = parsePagination(parsedUrl.searchParams);
+      const rawType = parsedUrl.searchParams.get("analysisType");
+      const rawStatus = parsedUrl.searchParams.get("status");
+      const filters = { limit: pageSize, offset: (page - 1) * pageSize };
+      if (rawType) {
+        filters.analysisType = parseBrainAnalysisType(rawType);
+      }
+      if (rawStatus) {
+        if (!BRAIN_ANALYSIS_STATUSES.includes(rawStatus)) {
+          throwValidationError("Invalid status parameter");
+        }
+        filters.status = rawStatus;
+      }
+      const scope = new BrainScope({ tenantId: ownerId, ownerId, actorId: ownerId });
+      const result = await brainAnalysisRepo.listByScope(scope, filters);
+      sendJson(200, {
+        success: true,
+        analyses: result.items.map(brainAnalysisDto),
+        total: result.total,
+        page,
+        pageSize,
+      });
+    } catch (err) {
+      handleBrainApiError(err);
+    }
+    return;
+  }
+
+  if (brainDetailMatch && req.method === "GET") {
+    const auth = await checkAuthentication();
+    const ownerId = requireAuthenticatedOwner(auth);
+    if (!ownerId) return;
+
+    try {
+      const scope = new BrainScope({ tenantId: ownerId, ownerId, actorId: ownerId });
+      const analysis = await brainAnalysisRepo.findById(brainDetailMatch[1], scope);
+      if (!analysis) {
+        sendJson(404, { success: false, error: "Brain analysis not found" });
+        return;
+      }
+      sendJson(200, { success: true, analysis: brainAnalysisDto(analysis) });
+    } catch (err) {
+      handleBrainApiError(err);
+    }
+    return;
+  }
+
   // 1F. Client API contracts
   const clientIdMatch = pathname.match(/^\/api\/clients\/([a-zA-Z0-9-]+)$/);
   const clientTimelineMatch = pathname.match(/^\/api\/clients\/([a-zA-Z0-9-]+)\/timeline$/);
@@ -1638,4 +2146,9 @@ export {
   subscriptionRepo,
   usageRepo,
   entitlementResolver,
+  brainAnalysisRepo,
+  brainExecutionService,
+  brainEngine,
+  brainEntitlementGateway,
+  brainContextOrchestrator,
 };

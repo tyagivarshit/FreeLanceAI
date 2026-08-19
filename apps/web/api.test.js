@@ -12,6 +12,8 @@ import {
   subscriptionRepo,
   usageRepo,
   entitlementResolver,
+  brainAnalysisRepo,
+  brainEngine,
 } from "./server.js";
 import {
   JobImport,
@@ -24,6 +26,12 @@ import {
   ClientTimeline,
   TimelineEntry,
   Client,
+  BrainAnalysisAggregate,
+  BrainConfidence,
+  BrainFailure,
+  BrainResult,
+  BrainScope,
+  BrainDomainError,
 } from "@freelanceos/core";
 
 // Capture original behaviors to restore after test run
@@ -43,6 +51,15 @@ const originalClientList = clientRepo.list;
 const originalClientFindById = clientRepo.findById;
 const originalClientCreate = clientRepo.create;
 const originalClientUpdate = clientRepo.update;
+const originalMatchFindById = matchRepo.findById;
+const originalBrainFindById = brainAnalysisRepo.findById;
+const originalBrainFindByIdempotencyKey = brainAnalysisRepo.findByIdempotencyKey;
+const originalBrainListByScope = brainAnalysisRepo.listByScope;
+const originalBrainCreate = brainAnalysisRepo.create;
+const originalBrainClaimExecution = brainAnalysisRepo.claimExecution;
+const originalBrainSaveCompleted = brainAnalysisRepo.saveCompleted;
+const originalBrainSaveFailed = brainAnalysisRepo.saveFailed;
+const originalBrainAnalyze = brainEngine.analyze;
 
 // Test variables to control mocks dynamically
 let currentUserId = "user-123";
@@ -59,6 +76,8 @@ let savedMatches = [];
 let savedTimelines = [];
 let savedClients = [];
 let updatedClients = [];
+let mockBrainAnalyses = [];
+let brainExecutionCalls = 0;
 
 // Helper to start/stop the test server on an ephemeral port
 let serverPort = 0;
@@ -92,6 +111,15 @@ test.after(() => {
       clientRepo.findById = originalClientFindById;
       clientRepo.create = originalClientCreate;
       clientRepo.update = originalClientUpdate;
+      matchRepo.findById = originalMatchFindById;
+      brainAnalysisRepo.findById = originalBrainFindById;
+      brainAnalysisRepo.findByIdempotencyKey = originalBrainFindByIdempotencyKey;
+      brainAnalysisRepo.listByScope = originalBrainListByScope;
+      brainAnalysisRepo.create = originalBrainCreate;
+      brainAnalysisRepo.claimExecution = originalBrainClaimExecution;
+      brainAnalysisRepo.saveCompleted = originalBrainSaveCompleted;
+      brainAnalysisRepo.saveFailed = originalBrainSaveFailed;
+      brainEngine.analyze = originalBrainAnalyze;
       resolve();
     });
   });
@@ -112,6 +140,8 @@ test.beforeEach(async () => {
   savedTimelines = [];
   savedClients = [];
   updatedClients = [];
+  mockBrainAnalyses = [];
+  brainExecutionCalls = 0;
 
   if (usageRepo && typeof usageRepo.reset === "function") {
     await usageRepo.reset();
@@ -194,14 +224,15 @@ test.beforeEach(async () => {
     savedMatches.push(match);
   };
 
+  matchRepo.findById = async (id, tenantId) => {
+    return savedMatches.find((m) => m.id === id && m.tenantId === tenantId) || null;
+  };
+
   timelineRepo.findById = async (timelineId, ownerId) => {
     const timeline = savedTimelines.find(
       (t) => t.timelineId === timelineId && t.ownerId === ownerId,
     );
-    if (timeline) {
-      return timeline;
-    }
-    return ClientTimeline.create(timelineId, ownerId, ownerId);
+    return timeline || null;
   };
 
   timelineRepo.save = async (timeline) => {
@@ -290,6 +321,138 @@ test.beforeEach(async () => {
     }
     updatedClients.push(client);
     mockClients[index] = client;
+  };
+
+  brainAnalysisRepo.create = async (analysis) => {
+    const duplicate = analysis.idempotencyKey
+      ? mockBrainAnalyses.find(
+          (existing) =>
+            existing.scope.tenantId === analysis.scope.tenantId &&
+            existing.scope.ownerId === analysis.scope.ownerId &&
+            existing.analysisType === analysis.analysisType &&
+            existing.idempotencyKey === analysis.idempotencyKey &&
+            ["REQUESTED", "RUNNING", "COMPLETED"].includes(existing.status),
+        )
+      : null;
+    if (duplicate) {
+      throw new BrainDomainError(
+        "INVALID_REQUEST",
+        "Concurrent duplicate analysis request detected.",
+      );
+    }
+    mockBrainAnalyses.push(new BrainAnalysisAggregate(analysis.toJSON()));
+  };
+
+  brainAnalysisRepo.claimExecution = async (id, scope, claimedAt = new Date()) => {
+    const analysis = mockBrainAnalyses.find(
+      (item) =>
+        item.id === id &&
+        item.scope.tenantId === scope.tenantId &&
+        item.scope.ownerId === scope.ownerId,
+    );
+    if (!analysis || analysis.status !== "REQUESTED") {
+      return null;
+    }
+    analysis.claim(scope.actorId, claimedAt);
+    return new BrainAnalysisAggregate(analysis.toJSON());
+  };
+
+  brainAnalysisRepo.saveCompleted = async (id, scope, result, completedAt = new Date()) => {
+    const index = mockBrainAnalyses.findIndex(
+      (item) =>
+        item.id === id &&
+        item.scope.tenantId === scope.tenantId &&
+        item.scope.ownerId === scope.ownerId,
+    );
+    mockBrainAnalyses[index].complete(result, completedAt);
+    return new BrainAnalysisAggregate(mockBrainAnalyses[index].toJSON());
+  };
+
+  brainAnalysisRepo.saveFailed = async (
+    id,
+    scope,
+    failure,
+    status = "FAILED",
+    failedAt = new Date(),
+  ) => {
+    const index = mockBrainAnalyses.findIndex(
+      (item) =>
+        item.id === id &&
+        item.scope.tenantId === scope.tenantId &&
+        item.scope.ownerId === scope.ownerId,
+    );
+    if (index >= 0) {
+      mockBrainAnalyses[index].fail(failure, status, failedAt);
+      return new BrainAnalysisAggregate(mockBrainAnalyses[index].toJSON());
+    }
+    throw new Error("Analysis not found");
+  };
+
+  brainAnalysisRepo.findById = async (id, scope) => {
+    const analysis = mockBrainAnalyses.find(
+      (item) =>
+        item.id === id &&
+        item.scope.tenantId === scope.tenantId &&
+        item.scope.ownerId === scope.ownerId,
+    );
+    return analysis ? new BrainAnalysisAggregate(analysis.toJSON()) : null;
+  };
+
+  brainAnalysisRepo.findByIdempotencyKey = async (scope, analysisType, idempotencyKey) => {
+    const analysis = mockBrainAnalyses.find(
+      (item) =>
+        item.scope.tenantId === scope.tenantId &&
+        item.scope.ownerId === scope.ownerId &&
+        item.analysisType === analysisType &&
+        item.idempotencyKey === idempotencyKey,
+    );
+    return analysis ? new BrainAnalysisAggregate(analysis.toJSON()) : null;
+  };
+
+  brainAnalysisRepo.listByScope = async (scope, filters = {}) => {
+    const items = mockBrainAnalyses
+      .filter(
+        (item) => item.scope.tenantId === scope.tenantId && item.scope.ownerId === scope.ownerId,
+      )
+      .filter((item) => (filters.analysisType ? item.analysisType === filters.analysisType : true))
+      .filter((item) => (filters.status ? item.status === filters.status : true))
+      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime() || b.id.localeCompare(a.id));
+    const offset = filters.offset ?? 0;
+    const limit = filters.limit ?? 20;
+    return { items: items.slice(offset, offset + limit), total: items.length };
+  };
+
+  brainEngine.analyze = async (request) => {
+    brainExecutionCalls++;
+    const confidence = new BrainConfidence({
+      score: 0.8,
+      level: "HIGH",
+      supportingSignalCount: request.context.signalCount,
+    });
+    const evidence = {
+      sourceType: "CLIENT_SIGNAL",
+      sourceId: request.context.clients[0]?.signalId ?? "business-1",
+      label: "Authorized context",
+    };
+    return new BrainResult({
+      analysisId: request.metadata.requestId,
+      analysisType: request.analysisType,
+      status: "COMPLETED",
+      summary: "Analysis completed.",
+      insights: [
+        {
+          insightId: "insight-1",
+          title: "Authorized signal reviewed",
+          body: "The analysis used only scoped context.",
+          confidence,
+          evidence: [evidence],
+        },
+      ],
+      recommendations: [],
+      confidence,
+      evidence: [evidence],
+      generatedAt: new Date("2026-08-18T10:00:00.000Z"),
+    });
   };
 });
 
@@ -387,6 +550,35 @@ function makeRequest(path, method = "GET", headers = {}, body = null) {
   });
 }
 
+function makeRawRequest(path, method = "POST", headers = {}, rawBody = "") {
+  return new Promise((resolve, reject) => {
+    const req = http.request(
+      {
+        hostname: "localhost",
+        port: serverPort,
+        path,
+        method,
+        headers: { "Content-Type": "application/json", ...headers },
+      },
+      (res) => {
+        let responseBody = "";
+        res.on("data", (chunk) => {
+          responseBody += chunk;
+        });
+        res.on("end", () => {
+          resolve({
+            statusCode: res.statusCode,
+            body: responseBody ? JSON.parse(responseBody) : null,
+          });
+        });
+      },
+    );
+    req.on("error", reject);
+    req.write(rawBody);
+    req.end();
+  });
+}
+
 // Aggregate builder for test jobs
 function buildTestJobImport({
   id,
@@ -440,6 +632,53 @@ function buildTestClient({
       createdAt,
       updatedAt: createdAt,
     },
+  });
+}
+
+function buildStoredBrainAnalysis({
+  id,
+  ownerId,
+  analysisType = "CLIENT_HEALTH",
+  status = "COMPLETED",
+  createdAt = new Date("2026-08-18T10:00:00.000Z"),
+}) {
+  const scope = new BrainScope({ tenantId: ownerId, ownerId, actorId: ownerId });
+  const confidence = new BrainConfidence({ score: 0.7, level: "MEDIUM", supportingSignalCount: 1 });
+  return new BrainAnalysisAggregate({
+    id,
+    scope,
+    analysisType,
+    status,
+    correlationId: id,
+    constraints: {},
+    summary: "Stored analysis",
+    insights:
+      status === "COMPLETED"
+        ? [
+            {
+              insightId: "stored-insight",
+              title: "Stored insight",
+              body: "Stored body",
+              confidence,
+              evidence: [],
+            },
+          ]
+        : [],
+    recommendations: [],
+    confidence: status === "COMPLETED" ? confidence : undefined,
+    evidence: [],
+    failure:
+      status === "COMPLETED"
+        ? undefined
+        : new BrainFailure({
+            code: "PROVIDER_TIMEOUT",
+            message: "Provider timed out.",
+            retryable: true,
+          }),
+    createdAt,
+    updatedAt: createdAt,
+    completedAt: status === "COMPLETED" ? createdAt : undefined,
+    failedAt: status !== "COMPLETED" ? createdAt : undefined,
   });
 }
 
@@ -872,6 +1111,336 @@ test("client live integration: list, detail, timeline, jobs, and update stay ten
   assert.strictEqual(timelineBRes.statusCode, 200);
   assert.strictEqual(timelineBRes.body.timeline.id, "timeline-b");
   assert.strictEqual(timelineBRes.body.timeline.entries[0].message, "Tenant B event");
+});
+
+test("brain API: unauthenticated requests return 401", async () => {
+  const post = await makeRequest(
+    "/api/brain/analyses",
+    "POST",
+    {},
+    { analysisType: "CLIENT_HEALTH" },
+  );
+  assert.strictEqual(post.statusCode, 401);
+  assert.strictEqual(post.body.error, "Unauthorized");
+
+  const list = await makeRequest("/api/brain/analyses");
+  assert.strictEqual(list.statusCode, 401);
+
+  const detail = await makeRequest("/api/brain/analyses/analysis-1");
+  assert.strictEqual(detail.statusCode, 401);
+});
+
+test("brain API: authenticated POST builds authoritative owner context and returns safe DTO", async () => {
+  const cookie = getSessionCookie("user-123", "user@example.com");
+  mockClients = [buildTestClient({ id: "client-a", ownerId: "user-123", name: "Own Client" })];
+
+  const res = await makeRequest(
+    "/api/brain/analyses",
+    "POST",
+    { Cookie: cookie, "X-Request-Id": "req-brain-1" },
+    {
+      ownerId: "user-456",
+      tenantId: "user-456",
+      analysisType: "CLIENT_HEALTH",
+      idempotencyKey: "idem-brain-1",
+      context: { clientIds: ["client-a"] },
+      constraints: { maxInsights: 2, maxRecommendations: 2 },
+    },
+  );
+
+  assert.strictEqual(res.statusCode, 201);
+  assert.strictEqual(res.body.success, true);
+  assert.strictEqual(res.body.analysis.analysisType, "CLIENT_HEALTH");
+  assert.strictEqual(res.body.analysis.summary, "Analysis completed.");
+  assert.strictEqual(brainExecutionCalls, 1);
+  assert.strictEqual(JSON.stringify(res.body).includes("user-456"), false);
+  assert.strictEqual(JSON.stringify(res.body).includes("tenantId"), false);
+  assert.strictEqual(JSON.stringify(res.body).includes("ownerId"), false);
+});
+
+test("brain API: forged or foreign resource references are rejected without existence leakage", async () => {
+  const cookie = getSessionCookie("user-123", "user@example.com");
+  mockClients = [buildTestClient({ id: "client-b", ownerId: "user-456", name: "Other Client" })];
+  mockJobs = [buildTestJobImport({ id: "job-b", tenantId: "user-456", title: "Other Job" })];
+  savedMatches = [
+    new JobMatch({
+      id: "match-b",
+      tenantId: "user-456",
+      ownerId: "user-456",
+      freelancerId: "user-456",
+      jobId: "job-b",
+      jobNormalizationId: "job-b",
+      normalizationVersion: "v1",
+      matchingVersion: "v1",
+      status: "CREATED",
+      snapshots: [],
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    }),
+  ];
+  savedTimelines = [ClientTimeline.create("timeline-b", "client-b", "user-456")];
+
+  const foreignClient = await makeRequest(
+    "/api/brain/analyses",
+    "POST",
+    { Cookie: cookie },
+    { analysisType: "CLIENT_HEALTH", context: { clientIds: ["client-b"] } },
+  );
+  assert.strictEqual(foreignClient.statusCode, 404);
+  assert.strictEqual(foreignClient.body.error, "Referenced resource not found");
+
+  const foreignJob = await makeRequest(
+    "/api/brain/analyses",
+    "POST",
+    { Cookie: cookie },
+    { analysisType: "OPPORTUNITY_REVIEW", context: { jobIds: ["job-b"] } },
+  );
+  assert.strictEqual(foreignJob.statusCode, 404);
+
+  const foreignMatch = await makeRequest(
+    "/api/brain/analyses",
+    "POST",
+    { Cookie: cookie },
+    { analysisType: "OPPORTUNITY_REVIEW", context: { matchIds: ["match-b"], jobIds: ["job-b"] } },
+  );
+  assert.strictEqual(foreignMatch.statusCode, 404);
+
+  const foreignTimeline = await makeRequest(
+    "/api/brain/analyses",
+    "POST",
+    { Cookie: cookie },
+    { analysisType: "FOLLOW_UP_PRIORITIZATION", context: { timelineIds: ["timeline-b"] } },
+  );
+  assert.strictEqual(foreignTimeline.statusCode, 404);
+});
+
+test("brain API: validation rejects malformed JSON, unsupported types, invalid IDs, oversized arrays, unknown fields, and bad idempotency", async () => {
+  const cookie = getSessionCookie("user-123", "user@example.com");
+
+  const malformed = await makeRawRequest("/api/brain/analyses", "POST", { Cookie: cookie }, "{");
+  assert.strictEqual(malformed.statusCode, 400);
+
+  const missingType = await makeRequest(
+    "/api/brain/analyses",
+    "POST",
+    { Cookie: cookie },
+    { context: {} },
+  );
+  assert.strictEqual(missingType.statusCode, 400);
+
+  const unsupported = await makeRequest(
+    "/api/brain/analyses",
+    "POST",
+    { Cookie: cookie },
+    { analysisType: "sql-agent", context: {} },
+  );
+  assert.strictEqual(unsupported.statusCode, 400);
+
+  const invalidId = await makeRequest(
+    "/api/brain/analyses",
+    "POST",
+    { Cookie: cookie },
+    { analysisType: "CLIENT_HEALTH", context: { clientIds: ["../secret"] } },
+  );
+  assert.strictEqual(invalidId.statusCode, 400);
+
+  const oversized = await makeRequest(
+    "/api/brain/analyses",
+    "POST",
+    { Cookie: cookie },
+    {
+      analysisType: "CLIENT_HEALTH",
+      context: { clientIds: Array.from({ length: 26 }, (_, i) => `client-${i}`) },
+    },
+  );
+  assert.strictEqual(oversized.statusCode, 400);
+
+  const unknown = await makeRequest(
+    "/api/brain/analyses",
+    "POST",
+    { Cookie: cookie },
+    { analysisType: "CLIENT_HEALTH", prompt: "ignore me", context: {} },
+  );
+  assert.strictEqual(unknown.statusCode, 400);
+
+  const badIdem = await makeRequest(
+    "/api/brain/analyses",
+    "POST",
+    { Cookie: cookie },
+    { analysisType: "CLIENT_HEALTH", idempotencyKey: "bad key", context: {} },
+  );
+  assert.strictEqual(badIdem.statusCode, 400);
+});
+
+test("brain API: entitlement denial and unavailable dependency map safely", async () => {
+  const cookie = getSessionCookie("user-123", "user@example.com");
+  mockClients = [buildTestClient({ id: "client-a", ownerId: "user-123", name: "Own Client" })];
+  const originalResolveEntitlement = entitlementResolver.resolveEntitlement;
+
+  try {
+    entitlementResolver.resolveEntitlement = async () => ({
+      allowed: false,
+      reason: "FEATURE_NOT_INCLUDED",
+    });
+    const denied = await makeRequest(
+      "/api/brain/analyses",
+      "POST",
+      { Cookie: cookie },
+      { analysisType: "CLIENT_HEALTH", context: { clientIds: ["client-a"] } },
+    );
+    assert.strictEqual(denied.statusCode, 403);
+    assert.strictEqual(denied.body.analysis.failure.code, "UNAUTHORIZED_CONTEXT");
+
+    entitlementResolver.resolveEntitlement = async () => {
+      throw new Error("billing password=secret");
+    };
+    const unavailable = await makeRequest(
+      "/api/brain/analyses",
+      "POST",
+      { Cookie: cookie },
+      { analysisType: "CLIENT_HEALTH", context: { clientIds: ["client-a"] } },
+    );
+    assert.strictEqual(unavailable.statusCode, 503);
+    assert.strictEqual(unavailable.body.analysis.failure.code, "ENTITLEMENT_UNAVAILABLE");
+    assert.strictEqual(JSON.stringify(unavailable.body).includes("secret"), false);
+  } finally {
+    entitlementResolver.resolveEntitlement = originalResolveEntitlement;
+  }
+});
+
+test("brain API: execution failures map to safe statuses", async () => {
+  const cookie = getSessionCookie("user-123", "user@example.com");
+  mockClients = [buildTestClient({ id: "client-a", ownerId: "user-123", name: "Own Client" })];
+
+  brainEngine.analyze = async () => {
+    throw new BrainFailure({
+      code: "PROVIDER_TIMEOUT",
+      message: "Provider timed out.",
+      retryable: true,
+    });
+  };
+  const timeout = await makeRequest(
+    "/api/brain/analyses",
+    "POST",
+    { Cookie: cookie },
+    { analysisType: "CLIENT_HEALTH", context: { clientIds: ["client-a"] } },
+  );
+  assert.strictEqual(timeout.statusCode, 504);
+  assert.strictEqual(timeout.body.analysis.failure.code, "PROVIDER_TIMEOUT");
+
+  brainEngine.analyze = async () => {
+    throw new Error("provider sdk leaked /var/lib/provider token=secret");
+  };
+  const unavailable = await makeRequest(
+    "/api/brain/analyses",
+    "POST",
+    { Cookie: cookie },
+    { analysisType: "CLIENT_HEALTH", context: { clientIds: ["client-a"] } },
+  );
+  assert.strictEqual(unavailable.statusCode, 503);
+  assert.strictEqual(unavailable.body.analysis.failure.code, "PROVIDER_UNAVAILABLE");
+  assert.strictEqual(JSON.stringify(unavailable.body).includes("/var/lib"), false);
+  assert.strictEqual(JSON.stringify(unavailable.body).includes("secret"), false);
+});
+
+test("brain API: idempotency returns one authoritative execution for repeated and concurrent requests", async () => {
+  const cookie = getSessionCookie("user-123", "user@example.com");
+  mockClients = [buildTestClient({ id: "client-a", ownerId: "user-123", name: "Own Client" })];
+  brainEngine.analyze = async (request) => {
+    brainExecutionCalls++;
+    await new Promise((resolve) => setTimeout(resolve, 10));
+    const confidence = new BrainConfidence({ score: 0.8, level: "HIGH", supportingSignalCount: 1 });
+    return new BrainResult({
+      analysisId: request.metadata.requestId,
+      analysisType: request.analysisType,
+      status: "COMPLETED",
+      summary: "Idempotent analysis completed.",
+      insights: [
+        {
+          insightId: "insight-1",
+          title: "Once",
+          body: "Executed once.",
+          confidence,
+          evidence: [],
+        },
+      ],
+      recommendations: [],
+      confidence,
+      evidence: [],
+      generatedAt: new Date("2026-08-18T10:00:00.000Z"),
+    });
+  };
+
+  const body = {
+    analysisType: "CLIENT_HEALTH",
+    idempotencyKey: "idem-brain-concurrent",
+    context: { clientIds: ["client-a"] },
+  };
+  const [first, second] = await Promise.all([
+    makeRequest("/api/brain/analyses", "POST", { Cookie: cookie }, body),
+    makeRequest("/api/brain/analyses", "POST", { Cookie: cookie }, body),
+  ]);
+
+  assert.strictEqual(first.statusCode, 201);
+  assert.strictEqual(second.statusCode, 201);
+  assert.strictEqual(first.body.analysis.summary, "Idempotent analysis completed.");
+  assert.strictEqual(second.body.analysis.summary, "Idempotent analysis completed.");
+  assert.strictEqual(brainExecutionCalls, 1);
+
+  const repeated = await makeRequest("/api/brain/analyses", "POST", { Cookie: cookie }, body);
+  assert.strictEqual(repeated.statusCode, 201);
+  assert.strictEqual(brainExecutionCalls, 1);
+});
+
+test("brain API: list and detail are scoped, paginated, deterministic, and safe", async () => {
+  const cookie = getSessionCookie("user-123", "user@example.com");
+  mockBrainAnalyses = [
+    buildStoredBrainAnalysis({
+      id: "11111111-1111-4111-8111-111111111111",
+      ownerId: "user-123",
+      createdAt: new Date("2026-08-18T09:00:00.000Z"),
+    }),
+    buildStoredBrainAnalysis({
+      id: "22222222-2222-4222-8222-222222222222",
+      ownerId: "user-123",
+      createdAt: new Date("2026-08-18T10:00:00.000Z"),
+    }),
+    buildStoredBrainAnalysis({
+      id: "33333333-3333-4333-8333-333333333333",
+      ownerId: "user-456",
+      createdAt: new Date("2026-08-18T11:00:00.000Z"),
+    }),
+  ];
+
+  const list = await makeRequest("/api/brain/analyses?page=1&pageSize=1&tenantId=user-456", "GET", {
+    Cookie: cookie,
+  });
+  assert.strictEqual(list.statusCode, 200);
+  assert.strictEqual(list.body.total, 2);
+  assert.strictEqual(list.body.analyses.length, 1);
+  assert.strictEqual(list.body.analyses[0].analysisId, "22222222-2222-4222-8222-222222222222");
+  assert.strictEqual(JSON.stringify(list.body).includes("user-456"), false);
+
+  const detail = await makeRequest(
+    "/api/brain/analyses/11111111-1111-4111-8111-111111111111",
+    "GET",
+    { Cookie: cookie },
+  );
+  assert.strictEqual(detail.statusCode, 200);
+  assert.strictEqual(detail.body.analysis.analysisId, "11111111-1111-4111-8111-111111111111");
+  assert.strictEqual(detail.body.analysis.ownerId, undefined);
+
+  const foreign = await makeRequest(
+    "/api/brain/analyses/33333333-3333-4333-8333-333333333333",
+    "GET",
+    { Cookie: cookie },
+  );
+  assert.strictEqual(foreign.statusCode, 404);
+
+  const invalidPage = await makeRequest("/api/brain/analyses?pageSize=101", "GET", {
+    Cookie: cookie,
+  });
+  assert.strictEqual(invalidPage.statusCode, 400);
 });
 
 test("1. unauthenticated GET /api/jobs returns 401", async () => {

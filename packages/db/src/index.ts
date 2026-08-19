@@ -139,11 +139,16 @@ export {
   visibilityClassificationEnum,
 } from "./schema/timeline.js";
 
+// Export Brain Domain Schemas
+export { brainAnalyses, brainAnalysisStatusEnum } from "./schema/brain.js";
+export type { BrainAnalysisRow, BrainAnalysisInsert } from "./schema/brain.js";
+
 // Export Repositories
 export { PostgresJobsRepository } from "./repository/jobs-repository.js";
 export { PostgresJobMatchRepository } from "./repository/match-repository.js";
 export { PostgresTimelineRepository } from "./repository/timeline-repository.js";
 export { PostgresClientRepository } from "./repository/client-repository.js";
+export { PostgresBrainAnalysisRepository } from "./repository/brain-analysis-repository.js";
 export type {
   ClientExternalIdentity,
   ClientListOptions,

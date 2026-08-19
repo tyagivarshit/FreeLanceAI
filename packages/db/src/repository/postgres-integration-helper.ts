@@ -31,7 +31,19 @@ export async function ensureMigrationsApplied(): Promise<void> {
     for (const statement of statements) {
       const trimmed = statement.trim();
       if (trimmed.length > 0) {
-        await pool.query(trimmed);
+        try {
+          await pool.query(trimmed);
+        } catch (error: unknown) {
+          // Idempotent ignore: relation/index/type/constraint already exists
+          const errorCode =
+            error && typeof error === "object" && "code" in error
+              ? String((error as { code: unknown }).code)
+              : undefined;
+          if (errorCode && ["42P07", "42710", "42701", "42P06", "42723"].includes(errorCode)) {
+            continue;
+          }
+          throw error;
+        }
       }
     }
   }
@@ -56,6 +68,7 @@ export async function isPostgresAvailable(): Promise<boolean> {
 export async function truncateClientDomainTables(): Promise<void> {
   await pool.query(`
     TRUNCATE TABLE
+      brain_analyses,
       timeline_entries,
       client_timelines,
       job_matches,

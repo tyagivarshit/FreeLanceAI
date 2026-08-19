@@ -112,9 +112,12 @@ export { jobMatches, jobMatchLifecycleEnum } from "./schema/matches.js";
 export { clients, clientStatusEnum } from "./schema/clients.js";
 // Export Timelines Domain Schemas
 export { clientTimelines, timelineEntries, timelineStatusEnum, timelineEventCategoryEnum, visibilityClassificationEnum, } from "./schema/timeline.js";
+// Export Brain Domain Schemas
+export { brainAnalyses, brainAnalysisStatusEnum } from "./schema/brain.js";
 // Export Repositories
 export { PostgresJobsRepository } from "./repository/jobs-repository.js";
 export { PostgresJobMatchRepository } from "./repository/match-repository.js";
 export { PostgresTimelineRepository } from "./repository/timeline-repository.js";
 export { PostgresClientRepository } from "./repository/client-repository.js";
+export { PostgresBrainAnalysisRepository } from "./repository/brain-analysis-repository.js";
 //# sourceMappingURL=index.js.map

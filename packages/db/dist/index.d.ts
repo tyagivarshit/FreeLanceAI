@@ -8,9 +8,12 @@ export { jobMatches, jobMatchLifecycleEnum } from "./schema/matches.js";
 export { clients, clientStatusEnum } from "./schema/clients.js";
 export type { ClientRow, ClientInsert } from "./schema/clients.js";
 export { clientTimelines, timelineEntries, timelineStatusEnum, timelineEventCategoryEnum, visibilityClassificationEnum, } from "./schema/timeline.js";
+export { brainAnalyses, brainAnalysisStatusEnum } from "./schema/brain.js";
+export type { BrainAnalysisRow, BrainAnalysisInsert } from "./schema/brain.js";
 export { PostgresJobsRepository } from "./repository/jobs-repository.js";
 export { PostgresJobMatchRepository } from "./repository/match-repository.js";
 export { PostgresTimelineRepository } from "./repository/timeline-repository.js";
 export { PostgresClientRepository } from "./repository/client-repository.js";
+export { PostgresBrainAnalysisRepository } from "./repository/brain-analysis-repository.js";
 export type { ClientExternalIdentity, ClientListOptions, ClientListResult, } from "./repository/client-repository.js";
 //# sourceMappingURL=index.d.ts.map

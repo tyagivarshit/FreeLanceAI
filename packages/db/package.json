@@ -15,8 +15,8 @@
   "scripts": {
     "build": "tsc",
     "typecheck": "tsc --noEmit",
-    "test": "node --env-file=../../.env.test --test dist/repository/*.test.js",
-    "test:unit": "node --env-file=../../.env.test --test dist/repository/*.test.js",
+    "test": "node --env-file=../../.env.test --test --test-concurrency=1 dist/repository/*.test.js",
+    "test:unit": "node --env-file=../../.env.test --test --test-concurrency=1 dist/repository/*.test.js",
     "clean": "node -e \"const fs = require('fs'); fs.rmSync('dist', { recursive: true, force: true }); fs.rmSync('tsconfig.tsbuildinfo', { force: true });\""
   },
   "dependencies": {
