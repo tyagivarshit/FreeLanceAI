@@ -117,4 +117,5 @@ export { mapClientToSearchResult, ClientSearchEngine, InMemoryClientSearchReposi
 export { mapJobToSearchResult, JobSearchEngine, InMemoryJobSearchRepository, } from "./job-search.js";
 export { mapMatchToSearchResult, MatchSearchEngine, InMemoryMatchSearchRepository, } from "./match-search.js";
 export { mapTimelineEntryToSearchResult, TimelineSearchEngine, InMemoryTimelineSearchRepository, } from "./timeline-search.js";
+export { UnifiedSearchEngine } from "./unified-search.js";
 //# sourceMappingURL=index.js.map

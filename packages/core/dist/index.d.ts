@@ -98,4 +98,6 @@ export { mapMatchToSearchResult, MatchSearchEngine, InMemoryMatchSearchRepositor
 export type { MatchSearchResultItem, MatchSearchResultList, MatchSearchRepository, InMemoryMatchRecord, } from "./match-search.js";
 export { mapTimelineEntryToSearchResult, TimelineSearchEngine, InMemoryTimelineSearchRepository, } from "./timeline-search.js";
 export type { TimelineSearchResultItem, TimelineSearchResultList, TimelineSearchRepository, InMemoryTimelineRecord, } from "./timeline-search.js";
+export { UnifiedSearchEngine } from "./unified-search.js";
+export type { UnifiedSearchEngineOptions } from "./unified-search.js";
 //# sourceMappingURL=index.d.ts.map

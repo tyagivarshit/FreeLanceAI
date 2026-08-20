@@ -1293,3 +1293,7 @@ export type {
   TimelineSearchRepository,
   InMemoryTimelineRecord,
 } from "./timeline-search.js";
+
+export { UnifiedSearchEngine } from "./unified-search.js";
+
+export type { UnifiedSearchEngineOptions } from "./unified-search.js";
