@@ -4,7 +4,7 @@ import assert from "node:assert";
 import { db } from "../client.js";
 import { jobMatches } from "../schema/matches.js";
 import { PostgresJobMatchRepository } from "./match-repository.js";
-import { JobMatch, MatchSignals } from "@freelanceos/core";
+import { JobMatch, MatchSignals, AuthorizedSearchScope, SearchQuery } from "@freelanceos/core";
 
 const originalSelect = db.select;
 const originalInsert = db.insert;
@@ -24,7 +24,12 @@ describe("PostgresJobMatchRepository Unit Tests", () => {
         from: () => builder,
         where: () => builder,
         orderBy: () => builder,
-        limit: () => Promise.resolve(selectMockResult),
+        limit: () => {
+          const promise = Promise.resolve(selectMockResult);
+          // @ts-expect-error offset chain helper
+          promise.offset = () => Promise.resolve(selectMockResult);
+          return promise;
+        },
       };
       return builder;
     };
@@ -131,5 +136,80 @@ describe("PostgresJobMatchRepository Unit Tests", () => {
     assert.strictEqual(result.jobId, "7b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d");
     assert.strictEqual(result.matchSignals?.semanticSimilarity, 0.95);
     assert.strictEqual(result.status, "EVALUATED");
+  });
+
+  test("3. searchMatches performs scoped query and returns bounded result list", async () => {
+    const repo = new PostgresJobMatchRepository();
+    selectMockResult = [
+      {
+        id: "9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d",
+        tenantId: "8b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d",
+        ownerId: "8b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d",
+        freelancerId: "8b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d",
+        jobId: "7b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d",
+        jobNormalizationId: "norm_id_123",
+        normalizationVersion: "v1",
+        matchingVersion: "v1",
+        matchSignals: {
+          matchedSkills: ["React", "TypeScript"],
+          missingSkills: [],
+          skillCoverage: 1.0,
+          experienceCompatibility: "COMPATIBLE",
+        },
+        status: "EVALUATED",
+        snapshots: [],
+        createdAt: new Date("2026-08-14T00:00:00.000Z"),
+        updatedAt: new Date("2026-08-14T00:00:00.000Z"),
+      },
+    ];
+
+    const scope = new AuthorizedSearchScope({
+      tenantId: "8b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d",
+      ownerId: "8b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d",
+    });
+
+    const res = await repo.searchMatches("React", scope, 1, 10);
+    assert.strictEqual(res.items.length, 1);
+    assert.strictEqual(res.items[0]?.status, "EVALUATED");
+    assert.strictEqual(res.items[0]?.matchingVersion, "v1");
+    assert.strictEqual(res.page, 1);
+    assert.strictEqual(res.pageSize, 10);
+  });
+
+  test("4. search provider executes query and maps to canonical SearchResultSet", async () => {
+    const repo = new PostgresJobMatchRepository();
+    selectMockResult = [
+      {
+        id: "9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d",
+        tenantId: "8b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d",
+        ownerId: "8b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d",
+        freelancerId: "8b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d",
+        jobId: "7b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d",
+        jobNormalizationId: "norm_id_123",
+        normalizationVersion: "v1",
+        matchingVersion: "v1",
+        matchSignals: {
+          matchedSkills: ["React", "TypeScript"],
+          missingSkills: [],
+          skillCoverage: 1.0,
+        },
+        status: "EVALUATED",
+        snapshots: [],
+        createdAt: new Date("2026-08-14T00:00:00.000Z"),
+        updatedAt: new Date("2026-08-14T00:00:00.000Z"),
+      },
+    ];
+
+    const scope = new AuthorizedSearchScope({
+      tenantId: "8b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d",
+      ownerId: "8b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d",
+    });
+    const query = new SearchQuery({ query: "EVALUATED" });
+
+    const resultSet = await repo.search(query, scope);
+    assert.strictEqual(resultSet.count, 1);
+    assert.strictEqual(resultSet.results[0]?.resultType, "MATCH");
+    assert.strictEqual(resultSet.results[0]?.entityId, "9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d");
+    assert.match(resultSet.results[0]?.display.title ?? "", /Match for Job/);
   });
 });

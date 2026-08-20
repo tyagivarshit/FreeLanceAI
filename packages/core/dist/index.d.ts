@@ -94,4 +94,6 @@ export { mapClientToSearchResult, ClientSearchEngine, InMemoryClientSearchReposi
 export type { ClientSearchResultItem, ClientSearchResultList, ClientSearchRepository, InMemoryClientRecord, } from "./client-search.js";
 export { mapJobToSearchResult, JobSearchEngine, InMemoryJobSearchRepository, } from "./job-search.js";
 export type { JobSearchResultItem, JobSearchResultList, JobSearchRepository, InMemoryJobRecord, } from "./job-search.js";
+export { mapMatchToSearchResult, MatchSearchEngine, InMemoryMatchSearchRepository, } from "./match-search.js";
+export type { MatchSearchResultItem, MatchSearchResultList, MatchSearchRepository, InMemoryMatchRecord, } from "./match-search.js";
 //# sourceMappingURL=index.d.ts.map

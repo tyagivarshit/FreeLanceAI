@@ -1267,3 +1267,16 @@ export type {
   JobSearchRepository,
   InMemoryJobRecord,
 } from "./job-search.js";
+
+export {
+  mapMatchToSearchResult,
+  MatchSearchEngine,
+  InMemoryMatchSearchRepository,
+} from "./match-search.js";
+
+export type {
+  MatchSearchResultItem,
+  MatchSearchResultList,
+  MatchSearchRepository,
+  InMemoryMatchRecord,
+} from "./match-search.js";

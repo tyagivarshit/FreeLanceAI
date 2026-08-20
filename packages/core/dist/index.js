@@ -115,4 +115,5 @@ export { SUPPORTED_BRAIN_ANALYSIS_TYPES, BrainDomainError, BrainFailure, isRetry
 export { DEFAULT_SEARCH_PAGE, DEFAULT_SEARCH_PAGE_SIZE, MIN_SEARCH_PAGE_SIZE, MAX_SEARCH_PAGE_SIZE, MAX_SEARCH_QUERY_LENGTH, SUPPORTED_SEARCH_RESULT_TYPES, SearchDomainError, SearchFailure, defaultStatusCodeForSearchFailure, isRetryableSearchFailure, requireSearchReference, assertSearchJsonSafe, isSearchResultType, parseSearchResultType, AuthorizedSearchScope, SearchQuery, SearchResult, SearchResultSet, } from "./search.js";
 export { mapClientToSearchResult, ClientSearchEngine, InMemoryClientSearchRepository, } from "./client-search.js";
 export { mapJobToSearchResult, JobSearchEngine, InMemoryJobSearchRepository, } from "./job-search.js";
+export { mapMatchToSearchResult, MatchSearchEngine, InMemoryMatchSearchRepository, } from "./match-search.js";
 //# sourceMappingURL=index.js.map
