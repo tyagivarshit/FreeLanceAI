@@ -935,6 +935,8 @@ const server = http.createServer(async (req, res) => {
     pathname === "/clients.html" ||
     pathname === "/clients" ||
     pathname === "/client-detail.html" ||
+    pathname === "/search.html" ||
+    pathname === "/search" ||
     clientDetailRouteMatch
   ) {
     const auth = await checkAuthentication();
@@ -949,6 +951,9 @@ const server = http.createServer(async (req, res) => {
     }
     if (pathname === "/clients") {
       staticPathname = "/clients.html";
+    }
+    if (pathname === "/search") {
+      staticPathname = "/search.html";
     }
     if (clientDetailRouteMatch) {
       staticPathname = "/client-detail.html";
