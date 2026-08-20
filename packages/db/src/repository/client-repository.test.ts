@@ -12,7 +12,7 @@ import {
   listMigrationFiles,
   truncateClientDomainTables,
 } from "./postgres-integration-helper.js";
-import { Client, ClientTimeline } from "@freelanceos/core";
+import { Client, ClientTimeline, AuthorizedSearchScope, SearchQuery } from "@freelanceos/core";
 
 const originalSelect = db.select;
 const originalInsert = db.insert;
@@ -109,6 +109,65 @@ describe("PostgresClientRepository Unit Tests", () => {
     assert.strictEqual(result.id, "9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d");
     assert.strictEqual(result.profile.name, "Acme Corp");
     assert.strictEqual(result.primaryContact?.email, "jane@acme.com");
+  });
+
+  test("3. searchClients performs scoped matching and returns bounded result list", async () => {
+    const repo = new PostgresClientRepository();
+    selectMockResult = [
+      {
+        id: "9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d",
+        tenantId: "8b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d",
+        ownerId: "8b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d",
+        status: "Active",
+        profile: { name: "Acme Corp", website: "https://acme.com" },
+        billingDetails: null,
+        primaryContact: { firstName: "Jane", lastName: "Doe", email: "jane@acme.com" },
+        createdAt: new Date("2026-08-14T00:00:00.000Z"),
+        updatedAt: new Date("2026-08-14T00:00:00.000Z"),
+      },
+    ];
+
+    const scope = new AuthorizedSearchScope({
+      tenantId: "8b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d",
+      ownerId: "8b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d",
+    });
+
+    const res = await repo.searchClients("Acme", scope, 1, 10);
+    assert.strictEqual(res.items.length, 1);
+    assert.strictEqual(res.items[0]?.name, "Acme Corp");
+    assert.strictEqual(res.items[0]?.email, "jane@acme.com");
+    assert.strictEqual(res.items[0]?.website, "https://acme.com");
+    assert.strictEqual(res.page, 1);
+    assert.strictEqual(res.pageSize, 10);
+  });
+
+  test("4. search provider executes search query and returns canonical SearchResultSet", async () => {
+    const repo = new PostgresClientRepository();
+    selectMockResult = [
+      {
+        id: "9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d",
+        tenantId: "8b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d",
+        ownerId: "8b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d",
+        status: "Active",
+        profile: { name: "Acme Corp", website: "https://acme.com" },
+        billingDetails: null,
+        primaryContact: { firstName: "Jane", lastName: "Doe", email: "jane@acme.com" },
+        createdAt: new Date("2026-08-14T00:00:00.000Z"),
+        updatedAt: new Date("2026-08-14T00:00:00.000Z"),
+      },
+    ];
+
+    const scope = new AuthorizedSearchScope({
+      tenantId: "8b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d",
+      ownerId: "8b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d",
+    });
+    const query = new SearchQuery({ query: "Acme" });
+
+    const resultSet = await repo.search(query, scope);
+    assert.strictEqual(resultSet.count, 1);
+    assert.strictEqual(resultSet.results[0]?.resultType, "CLIENT");
+    assert.strictEqual(resultSet.results[0]?.entityId, "9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d");
+    assert.strictEqual(resultSet.results[0]?.display.title, "Acme Corp");
   });
 });
 
@@ -441,5 +500,48 @@ describe("PostgresClientRepository PostgreSQL Integration Tests", () => {
     assert.strictEqual(columnNames.includes("token"), false);
     assert.strictEqual(columnNames.includes("session_cookie"), false);
     assert.strictEqual(columnNames.includes("stripe_secret"), false);
+  });
+
+  test("8. performs bounded client search with deterministic ordering and tenant isolation", async (t) => {
+    if (!postgresAvailable) {
+      t.skip("PostgreSQL is not available for integration verification.");
+      return;
+    }
+
+    const repo = new PostgresClientRepository();
+    const client1 = Client.create(
+      "12345678-1234-4234-8234-123456789001",
+      tenantA,
+      { name: "Searchable Alpha Inc", website: "https://alpha.com" },
+      undefined,
+      { firstName: "Alice", lastName: "Smith", email: "alice@alpha.com" },
+    );
+    const client2 = Client.create(
+      "12345678-1234-4234-8234-123456789002",
+      tenantA,
+      { name: "Alpha Technologies LLC", website: "https://alphatech.com" },
+      undefined,
+      { firstName: "Aaron", lastName: "Adams", email: "aaron@alphatech.com" },
+    );
+    const foreignClient = Client.create(
+      "12345678-1234-4234-8234-123456789003",
+      tenantB,
+      { name: "Foreign Alpha Corp", website: "https://foreign-alpha.com" },
+      undefined,
+      { firstName: "Arthur", lastName: "Foreign", email: "arthur@foreign.com" },
+    );
+
+    await repo.create(client1);
+    await repo.create(client2);
+    await repo.create(foreignClient);
+
+    const scopeA = new AuthorizedSearchScope({ tenantId: tenantA, ownerId: tenantA });
+    const searchRes = await repo.search(new SearchQuery({ query: "Alpha" }), scopeA);
+
+    assert.strictEqual(searchRes.total, 2);
+    assert.strictEqual(searchRes.count, 2);
+    for (const item of searchRes.results) {
+      assert.notStrictEqual(item.entityId, "12345678-1234-4234-8234-123456789003");
+    }
   });
 });

@@ -1,4 +1,4 @@
-import { eq, and, desc, sql, ne } from "drizzle-orm";
+import { eq, and, or, desc, sql, ne } from "drizzle-orm";
 import { db } from "../client.js";
 import { clients } from "../schema/clients.js";
 import {
@@ -10,6 +10,14 @@ import {
   BillingDetails,
   PrimaryContact,
   SystemMetadata,
+  AuthorizedSearchScope,
+  SearchQuery,
+  SearchResultSet,
+  ClientSearchEngine,
+  type ClientSearchRepository,
+  type ClientSearchResultItem,
+  type ClientSearchResultList,
+  type SearchProvider,
 } from "@freelanceos/core";
 
 const DEFAULT_PAGE_SIZE = 20;
@@ -38,7 +46,9 @@ export interface ClientListResult {
   pageSize: number;
 }
 
-export class PostgresClientRepository implements AggregateStore, DomainPersistenceContract {
+export class PostgresClientRepository
+  implements AggregateStore, DomainPersistenceContract, ClientSearchRepository, SearchProvider
+{
   public async create(client: Client): Promise<void> {
     await client.validateUniqueness(this);
     await this.save(client);
@@ -243,6 +253,80 @@ export class PostgresClientRepository implements AggregateStore, DomainPersisten
       page,
       pageSize,
     };
+  }
+
+  public async searchClients(
+    queryText: string,
+    scope: AuthorizedSearchScope,
+    page = DEFAULT_PAGE_SIZE,
+    pageSize = DEFAULT_PAGE_SIZE,
+  ): Promise<ClientSearchResultList> {
+    const boundedPage = Math.max(1, page);
+    const boundedPageSize = Math.min(MAX_PAGE_SIZE, Math.max(1, pageSize));
+    const offset = (boundedPage - 1) * boundedPageSize;
+
+    const normalizedQuery = queryText.trim().toLowerCase();
+    const searchPattern = `%${normalizedQuery}%`;
+
+    const scopeCondition = and(
+      eq(clients.ownerId, scope.ownerId),
+      eq(clients.tenantId, scope.tenantId),
+    );
+
+    const searchCondition = or(
+      sql`lower(${clients.profile}->>'name') LIKE ${searchPattern}`,
+      sql`lower(${clients.primaryContact}->>'email') LIKE ${searchPattern}`,
+      sql`lower(${clients.profile}->>'website') LIKE ${searchPattern}`,
+      sql`lower(${clients.primaryContact}->>'firstName') LIKE ${searchPattern}`,
+      sql`lower(${clients.primaryContact}->>'lastName') LIKE ${searchPattern}`,
+      sql`lower(${clients.profile}->>'phone') LIKE ${searchPattern}`,
+    );
+
+    const whereClause = and(scopeCondition, searchCondition);
+
+    const countResult = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(clients)
+      .where(whereClause);
+
+    const total = Number(countResult[0]?.count || 0);
+
+    const rows = await db
+      .select()
+      .from(clients)
+      .where(whereClause)
+      .orderBy(desc(clients.createdAt), desc(clients.id))
+      .limit(boundedPageSize)
+      .offset(offset);
+
+    const items: ClientSearchResultItem[] = rows.map((row) => {
+      const profile = row.profile as ClientProfile;
+      const primaryContact = (row.primaryContact as Partial<PrimaryContact> | null) ?? undefined;
+
+      return {
+        id: row.id,
+        name: profile.name,
+        status: row.status,
+        email: primaryContact?.email,
+        website: profile.website,
+        firstName: primaryContact?.firstName,
+        lastName: primaryContact?.lastName,
+        phone: profile.phone,
+        createdAt: row.createdAt,
+      };
+    });
+
+    return {
+      items,
+      total,
+      page: boundedPage,
+      pageSize: boundedPageSize,
+    };
+  }
+
+  public async search(query: SearchQuery, scope: AuthorizedSearchScope): Promise<SearchResultSet> {
+    const engine = new ClientSearchEngine(this);
+    return engine.search(query, scope);
   }
 
   private mapToAggregate(row: typeof clients.$inferSelect): Client {

@@ -467,20 +467,20 @@ export class SearchQuery {
 
 export interface SearchResultDisplay {
   title: string;
-  subtitle?: string;
-  snippet?: string;
+  subtitle?: string | undefined;
+  snippet?: string | undefined;
 }
 
 export interface SearchResultRelevance {
-  score?: number;
-  matchedFields?: readonly string[];
+  score?: number | undefined;
+  matchedFields?: readonly string[] | undefined;
 }
 
 export interface SearchResultProperties {
   resultType: SearchResultType;
   entityId: string;
   display: SearchResultDisplay;
-  relevance?: SearchResultRelevance;
+  relevance?: SearchResultRelevance | undefined;
 }
 
 const ALLOWED_SEARCH_RESULT_KEYS = new Set(["resultType", "entityId", "display", "relevance"]);

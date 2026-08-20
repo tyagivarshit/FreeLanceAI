@@ -1241,3 +1241,16 @@ export type {
   SearchProvider,
   SearchEngine,
 } from "./search.js";
+
+export {
+  mapClientToSearchResult,
+  ClientSearchEngine,
+  InMemoryClientSearchRepository,
+} from "./client-search.js";
+
+export type {
+  ClientSearchResultItem,
+  ClientSearchResultList,
+  ClientSearchRepository,
+  InMemoryClientRecord,
+} from "./client-search.js";
