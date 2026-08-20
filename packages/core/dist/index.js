@@ -116,4 +116,5 @@ export { DEFAULT_SEARCH_PAGE, DEFAULT_SEARCH_PAGE_SIZE, MIN_SEARCH_PAGE_SIZE, MA
 export { mapClientToSearchResult, ClientSearchEngine, InMemoryClientSearchRepository, } from "./client-search.js";
 export { mapJobToSearchResult, JobSearchEngine, InMemoryJobSearchRepository, } from "./job-search.js";
 export { mapMatchToSearchResult, MatchSearchEngine, InMemoryMatchSearchRepository, } from "./match-search.js";
+export { mapTimelineEntryToSearchResult, TimelineSearchEngine, InMemoryTimelineSearchRepository, } from "./timeline-search.js";
 //# sourceMappingURL=index.js.map

@@ -4,7 +4,7 @@ import assert from "node:assert";
 import { db } from "../client.js";
 import { clientTimelines, timelineEntries } from "../schema/timeline.js";
 import { PostgresTimelineRepository } from "./timeline-repository.js";
-import { ClientTimeline } from "@freelanceos/core";
+import { ClientTimeline, AuthorizedSearchScope, SearchQuery } from "@freelanceos/core";
 
 const originalSelect = db.select;
 const originalInsert = db.insert;
@@ -44,34 +44,47 @@ describe("PostgresTimelineRepository Unit Tests", () => {
       return await callback(mockTx);
     };
 
-    let selectCallCount = 0;
     // Mock db.select chain for joins and queries
     // @ts-expect-error db.select is read-only
-    db.select = function () {
+    db.select = function (fields?: any) {
+      const isCount = Boolean(fields && typeof fields === "object" && "count" in fields);
+      let hasInnerJoin = false;
+      let targetTable: any = null;
       const builder = {
-        from: (_table: any) => builder,
-        innerJoin: () => builder,
+        from: (table: any) => {
+          targetTable = table;
+          return builder;
+        },
+        innerJoin: () => {
+          hasInnerJoin = true;
+          return builder;
+        },
         where: () => builder,
         orderBy: () => builder,
         limit: (_limitVal: number) => builder,
         offset: (_offsetVal: number) => builder,
         then: (onfulfilled: any) => {
-          selectCallCount++;
-          const res =
-            selectCallCount === 1
-              ? selectMockResult
-              : [
-                  {
-                    id: "1b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d",
-                    timelineId: "9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d",
-                    category: "Lifecycle Event",
-                    timestamp: new Date("2026-08-14T00:00:00.000Z"),
-                    metadata: { desc: "Loaded from Database" },
-                    actorRef: "actor_123",
-                    visibility: "Public",
-                  },
-                ];
-          return Promise.resolve(res).then(onfulfilled);
+          if (isCount) {
+            return Promise.resolve([{ count: selectMockResult.length }]).then(onfulfilled);
+          }
+          if (hasInnerJoin) {
+            return Promise.resolve(selectMockResult).then(onfulfilled);
+          }
+          if (targetTable === timelineEntries) {
+            const defaultEntries = [
+              {
+                id: "1b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d",
+                timelineId: "9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d",
+                category: "Lifecycle Event",
+                timestamp: new Date("2026-08-14T00:00:00.000Z"),
+                metadata: { desc: "Loaded from Database" },
+                actorRef: "actor_123",
+                visibility: "Public",
+              },
+            ];
+            return Promise.resolve(defaultEntries).then(onfulfilled);
+          }
+          return Promise.resolve(selectMockResult).then(onfulfilled);
         },
       };
       return builder;
@@ -138,5 +151,65 @@ describe("PostgresTimelineRepository Unit Tests", () => {
     assert.strictEqual(result.entries.length, 1);
     assert.strictEqual(result.entries[0]!.entryId, "1b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d");
     assert.strictEqual(result.entries[0]!.metadata.desc, "Loaded from Database");
+  });
+
+  test("3. searchTimeline performs scoped query and returns bounded result list", async () => {
+    const repo = new PostgresTimelineRepository();
+    selectMockResult = [
+      {
+        id: "1b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d",
+        timelineId: "9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d",
+        clientId: "8b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6e",
+        category: "Communication Event",
+        timestamp: new Date("2026-08-14T00:00:00.000Z"),
+        eventRef: "meeting-1",
+        actorRef: "actor_123",
+        visibility: "Public",
+        metadata: { note: "Quarterly review meeting" },
+        createdAt: new Date("2026-08-14T00:00:00.000Z"),
+      },
+    ];
+
+    const scope = new AuthorizedSearchScope({
+      tenantId: "8b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6e",
+      ownerId: "8b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6f",
+    });
+
+    const res = await repo.searchTimeline("Communication", scope, 1, 10);
+    assert.strictEqual(res.items.length, 1);
+    assert.strictEqual(res.items[0]?.category, "Communication Event");
+    assert.strictEqual(res.items[0]?.eventRef, "meeting-1");
+    assert.strictEqual(res.page, 1);
+    assert.strictEqual(res.pageSize, 10);
+  });
+
+  test("4. search provider executes query and maps to canonical SearchResultSet", async () => {
+    const repo = new PostgresTimelineRepository();
+    selectMockResult = [
+      {
+        id: "1b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d",
+        timelineId: "9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d",
+        clientId: "8b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6e",
+        category: "Communication Event",
+        timestamp: new Date("2026-08-14T00:00:00.000Z"),
+        eventRef: "meeting-1",
+        actorRef: "actor_123",
+        visibility: "Public",
+        metadata: { note: "Quarterly review meeting" },
+        createdAt: new Date("2026-08-14T00:00:00.000Z"),
+      },
+    ];
+
+    const scope = new AuthorizedSearchScope({
+      tenantId: "8b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6e",
+      ownerId: "8b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6f",
+    });
+    const query = new SearchQuery({ query: "Communication" });
+
+    const resultSet = await repo.search(query, scope);
+    assert.strictEqual(resultSet.count, 1);
+    assert.strictEqual(resultSet.results[0]?.resultType, "TIMELINE");
+    assert.strictEqual(resultSet.results[0]?.entityId, "1b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d");
+    assert.match(resultSet.results[0]?.display.title ?? "", /Communication Event/);
   });
 });

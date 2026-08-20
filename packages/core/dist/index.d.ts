@@ -96,4 +96,6 @@ export { mapJobToSearchResult, JobSearchEngine, InMemoryJobSearchRepository, } f
 export type { JobSearchResultItem, JobSearchResultList, JobSearchRepository, InMemoryJobRecord, } from "./job-search.js";
 export { mapMatchToSearchResult, MatchSearchEngine, InMemoryMatchSearchRepository, } from "./match-search.js";
 export type { MatchSearchResultItem, MatchSearchResultList, MatchSearchRepository, InMemoryMatchRecord, } from "./match-search.js";
+export { mapTimelineEntryToSearchResult, TimelineSearchEngine, InMemoryTimelineSearchRepository, } from "./timeline-search.js";
+export type { TimelineSearchResultItem, TimelineSearchResultList, TimelineSearchRepository, InMemoryTimelineRecord, } from "./timeline-search.js";
 //# sourceMappingURL=index.d.ts.map

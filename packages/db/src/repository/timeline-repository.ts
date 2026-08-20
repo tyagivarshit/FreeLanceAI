@@ -1,9 +1,27 @@
-import { eq, and, asc, desc, sql } from "drizzle-orm";
+import { eq, and, or, asc, desc, sql } from "drizzle-orm";
 import { db } from "../client.js";
 import { clientTimelines, timelineEntries } from "../schema/timeline.js";
-import { ClientTimeline, TimelineEntry, TimelineAggregateStore } from "@freelanceos/core";
+import { clients } from "../schema/clients.js";
+import {
+  ClientTimeline,
+  TimelineEntry,
+  TimelineAggregateStore,
+  AuthorizedSearchScope,
+  SearchQuery,
+  SearchResultSet,
+  TimelineSearchEngine,
+  DEFAULT_SEARCH_PAGE,
+  DEFAULT_SEARCH_PAGE_SIZE,
+  MAX_SEARCH_PAGE_SIZE,
+  type TimelineSearchRepository,
+  type TimelineSearchResultItem,
+  type TimelineSearchResultList,
+  type SearchProvider,
+} from "@freelanceos/core";
 
-export class PostgresTimelineRepository implements TimelineAggregateStore {
+export class PostgresTimelineRepository
+  implements TimelineAggregateStore, TimelineSearchRepository, SearchProvider
+{
   public async save(timeline: ClientTimeline): Promise<void> {
     await db.transaction(async (tx) => {
       // 1. Save parent client timeline record
@@ -185,6 +203,107 @@ export class PostgresTimelineRepository implements TimelineAggregateStore {
     );
 
     return { timelineId: parent[0]!.id, status: parent[0]!.status, items, total };
+  }
+
+  public async searchTimeline(
+    queryText: string,
+    scope: AuthorizedSearchScope,
+    page = DEFAULT_SEARCH_PAGE,
+    pageSize = DEFAULT_SEARCH_PAGE_SIZE,
+  ): Promise<TimelineSearchResultList> {
+    const boundedPage = Math.max(1, page);
+    const boundedPageSize = Math.min(MAX_SEARCH_PAGE_SIZE, Math.max(1, pageSize));
+    const offset = (boundedPage - 1) * boundedPageSize;
+
+    const normalizedQuery = queryText.trim().toLowerCase();
+    const searchPattern = `%${normalizedQuery}%`;
+
+    const scopeCondition = and(
+      eq(clientTimelines.ownerId, scope.ownerId),
+      eq(clients.tenantId, scope.tenantId),
+    );
+
+    const searchCondition = or(
+      sql`lower(${timelineEntries.category}) LIKE ${searchPattern}`,
+      sql`lower(${timelineEntries.eventRef}) LIKE ${searchPattern}`,
+      sql`lower(${timelineEntries.actorRef}) LIKE ${searchPattern}`,
+      sql`lower(${timelineEntries.visibility}) LIKE ${searchPattern}`,
+      sql`cast(${timelineEntries.id} as text) LIKE ${searchPattern}`,
+      sql`cast(${timelineEntries.timelineId} as text) LIKE ${searchPattern}`,
+      sql`cast(${clientTimelines.clientId} as text) LIKE ${searchPattern}`,
+      sql`lower(cast(${timelineEntries.metadata} as text)) LIKE ${searchPattern}`,
+    );
+
+    const whereClause = and(scopeCondition, searchCondition);
+
+    const countResult = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(timelineEntries)
+      .innerJoin(clientTimelines, eq(timelineEntries.timelineId, clientTimelines.id))
+      .innerJoin(clients, eq(clientTimelines.clientId, clients.id))
+      .where(whereClause);
+
+    const total = Number(countResult[0]?.count || 0);
+
+    const rows = await db
+      .select({
+        id: timelineEntries.id,
+        timelineId: timelineEntries.timelineId,
+        clientId: clientTimelines.clientId,
+        category: timelineEntries.category,
+        timestamp: timelineEntries.timestamp,
+        eventRef: timelineEntries.eventRef,
+        actorRef: timelineEntries.actorRef,
+        visibility: timelineEntries.visibility,
+        metadata: timelineEntries.metadata,
+        createdAt: timelineEntries.createdAt,
+      })
+      .from(timelineEntries)
+      .innerJoin(clientTimelines, eq(timelineEntries.timelineId, clientTimelines.id))
+      .innerJoin(clients, eq(clientTimelines.clientId, clients.id))
+      .where(whereClause)
+      .orderBy(desc(timelineEntries.timestamp), desc(timelineEntries.id))
+      .limit(boundedPageSize)
+      .offset(offset);
+
+    const items: TimelineSearchResultItem[] = rows.map((row) => {
+      const meta = (row.metadata as Record<string, unknown>) || {};
+      const rawNote = meta.note || meta.message || meta.description || meta.title || meta.summary;
+      let metadataSummary: string | undefined;
+      if (typeof rawNote === "string") {
+        metadataSummary = rawNote;
+      } else if (Object.keys(meta).length > 0) {
+        metadataSummary = Object.entries(meta)
+          .filter(([_, v]) => typeof v === "string" || typeof v === "number")
+          .map(([k, v]) => `${k}: ${v}`)
+          .join(", ");
+      }
+
+      return {
+        id: row.id,
+        timelineId: row.timelineId,
+        clientId: row.clientId,
+        category: row.category,
+        timestamp: row.timestamp,
+        eventRef: row.eventRef || undefined,
+        actorRef: row.actorRef,
+        visibility: row.visibility,
+        metadataSummary: metadataSummary || undefined,
+        createdAt: row.createdAt,
+      };
+    });
+
+    return {
+      items,
+      total,
+      page: boundedPage,
+      pageSize: boundedPageSize,
+    };
+  }
+
+  public async search(query: SearchQuery, scope: AuthorizedSearchScope): Promise<SearchResultSet> {
+    const engine = new TimelineSearchEngine(this);
+    return engine.search(query, scope);
   }
 
   private async loadTimelineWithEntries(
