@@ -874,9 +874,8 @@ describe("Phase 11D-7: Unified Search Orchestration Tests", () => {
     const { unifiedEngine } = createTestHarness();
     const query = new SearchQuery({ query: "test" });
 
-    // @ts-expect-error test invalid scope
     await assert.rejects(
-      async () => unifiedEngine.search(query, null),
+      async () => unifiedEngine.search(query, null as unknown as AuthorizedSearchScope),
       (err: unknown) => {
         assert(err instanceof SearchDomainError);
         assert.strictEqual(err.code, "UNAUTHORIZED_SCOPE");
@@ -891,9 +890,8 @@ describe("Phase 11D-7: Unified Search Orchestration Tests", () => {
   test("22. validation errors fail fast", async () => {
     const { unifiedEngine } = createTestHarness();
 
-    // @ts-expect-error test invalid query
     await assert.rejects(
-      async () => unifiedEngine.search(null, scopeA),
+      async () => unifiedEngine.search(null as unknown as SearchQuery, scopeA),
       (err: unknown) => {
         assert(err instanceof SearchDomainError);
         assert.strictEqual(err.code, "INVALID_SEARCH_REQUEST");
