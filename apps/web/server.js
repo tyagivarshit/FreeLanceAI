@@ -44,6 +44,14 @@ import {
   HeuristicBrainEngine,
   BrainContextOrchestrator,
   BrainDecisionDeriver,
+  SearchQuery,
+  AuthorizedSearchScope,
+  SearchDomainError,
+  UnifiedSearchEngine,
+  ClientSearchEngine,
+  JobSearchEngine,
+  MatchSearchEngine,
+  TimelineSearchEngine,
 } from "@freelanceos/core";
 import {
   db,
@@ -177,6 +185,18 @@ const brainExecutionService = new BrainExecutionService({
   entitlementGateway: brainEntitlementGateway,
   repository: brainAnalysisRepo,
   defaultTimeoutMs: 5000,
+});
+
+const clientSearchEngine = new ClientSearchEngine(clientRepo);
+const jobSearchEngine = new JobSearchEngine(jobsRepo);
+const matchSearchEngine = new MatchSearchEngine(matchRepo);
+const timelineSearchEngine = new TimelineSearchEngine(timelineRepo);
+
+const unifiedSearchEngine = new UnifiedSearchEngine({
+  clientEngine: clientSearchEngine,
+  jobEngine: jobSearchEngine,
+  matchEngine: matchSearchEngine,
+  timelineEngine: timelineSearchEngine,
 });
 
 const PORT = runtimeConfig.API_PORT || 4000;
@@ -954,6 +974,110 @@ const server = http.createServer(async (req, res) => {
         },
       }),
     );
+    return;
+  }
+
+  // 1F. Search API Error Handler (Phase 11D-8)
+  function handleSearchApiError(err) {
+    if (err instanceof SearchDomainError) {
+      let statusCode = 400;
+      if (err.code === "UNAUTHORIZED_SCOPE") {
+        statusCode = 401;
+      } else if (err.code === "SEARCH_PROVIDER_ERROR") {
+        statusCode = 500;
+      }
+      sendJson(statusCode, {
+        success: false,
+        error: err.publicMessage,
+        code: err.code,
+      });
+      return;
+    }
+
+    const message = err instanceof Error ? err.message : String(err);
+    const statusCode = err && typeof err === "object" && err.statusCode ? err.statusCode : null;
+    if (statusCode && statusCode < 500) {
+      sendJson(statusCode, { success: false, error: message, code: "INVALID_SEARCH_REQUEST" });
+      return;
+    }
+
+    logger.error({
+      message: "Search API request failed",
+      error: err instanceof Error ? err : new Error(String(err)),
+    });
+    sendJson(500, {
+      success: false,
+      error: "Search service unavailable",
+      code: "SEARCH_PROVIDER_ERROR",
+    });
+  }
+
+  // 1G. Unified Search API (Phase 11D-8)
+  if (pathname === "/api/search" && req.method === "GET") {
+    const auth = await checkAuthentication();
+    const ownerId = requireAuthenticatedOwner(auth);
+    if (!ownerId) return;
+
+    try {
+      const searchParams = parsedUrl.searchParams;
+
+      // Build raw query parameter object for canonical SearchQuery validation
+      const queryObj = {};
+      for (const [key, value] of searchParams.entries()) {
+        if (key === "q" || key === "query") {
+          queryObj.query = value;
+        } else if (key === "resultTypes" || key === "types") {
+          const types = value
+            .split(",")
+            .map((s) => s.trim())
+            .filter(Boolean);
+          for (const t of types) {
+            if (
+              t.toUpperCase() === "OPPORTUNITY" ||
+              !["CLIENT", "JOB", "MATCH", "TIMELINE"].includes(t.toUpperCase())
+            ) {
+              throw new SearchDomainError(
+                "INVALID_SEARCH_REQUEST",
+                `Unsupported search result type: ${t}`,
+              );
+            }
+          }
+          queryObj.resultTypes = types;
+        } else if (key === "page") {
+          const p = parseInt(value, 10);
+          queryObj.page = isNaN(p) || String(p) !== value ? value : p;
+        } else if (key === "pageSize") {
+          const ps = parseInt(value, 10);
+          queryObj.pageSize = isNaN(ps) || String(ps) !== value ? value : ps;
+        } else {
+          // Pass unknown/forged query parameters (e.g. ownerId, tenantId) directly
+          // so SearchQuery.fromRaw triggers strict unknown key validation
+          queryObj[key] = value;
+        }
+      }
+
+      if (queryObj.query === undefined) {
+        throw new SearchDomainError("INVALID_QUERY", "Search query is required.");
+      }
+
+      const searchQuery = SearchQuery.fromRaw(queryObj);
+
+      const scope = new AuthorizedSearchScope({
+        tenantId: ownerId,
+        ownerId: ownerId,
+      });
+
+      const resultSet = await unifiedSearchEngine.search(searchQuery, scope);
+
+      sendJson(200, {
+        success: true,
+        ...resultSet.toJSON(),
+        count: resultSet.count,
+        isEmpty: resultSet.isEmpty,
+      });
+    } catch (err) {
+      handleSearchApiError(err);
+    }
     return;
   }
 
@@ -2151,4 +2275,9 @@ export {
   brainEngine,
   brainEntitlementGateway,
   brainContextOrchestrator,
+  unifiedSearchEngine,
+  clientSearchEngine,
+  jobSearchEngine,
+  matchSearchEngine,
+  timelineSearchEngine,
 };

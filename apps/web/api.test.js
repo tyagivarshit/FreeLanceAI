@@ -60,6 +60,10 @@ const originalBrainClaimExecution = brainAnalysisRepo.claimExecution;
 const originalBrainSaveCompleted = brainAnalysisRepo.saveCompleted;
 const originalBrainSaveFailed = brainAnalysisRepo.saveFailed;
 const originalBrainAnalyze = brainEngine.analyze;
+const originalClientSearch = clientRepo.searchClients;
+const originalJobsSearch = jobsRepo.searchJobs;
+const originalMatchSearch = matchRepo.searchMatches;
+const originalTimelineSearch = timelineRepo.searchTimeline;
 
 // Test variables to control mocks dynamically
 let currentUserId = "user-123";
@@ -78,6 +82,16 @@ let savedClients = [];
 let updatedClients = [];
 let mockBrainAnalyses = [];
 let brainExecutionCalls = 0;
+let mockSearchClients = [];
+let mockSearchJobs = [];
+let mockSearchMatches = [];
+let mockSearchTimelines = [];
+let searchCalls = {
+  client: 0,
+  job: 0,
+  match: 0,
+  timeline: 0,
+};
 
 // Helper to start/stop the test server on an ephemeral port
 let serverPort = 0;
@@ -120,6 +134,10 @@ test.after(() => {
       brainAnalysisRepo.saveCompleted = originalBrainSaveCompleted;
       brainAnalysisRepo.saveFailed = originalBrainSaveFailed;
       brainEngine.analyze = originalBrainAnalyze;
+      clientRepo.searchClients = originalClientSearch;
+      jobsRepo.searchJobs = originalJobsSearch;
+      matchRepo.searchMatches = originalMatchSearch;
+      timelineRepo.searchTimeline = originalTimelineSearch;
       resolve();
     });
   });
@@ -453,6 +471,66 @@ test.beforeEach(async () => {
       evidence: [evidence],
       generatedAt: new Date("2026-08-18T10:00:00.000Z"),
     });
+  };
+
+  mockSearchClients = [];
+  mockSearchJobs = [];
+  mockSearchMatches = [];
+  mockSearchTimelines = [];
+  searchCalls = {
+    client: 0,
+    job: 0,
+    match: 0,
+    timeline: 0,
+  };
+
+  clientRepo.searchClients = async (queryText, scope, page = 1, pageSize = 20) => {
+    searchCalls.client++;
+    const qLower = queryText ? queryText.toLowerCase() : "";
+    const items = mockSearchClients
+      .filter((c) => c.ownerId === scope.ownerId)
+      .filter((c) => !qLower || c.name.toLowerCase().includes(qLower));
+    const offset = (page - 1) * pageSize;
+    const pageItems = items.slice(offset, offset + pageSize);
+    return { items: pageItems, total: items.length, page, pageSize };
+  };
+
+  jobsRepo.searchJobs = async (queryText, scope, page = 1, pageSize = 20) => {
+    searchCalls.job++;
+    const qLower = queryText ? queryText.toLowerCase() : "";
+    const items = mockSearchJobs
+      .filter((j) => j.tenantId === scope.tenantId)
+      .filter((j) => !qLower || j.title.toLowerCase().includes(qLower));
+    const offset = (page - 1) * pageSize;
+    const pageItems = items.slice(offset, offset + pageSize);
+    return { items: pageItems, total: items.length, page, pageSize };
+  };
+
+  matchRepo.searchMatches = async (queryText, scope, page = 1, pageSize = 20) => {
+    searchCalls.match++;
+    const qLower = queryText ? queryText.toLowerCase() : "";
+    const items = mockSearchMatches
+      .filter((m) => m.tenantId === scope.tenantId)
+      .filter((m) => !qLower || (m.status && m.status.toLowerCase().includes(qLower)));
+    const offset = (page - 1) * pageSize;
+    const pageItems = items.slice(offset, offset + pageSize);
+    return { items: pageItems, total: items.length, page, pageSize };
+  };
+
+  timelineRepo.searchTimeline = async (queryText, scope, page = 1, pageSize = 20) => {
+    searchCalls.timeline++;
+    const qLower = queryText ? queryText.toLowerCase() : "";
+    const items = mockSearchTimelines
+      .filter((t) => t.ownerId === scope.ownerId)
+      .filter(
+        (t) =>
+          !qLower ||
+          t.category.toLowerCase().includes(qLower) ||
+          (t.metadataSummary && t.metadataSummary.toLowerCase().includes(qLower)),
+      );
+    const offset = (page - 1) * pageSize;
+    const pageItems = items.slice(offset, offset + pageSize);
+    return { items: pageItems, total: items.length, page, pageSize };
   };
 });
 
@@ -1686,4 +1764,508 @@ test("16. no secret leakage: environment variables or Stripe keys are never retu
   assert.ok(!resStr.includes("stripe_price"));
   assert.ok(!resStr.includes("mock_secret_key"));
   assert.ok(!resStr.includes("postgres_password_local"));
+});
+
+// ============================================================================
+// Phase 11D-8: Unified Search API Tests (GET /api/search)
+// ============================================================================
+
+test("Search API 1. unauthenticated request -> 401", async () => {
+  const res = await makeRequest("/api/search?q=test", "GET");
+  assert.strictEqual(res.statusCode, 401);
+  assert.strictEqual(res.body.success, false);
+  assert.strictEqual(res.body.error, "Unauthorized");
+});
+
+test("Search API 2. authenticated empty search -> correct validation behavior", async () => {
+  const cookie = getSessionCookie("user-123", "user@example.com");
+  const res = await makeRequest("/api/search?q=", "GET", { Cookie: cookie });
+  assert.strictEqual(res.statusCode, 400);
+  assert.strictEqual(res.body.success, false);
+  assert.strictEqual(res.body.code, "INVALID_QUERY");
+});
+
+test("Search API 3. valid single-type CLIENT search", async () => {
+  const cookie = getSessionCookie("user-123", "user@example.com");
+  mockSearchClients = [
+    {
+      id: "client-1",
+      name: "Acme Corp",
+      status: "Active",
+      email: "contact@acme.com",
+      ownerId: "user-123",
+      createdAt: new Date(),
+    },
+  ];
+
+  const res = await makeRequest("/api/search?q=Acme&resultTypes=CLIENT", "GET", { Cookie: cookie });
+  assert.strictEqual(res.statusCode, 200);
+  assert.strictEqual(res.body.success, true);
+  assert.strictEqual(res.body.results.length, 1);
+  assert.strictEqual(res.body.results[0].resultType, "CLIENT");
+  assert.strictEqual(res.body.results[0].entityId, "client-1");
+  assert.strictEqual(res.body.results[0].display.title, "Acme Corp");
+});
+
+test("Search API 4. valid single-type JOB search", async () => {
+  const cookie = getSessionCookie("user-123", "user@example.com");
+  mockSearchJobs = [
+    {
+      id: "job-1",
+      title: "Senior React Architect",
+      source: "UPWORK",
+      status: "IMPORTED",
+      tenantId: "user-123",
+      createdAt: new Date(),
+    },
+  ];
+
+  const res = await makeRequest("/api/search?q=React&resultTypes=JOB", "GET", { Cookie: cookie });
+  assert.strictEqual(res.statusCode, 200);
+  assert.strictEqual(res.body.success, true);
+  assert.strictEqual(res.body.results.length, 1);
+  assert.strictEqual(res.body.results[0].resultType, "JOB");
+  assert.strictEqual(res.body.results[0].entityId, "job-1");
+  assert.strictEqual(res.body.results[0].display.title, "Senior React Architect");
+});
+
+test("Search API 5. valid single-type MATCH search", async () => {
+  const cookie = getSessionCookie("user-123", "user@example.com");
+  mockSearchMatches = [
+    {
+      id: "match-1",
+      jobId: "job-1",
+      freelancerId: "user-123",
+      status: "EVALUATED",
+      matchingVersion: "v1",
+      semanticSimilarity: 0.95,
+      tenantId: "user-123",
+      createdAt: new Date(),
+    },
+  ];
+
+  const res = await makeRequest("/api/search?q=EVALUATED&resultTypes=MATCH", "GET", {
+    Cookie: cookie,
+  });
+  assert.strictEqual(res.statusCode, 200);
+  assert.strictEqual(res.body.success, true);
+  assert.strictEqual(res.body.results.length, 1);
+  assert.strictEqual(res.body.results[0].resultType, "MATCH");
+  assert.strictEqual(res.body.results[0].entityId, "match-1");
+});
+
+test("Search API 6. valid single-type TIMELINE search", async () => {
+  const cookie = getSessionCookie("user-123", "user@example.com");
+  mockSearchTimelines = [
+    {
+      id: "timeline-1",
+      timelineId: "tl-1",
+      clientId: "c-1",
+      category: "Milestone",
+      timestamp: new Date(),
+      actorRef: "system",
+      visibility: "Public",
+      ownerId: "user-123",
+      createdAt: new Date(),
+    },
+  ];
+
+  const res = await makeRequest("/api/search?q=Milestone&resultTypes=TIMELINE", "GET", {
+    Cookie: cookie,
+  });
+  assert.strictEqual(res.statusCode, 200);
+  assert.strictEqual(res.body.success, true);
+  assert.strictEqual(res.body.results.length, 1);
+  assert.strictEqual(res.body.results[0].resultType, "TIMELINE");
+  assert.strictEqual(res.body.results[0].entityId, "timeline-1");
+});
+
+test("Search API 7. unrestricted multi-type search", async () => {
+  const cookie = getSessionCookie("user-123", "user@example.com");
+  mockSearchClients = [
+    {
+      id: "client-1",
+      name: "Alpha Client",
+      status: "Active",
+      ownerId: "user-123",
+      createdAt: new Date(),
+    },
+  ];
+  mockSearchJobs = [
+    {
+      id: "job-1",
+      title: "Alpha Job",
+      source: "UPWORK",
+      status: "IMPORTED",
+      tenantId: "user-123",
+      createdAt: new Date(),
+    },
+  ];
+
+  const res = await makeRequest("/api/search?q=Alpha", "GET", { Cookie: cookie });
+  assert.strictEqual(res.statusCode, 200);
+  assert.strictEqual(res.body.success, true);
+  assert.strictEqual(res.body.results.length, 2);
+  assert.strictEqual(res.body.total, 2);
+  const types = res.body.results.map((r) => r.resultType);
+  assert.ok(types.includes("CLIENT"));
+  assert.ok(types.includes("JOB"));
+});
+
+test("Search API 8. resultTypes subset filtering", async () => {
+  const cookie = getSessionCookie("user-123", "user@example.com");
+  mockSearchClients = [
+    {
+      id: "client-1",
+      name: "Beta Client",
+      status: "Active",
+      ownerId: "user-123",
+      createdAt: new Date(),
+    },
+  ];
+  mockSearchJobs = [
+    {
+      id: "job-1",
+      title: "Beta Job",
+      source: "UPWORK",
+      status: "IMPORTED",
+      tenantId: "user-123",
+      createdAt: new Date(),
+    },
+  ];
+  mockSearchMatches = [
+    {
+      id: "match-1",
+      jobId: "job-1",
+      freelancerId: "user-123",
+      status: "Beta Match",
+      matchingVersion: "v1",
+      tenantId: "user-123",
+      createdAt: new Date(),
+    },
+  ];
+
+  const res = await makeRequest("/api/search?q=Beta&resultTypes=CLIENT,JOB", "GET", {
+    Cookie: cookie,
+  });
+  assert.strictEqual(res.statusCode, 200);
+  assert.strictEqual(res.body.success, true);
+  assert.strictEqual(res.body.results.length, 2);
+  const types = res.body.results.map((r) => r.resultType);
+  assert.ok(types.includes("CLIENT"));
+  assert.ok(types.includes("JOB"));
+  assert.ok(!types.includes("MATCH"));
+});
+
+test("Search API 9. OPPORTUNITY rejected with 400", async () => {
+  const cookie = getSessionCookie("user-123", "user@example.com");
+  const res = await makeRequest("/api/search?q=test&resultTypes=OPPORTUNITY", "GET", {
+    Cookie: cookie,
+  });
+  assert.strictEqual(res.statusCode, 400);
+  assert.strictEqual(res.body.success, false);
+  assert.strictEqual(res.body.code, "INVALID_SEARCH_REQUEST");
+});
+
+test("Search API 10. invalid page -> 400", async () => {
+  const cookie = getSessionCookie("user-123", "user@example.com");
+  const res1 = await makeRequest("/api/search?q=test&page=0", "GET", { Cookie: cookie });
+  assert.strictEqual(res1.statusCode, 400);
+  assert.strictEqual(res1.body.code, "INVALID_PAGINATION");
+
+  const res2 = await makeRequest("/api/search?q=test&page=-5", "GET", { Cookie: cookie });
+  assert.strictEqual(res2.statusCode, 400);
+  assert.strictEqual(res2.body.code, "INVALID_PAGINATION");
+
+  const res3 = await makeRequest("/api/search?q=test&page=abc", "GET", { Cookie: cookie });
+  assert.strictEqual(res3.statusCode, 400);
+  assert.strictEqual(res3.body.code, "INVALID_PAGINATION");
+});
+
+test("Search API 11. invalid pageSize -> 400", async () => {
+  const cookie = getSessionCookie("user-123", "user@example.com");
+  const res1 = await makeRequest("/api/search?q=test&pageSize=0", "GET", { Cookie: cookie });
+  assert.strictEqual(res1.statusCode, 400);
+  assert.strictEqual(res1.body.code, "INVALID_PAGINATION");
+
+  const res2 = await makeRequest("/api/search?q=test&pageSize=-10", "GET", { Cookie: cookie });
+  assert.strictEqual(res2.statusCode, 400);
+  assert.strictEqual(res2.body.code, "INVALID_PAGINATION");
+});
+
+test("Search API 12. pageSize > 100 -> 400", async () => {
+  const cookie = getSessionCookie("user-123", "user@example.com");
+  const res = await makeRequest("/api/search?q=test&pageSize=101", "GET", { Cookie: cookie });
+  assert.strictEqual(res.statusCode, 400);
+  assert.strictEqual(res.body.success, false);
+  assert.strictEqual(res.body.code, "INVALID_PAGINATION");
+});
+
+test("Search API 13. missing/blank query -> 400", async () => {
+  const cookie = getSessionCookie("user-123", "user@example.com");
+  const res1 = await makeRequest("/api/search", "GET", { Cookie: cookie });
+  assert.strictEqual(res1.statusCode, 400);
+  assert.strictEqual(res1.body.code, "INVALID_QUERY");
+
+  const res2 = await makeRequest("/api/search?q=%20%20%20", "GET", { Cookie: cookie });
+  assert.strictEqual(res2.statusCode, 400);
+  assert.strictEqual(res2.body.code, "INVALID_QUERY");
+});
+
+test("Search API 14. forged ownerId rejected", async () => {
+  const cookie = getSessionCookie("user-123", "user@example.com");
+  const res = await makeRequest("/api/search?q=test&ownerId=attacker-999", "GET", {
+    Cookie: cookie,
+  });
+  assert.strictEqual(res.statusCode, 400);
+  assert.strictEqual(res.body.success, false);
+  assert.strictEqual(res.body.code, "INVALID_SEARCH_REQUEST");
+});
+
+test("Search API 15. forged tenantId rejected", async () => {
+  const cookie = getSessionCookie("user-123", "user@example.com");
+  const res = await makeRequest("/api/search?q=test&tenantId=attacker-tenant", "GET", {
+    Cookie: cookie,
+  });
+  assert.strictEqual(res.statusCode, 400);
+  assert.strictEqual(res.body.success, false);
+  assert.strictEqual(res.body.code, "INVALID_SEARCH_REQUEST");
+});
+
+test("Search API 16. authenticated owner/tenant scope passed to UnifiedSearchEngine", async () => {
+  currentUserId = "user-specific-owner";
+  currentUserEmail = "specific@example.com";
+  const cookie = getSessionCookie("user-specific-owner", "specific@example.com");
+  let capturedScope = null;
+  clientRepo.searchClients = async (_query, scope) => {
+    capturedScope = scope;
+    return { items: [], total: 0, page: 1, pageSize: 20 };
+  };
+
+  const res = await makeRequest("/api/search?q=test&resultTypes=CLIENT", "GET", { Cookie: cookie });
+  assert.strictEqual(res.statusCode, 200);
+  assert.ok(capturedScope !== null);
+  assert.strictEqual(capturedScope.ownerId, "user-specific-owner");
+  assert.strictEqual(capturedScope.tenantId, "user-specific-owner");
+});
+
+test("Search API 17. cross-owner data cannot appear", async () => {
+  currentUserId = "user-A";
+  currentUserEmail = "userA@example.com";
+  const cookieA = getSessionCookie("user-A", "userA@example.com");
+  mockSearchClients = [
+    {
+      id: "client-A",
+      name: "Secret Client A",
+      status: "Active",
+      ownerId: "user-A",
+      createdAt: new Date(),
+    },
+    {
+      id: "client-B",
+      name: "Secret Client B",
+      status: "Active",
+      ownerId: "user-B",
+      createdAt: new Date(),
+    },
+  ];
+
+  const resA = await makeRequest("/api/search?q=Secret&resultTypes=CLIENT", "GET", {
+    Cookie: cookieA,
+  });
+  assert.strictEqual(resA.statusCode, 200);
+  assert.strictEqual(resA.body.results.length, 1);
+  assert.strictEqual(resA.body.results[0].entityId, "client-A");
+});
+
+test("Search API 18. cross-tenant data cannot appear", async () => {
+  currentUserId = "user-A";
+  currentUserEmail = "userA@example.com";
+  const cookieA = getSessionCookie("user-A", "userA@example.com");
+  mockSearchJobs = [
+    {
+      id: "job-A",
+      title: "Target Job A",
+      source: "UPWORK",
+      status: "IMPORTED",
+      tenantId: "user-A",
+      createdAt: new Date(),
+    },
+    {
+      id: "job-B",
+      title: "Target Job B",
+      source: "UPWORK",
+      status: "IMPORTED",
+      tenantId: "user-B",
+      createdAt: new Date(),
+    },
+  ];
+
+  const resA = await makeRequest("/api/search?q=Target&resultTypes=JOB", "GET", {
+    Cookie: cookieA,
+  });
+  assert.strictEqual(resA.statusCode, 200);
+  assert.strictEqual(resA.body.results.length, 1);
+  assert.strictEqual(resA.body.results[0].entityId, "job-A");
+});
+
+test("Search API 19. pagination metadata returned correctly", async () => {
+  const cookie = getSessionCookie("user-123", "user@example.com");
+  mockSearchClients = Array.from({ length: 45 }, (_, i) => ({
+    id: `client-${i + 1}`,
+    name: `Client ${i + 1}`,
+    status: "Active",
+    ownerId: "user-123",
+    createdAt: new Date(),
+  }));
+
+  const res = await makeRequest(
+    "/api/search?q=Client&resultTypes=CLIENT&page=2&pageSize=10",
+    "GET",
+    { Cookie: cookie },
+  );
+  assert.strictEqual(res.statusCode, 200);
+  assert.strictEqual(res.body.page, 2);
+  assert.strictEqual(res.body.pageSize, 10);
+  assert.strictEqual(res.body.total, 45);
+  assert.strictEqual(res.body.totalPages, 5);
+  assert.strictEqual(res.body.count, 10);
+  assert.strictEqual(res.body.isEmpty, false);
+});
+
+test("Search API 20. results.length never exceeds pageSize", async () => {
+  const cookie = getSessionCookie("user-123", "user@example.com");
+  mockSearchClients = Array.from({ length: 25 }, (_, i) => ({
+    id: `client-${i + 1}`,
+    name: `Bulk Item ${i + 1}`,
+    status: "Active",
+    ownerId: "user-123",
+    createdAt: new Date(),
+  }));
+
+  const res = await makeRequest("/api/search?q=Bulk&pageSize=5", "GET", { Cookie: cookie });
+  assert.strictEqual(res.statusCode, 200);
+  assert.strictEqual(res.body.results.length, 5);
+  assert.ok(res.body.results.length <= 5);
+});
+
+test("Search API 21. provider/search failure mapped safely", async () => {
+  const cookie = getSessionCookie("user-123", "user@example.com");
+  clientRepo.searchClients = async () => {
+    throw new Error("Simulated database timeout failure");
+  };
+
+  const res = await makeRequest("/api/search?q=test&resultTypes=CLIENT", "GET", { Cookie: cookie });
+  assert.strictEqual(res.statusCode, 500);
+  assert.strictEqual(res.body.success, false);
+  assert.strictEqual(res.body.code, "SEARCH_PROVIDER_ERROR");
+  assert.ok(typeof res.body.error === "string");
+});
+
+test("Search API 22. SQL/stack/path/credential leakage absent", async () => {
+  const cookie = getSessionCookie("user-123", "user@example.com");
+  clientRepo.searchClients = async () => {
+    throw new Error(
+      "FATAL: connection to server at '127.0.0.1', port 5432 failed: password authentication failed for user 'postgres_secret_user'",
+    );
+  };
+
+  const res = await makeRequest("/api/search?q=test&resultTypes=CLIENT", "GET", { Cookie: cookie });
+  assert.strictEqual(res.statusCode, 500);
+  const jsonStr = JSON.stringify(res.body);
+  assert.ok(!jsonStr.includes("postgres_secret_user"));
+  assert.ok(!jsonStr.includes("5432"));
+  assert.ok(!jsonStr.includes("FATAL"));
+  assert.ok(!jsonStr.includes("stack"));
+});
+
+test("Search API 23. success response uses canonical safe DTO", async () => {
+  const cookie = getSessionCookie("user-123", "user@example.com");
+  mockSearchClients = [
+    {
+      id: "client-1",
+      name: "Safe Client",
+      status: "Active",
+      email: "safe@client.com",
+      website: "https://safe.com",
+      ownerId: "user-123",
+      createdAt: new Date(),
+    },
+  ];
+
+  const res = await makeRequest("/api/search?q=Safe&resultTypes=CLIENT", "GET", { Cookie: cookie });
+  assert.strictEqual(res.statusCode, 200);
+  assert.deepStrictEqual(Object.keys(res.body).sort(), [
+    "count",
+    "isEmpty",
+    "page",
+    "pageSize",
+    "results",
+    "success",
+    "total",
+    "totalPages",
+  ]);
+
+  const result = res.body.results[0];
+  assert.deepStrictEqual(Object.keys(result).sort(), [
+    "display",
+    "entityId",
+    "relevance",
+    "resultType",
+  ]);
+  assert.strictEqual(result.resultType, "CLIENT");
+  assert.strictEqual(result.entityId, "client-1");
+  assert.ok(!JSON.stringify(result).includes("user-123")); // scope not exposed in result
+});
+
+test("Search API 24. repeated identical requests return deterministic results", async () => {
+  const cookie = getSessionCookie("user-123", "user@example.com");
+  mockSearchClients = [
+    {
+      id: "client-1",
+      name: "Repeated Test Item",
+      status: "Active",
+      ownerId: "user-123",
+      createdAt: new Date(),
+    },
+    {
+      id: "client-2",
+      name: "Repeated Test Item",
+      status: "Active",
+      ownerId: "user-123",
+      createdAt: new Date(),
+    },
+  ];
+
+  const res1 = await makeRequest("/api/search?q=Repeated&resultTypes=CLIENT", "GET", {
+    Cookie: cookie,
+  });
+  const res2 = await makeRequest("/api/search?q=Repeated&resultTypes=CLIENT", "GET", {
+    Cookie: cookie,
+  });
+  assert.strictEqual(res1.statusCode, 200);
+  assert.strictEqual(res2.statusCode, 200);
+  assert.deepStrictEqual(res1.body.results, res2.body.results);
+});
+
+test("Search API 25. excluded result types do not invoke excluded providers", async () => {
+  const cookie = getSessionCookie("user-123", "user@example.com");
+  mockSearchClients = [
+    {
+      id: "client-1",
+      name: "Selective Item",
+      status: "Active",
+      ownerId: "user-123",
+      createdAt: new Date(),
+    },
+  ];
+
+  const res = await makeRequest("/api/search?q=Selective&resultTypes=CLIENT", "GET", {
+    Cookie: cookie,
+  });
+  assert.strictEqual(res.statusCode, 200);
+  assert.strictEqual(searchCalls.client, 1);
+  assert.strictEqual(searchCalls.job, 0);
+  assert.strictEqual(searchCalls.match, 0);
+  assert.strictEqual(searchCalls.timeline, 0);
 });
