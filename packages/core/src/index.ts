@@ -1206,3 +1206,38 @@ export type {
   BrainDecision,
   DecisionDerivationOptions,
 } from "./brain.js";
+
+export {
+  DEFAULT_SEARCH_PAGE,
+  DEFAULT_SEARCH_PAGE_SIZE,
+  MIN_SEARCH_PAGE_SIZE,
+  MAX_SEARCH_PAGE_SIZE,
+  MAX_SEARCH_QUERY_LENGTH,
+  SUPPORTED_SEARCH_RESULT_TYPES,
+  SearchDomainError,
+  SearchFailure,
+  defaultStatusCodeForSearchFailure,
+  isRetryableSearchFailure,
+  requireSearchReference,
+  assertSearchJsonSafe,
+  isSearchResultType,
+  parseSearchResultType,
+  AuthorizedSearchScope,
+  SearchQuery,
+  SearchResult,
+  SearchResultSet,
+} from "./search.js";
+
+export type {
+  SearchResultType,
+  SearchFailureCode,
+  SearchFailureProperties,
+  AuthorizedSearchScopeProperties,
+  SearchQueryProperties,
+  SearchResultDisplay,
+  SearchResultRelevance,
+  SearchResultProperties,
+  SearchResultSetProperties,
+  SearchProvider,
+  SearchEngine,
+} from "./search.js";
