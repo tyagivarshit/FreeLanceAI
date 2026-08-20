@@ -92,4 +92,6 @@ export { DEFAULT_SEARCH_PAGE, DEFAULT_SEARCH_PAGE_SIZE, MIN_SEARCH_PAGE_SIZE, MA
 export type { SearchResultType, SearchFailureCode, SearchFailureProperties, AuthorizedSearchScopeProperties, SearchQueryProperties, SearchResultDisplay, SearchResultRelevance, SearchResultProperties, SearchResultSetProperties, SearchProvider, SearchEngine, } from "./search.js";
 export { mapClientToSearchResult, ClientSearchEngine, InMemoryClientSearchRepository, } from "./client-search.js";
 export type { ClientSearchResultItem, ClientSearchResultList, ClientSearchRepository, InMemoryClientRecord, } from "./client-search.js";
+export { mapJobToSearchResult, JobSearchEngine, InMemoryJobSearchRepository, } from "./job-search.js";
+export type { JobSearchResultItem, JobSearchResultList, JobSearchRepository, InMemoryJobRecord, } from "./job-search.js";
 //# sourceMappingURL=index.d.ts.map

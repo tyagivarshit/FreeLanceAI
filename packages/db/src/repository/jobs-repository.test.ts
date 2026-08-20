@@ -11,6 +11,8 @@ import {
   JobImportProvenance,
   JobRawPayload,
   JobImportFingerprint,
+  AuthorizedSearchScope,
+  SearchQuery,
 } from "@freelanceos/core";
 
 const originalSelect = db.select;
@@ -161,5 +163,82 @@ describe("PostgresJobsRepository Unit Tests", () => {
     });
 
     assert.ok(queryConditions);
+  });
+
+  test("4. searchJobs performs scoped query and returns bounded result list", async () => {
+    const repo = new PostgresJobsRepository();
+    selectMockResult = [
+      {
+        id: "9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d",
+        tenantId: "8b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d",
+        ownerId: "8b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d",
+        source: "upwork",
+        externalJobId: "upwork_555",
+        sourceUrl: "https://upwork.com/jobs/555",
+        importedAt: new Date("2026-08-14T00:00:00.000Z"),
+        rawPayload: {
+          title: "Full-Stack Engineer",
+          description: "Build robust distributed backend systems.",
+          skills: ["typescript", "nodejs"],
+          category: "Software Development",
+        },
+        fingerprint: "fingerprint_123",
+        status: "IMPORTED",
+        snapshots: [],
+        createdAt: new Date("2026-08-14T00:00:00.000Z"),
+        updatedAt: new Date("2026-08-14T00:00:00.000Z"),
+      },
+    ];
+
+    const scope = new AuthorizedSearchScope({
+      tenantId: "8b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d",
+      ownerId: "8b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d",
+    });
+
+    const res = await repo.searchJobs("Full-Stack", scope, 1, 10);
+    assert.strictEqual(res.items.length, 1);
+    assert.strictEqual(res.items[0]?.title, "Full-Stack Engineer");
+    assert.strictEqual(res.items[0]?.source, "upwork");
+    assert.strictEqual(res.page, 1);
+    assert.strictEqual(res.pageSize, 10);
+  });
+
+  test("5. search provider executes query and maps to canonical SearchResultSet", async () => {
+    const repo = new PostgresJobsRepository();
+    selectMockResult = [
+      {
+        id: "9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d",
+        tenantId: "8b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d",
+        ownerId: "8b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d",
+        source: "upwork",
+        externalJobId: "upwork_555",
+        sourceUrl: "https://upwork.com/jobs/555",
+        importedAt: new Date("2026-08-14T00:00:00.000Z"),
+        rawPayload: {
+          title: "Full-Stack Engineer",
+          description: "Build robust distributed backend systems.",
+          skills: ["typescript", "nodejs"],
+          category: "Software Development",
+        },
+        fingerprint: "fingerprint_123",
+        status: "IMPORTED",
+        snapshots: [],
+        createdAt: new Date("2026-08-14T00:00:00.000Z"),
+        updatedAt: new Date("2026-08-14T00:00:00.000Z"),
+      },
+    ];
+
+    const scope = new AuthorizedSearchScope({
+      tenantId: "8b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d",
+      ownerId: "8b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d",
+    });
+    const query = new SearchQuery({ query: "Full-Stack" });
+
+    const resultSet = await repo.search(query, scope);
+    assert.strictEqual(resultSet.count, 1);
+    assert.strictEqual(resultSet.results[0]?.resultType, "JOB");
+    assert.strictEqual(resultSet.results[0]?.entityId, "9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d");
+    assert.strictEqual(resultSet.results[0]?.display.title, "Full-Stack Engineer");
+    assert.strictEqual(resultSet.results[0]?.display.subtitle, "Upwork • IMPORTED");
   });
 });

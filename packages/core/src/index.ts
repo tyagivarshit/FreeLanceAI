@@ -1254,3 +1254,16 @@ export type {
   ClientSearchRepository,
   InMemoryClientRecord,
 } from "./client-search.js";
+
+export {
+  mapJobToSearchResult,
+  JobSearchEngine,
+  InMemoryJobSearchRepository,
+} from "./job-search.js";
+
+export type {
+  JobSearchResultItem,
+  JobSearchResultList,
+  JobSearchRepository,
+  InMemoryJobRecord,
+} from "./job-search.js";

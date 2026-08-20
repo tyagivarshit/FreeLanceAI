@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { eq, and, desc, sql } from "drizzle-orm";
+import { eq, and, or, desc, sql } from "drizzle-orm";
 import { db } from "../client.js";
 import { jobImports } from "../schema/jobs.js";
 import {
@@ -13,10 +13,25 @@ import {
   JobImportFingerprint,
   JobImportSnapshot,
   JobImportLifecycle,
+  AuthorizedSearchScope,
+  SearchQuery,
+  SearchResultSet,
+  JobSearchEngine,
+  DEFAULT_SEARCH_PAGE,
+  DEFAULT_SEARCH_PAGE_SIZE,
+  MAX_SEARCH_PAGE_SIZE,
+  type JobSearchRepository,
+  type JobSearchResultItem,
+  type JobSearchResultList,
+  type SearchProvider,
 } from "@freelanceos/core";
 
 export class PostgresJobsRepository
-  implements JobImportAggregateStore, JobImportPersistenceContract
+  implements
+    JobImportAggregateStore,
+    JobImportPersistenceContract,
+    JobSearchRepository,
+    SearchProvider
 {
   public async save(jobImport: JobImport): Promise<void> {
     const values = {
@@ -139,6 +154,91 @@ export class PostgresJobsRepository
 
     const items = rows.map((row) => this.mapToAggregate(row));
     return { items, total };
+  }
+
+  public async searchJobs(
+    queryText: string,
+    scope: AuthorizedSearchScope,
+    page = DEFAULT_SEARCH_PAGE,
+    pageSize = DEFAULT_SEARCH_PAGE_SIZE,
+  ): Promise<JobSearchResultList> {
+    const boundedPage = Math.max(1, page);
+    const boundedPageSize = Math.min(MAX_SEARCH_PAGE_SIZE, Math.max(1, pageSize));
+    const offset = (boundedPage - 1) * boundedPageSize;
+
+    const normalizedQuery = queryText.trim().toLowerCase();
+    const searchPattern = `%${normalizedQuery}%`;
+
+    const scopeCondition = and(
+      eq(jobImports.ownerId, scope.ownerId),
+      eq(jobImports.tenantId, scope.tenantId),
+    );
+
+    const searchCondition = or(
+      sql`lower(${jobImports.rawPayload}->>'title') LIKE ${searchPattern}`,
+      sql`lower(${jobImports.rawPayload}->>'description') LIKE ${searchPattern}`,
+      sql`lower(${jobImports.source}) LIKE ${searchPattern}`,
+      sql`lower(${jobImports.externalJobId}) LIKE ${searchPattern}`,
+      sql`lower(cast(${jobImports.rawPayload}->'skills' as text)) LIKE ${searchPattern}`,
+      sql`lower(${jobImports.rawPayload}->>'category') LIKE ${searchPattern}`,
+      sql`lower(${jobImports.status}) LIKE ${searchPattern}`,
+    );
+
+    const whereClause = and(scopeCondition, searchCondition);
+
+    const countResult = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(jobImports)
+      .where(whereClause);
+
+    const total = Number(countResult[0]?.count || 0);
+
+    const rows = await db
+      .select()
+      .from(jobImports)
+      .where(whereClause)
+      .orderBy(desc(jobImports.createdAt), desc(jobImports.id))
+      .limit(boundedPageSize)
+      .offset(offset);
+
+    const items: JobSearchResultItem[] = rows.map((row) => {
+      const raw = (row.rawPayload as Record<string, unknown>) || {};
+      const title =
+        typeof raw.title === "string" && raw.title.trim() !== ""
+          ? raw.title.trim()
+          : `${row.source.toUpperCase()} Job (${row.externalJobId})`;
+      const description = typeof raw.description === "string" ? raw.description : undefined;
+      const skills = Array.isArray(raw.skills)
+        ? (raw.skills as string[]).filter((s) => typeof s === "string")
+        : undefined;
+      const category = typeof raw.category === "string" ? raw.category : undefined;
+
+      return {
+        id: row.id,
+        title,
+        source: row.source,
+        status: row.status,
+        description,
+        skills,
+        category,
+        externalJobId: row.externalJobId,
+        sourceUrl: row.sourceUrl || undefined,
+        clientId: row.clientId || undefined,
+        createdAt: row.createdAt,
+      };
+    });
+
+    return {
+      items,
+      total,
+      page: boundedPage,
+      pageSize: boundedPageSize,
+    };
+  }
+
+  public async search(query: SearchQuery, scope: AuthorizedSearchScope): Promise<SearchResultSet> {
+    const engine = new JobSearchEngine(this);
+    return engine.search(query, scope);
   }
 
   private mapToAggregate(row: typeof jobImports.$inferSelect): JobImport {
