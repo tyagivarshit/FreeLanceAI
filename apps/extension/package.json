@@ -14,7 +14,7 @@
   },
   "devDependencies": {
     "@freelanceos/ts-config": "*",
-    "@types/chrome": "0.0.268",
-    "typescript": "5.5.4"
+    "@types/chrome": "0.2.6",
+    "typescript": "5.9.3"
   }
 }
