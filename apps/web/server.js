@@ -22,6 +22,9 @@ import {
   InMemoryStripeSubscriptionRepository,
   InMemoryWebhookEventStore,
   StripePriceRegistry,
+  StripeBillingProviderImpl,
+  StripeBillingError,
+  TrialService,
   EntitlementResolver,
   PlanCatalog,
   Plan,
@@ -93,6 +96,70 @@ const priceRegistry = new StripePriceRegistry([
     version: 1,
     stripePriceId: "stripe_price_pro_india_v1",
   },
+  {
+    planId: "PRO",
+    region: "NORTH_AMERICA",
+    currency: "USD",
+    interval: "MONTHLY",
+    version: 1,
+    stripePriceId: "stripe_price_pro_na_v1",
+  },
+  {
+    planId: "PRO",
+    region: "UK",
+    currency: "GBP",
+    interval: "MONTHLY",
+    version: 1,
+    stripePriceId: "stripe_price_pro_uk_v1",
+  },
+  {
+    planId: "PRO",
+    region: "EUROPE",
+    currency: "EUR",
+    interval: "MONTHLY",
+    version: 1,
+    stripePriceId: "stripe_price_pro_eu_v1",
+  },
+  {
+    planId: "POWER_BIDDER",
+    region: "GLOBAL",
+    currency: "USD",
+    interval: "MONTHLY",
+    version: 1,
+    stripePriceId: "stripe_price_power_bidder_global_v1",
+  },
+  {
+    planId: "POWER_BIDDER",
+    region: "INDIA",
+    currency: "INR",
+    interval: "MONTHLY",
+    version: 1,
+    stripePriceId: "stripe_price_power_bidder_india_v1",
+  },
+  {
+    planId: "POWER_BIDDER",
+    region: "NORTH_AMERICA",
+    currency: "USD",
+    interval: "MONTHLY",
+    version: 1,
+    stripePriceId: "stripe_price_power_bidder_na_v1",
+  },
+  {
+    planId: "POWER_BIDDER",
+    region: "UK",
+    currency: "GBP",
+    interval: "MONTHLY",
+    version: 1,
+    stripePriceId: "stripe_price_power_bidder_uk_v1",
+  },
+  {
+    planId: "POWER_BIDDER",
+    region: "EUROPE",
+    currency: "EUR",
+    interval: "MONTHLY",
+    version: 1,
+    stripePriceId: "stripe_price_power_bidder_eu_v1",
+  },
 ]);
 
 // Instantiate In-Memory Repositories as Singletons for Web Layer
@@ -138,6 +205,15 @@ const entitlementResolver = new EntitlementResolver({
   customerMappingRepo,
   subscriptionRepo,
   usageRepo,
+});
+
+// Instantiate StripeBillingProvider
+const stripeBillingProvider = new StripeBillingProviderImpl({
+  secretKey: runtimeConfig.STRIPE_SECRET_KEY || "mock_secret_key",
+  env: runtimeConfig.NODE_ENV === "production" ? "production" : "development",
+  priceRegistry,
+  customerMappingRepo,
+  planCatalog,
 });
 
 // Instantiate the StripeWebhookProcessor
@@ -939,6 +1015,8 @@ const server = http.createServer(async (req, res) => {
     pathname === "/search" ||
     pathname === "/matching.html" ||
     pathname === "/matching" ||
+    pathname === "/billing.html" ||
+    pathname === "/billing" ||
     clientDetailRouteMatch
   ) {
     const auth = await checkAuthentication();
@@ -959,6 +1037,9 @@ const server = http.createServer(async (req, res) => {
     }
     if (pathname === "/matching") {
       staticPathname = "/matching.html";
+    }
+    if (pathname === "/billing") {
+      staticPathname = "/billing.html";
     }
     if (clientDetailRouteMatch) {
       staticPathname = "/client-detail.html";
@@ -2088,6 +2169,265 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
+  // =====================================================================
+  // Phase 11F: Billing API Endpoints
+  // =====================================================================
+
+  // GET /api/billing/plans
+  if (pathname === "/api/billing/plans" && req.method === "GET") {
+    try {
+      const plans = [
+        planCatalog.getPlan("STARTER"),
+        planCatalog.getPlan("PRO"),
+        planCatalog.getPlan("POWER_BIDDER"),
+      ].filter((p) => Boolean(p && p.lifecycleState === "ACTIVE"));
+
+      const plansDto = plans.map((p) => {
+        const pricesDto = p.prices.map((pr) => {
+          let formatted = "";
+          if (pr.currency === "USD") {
+            formatted = `$${(pr.amountMinor / 100).toFixed(pr.amountMinor % 100 === 0 ? 0 : 2)}`;
+          } else if (pr.currency === "INR") {
+            formatted = `₹${(pr.amountMinor / 100).toFixed(0)}`;
+          } else if (pr.currency === "GBP") {
+            formatted = `£${(pr.amountMinor / 100).toFixed(pr.amountMinor % 100 === 0 ? 0 : 2)}`;
+          } else if (pr.currency === "EUR") {
+            formatted = `€${(pr.amountMinor / 100).toFixed(pr.amountMinor % 100 === 0 ? 0 : 2)}`;
+          } else {
+            formatted = `${pr.currency} ${(pr.amountMinor / 100).toFixed(2)}`;
+          }
+
+          return {
+            region: pr.region,
+            currency: pr.currency,
+            amountMinor: pr.amountMinor,
+            formatted,
+            interval: pr.interval,
+            version: pr.version,
+          };
+        });
+
+        let description = "";
+        if (p.planId === "STARTER") {
+          description = "Essential features for freelancers starting out.";
+        } else if (p.planId === "PRO") {
+          description = "Advanced matching, full explanations, and higher proposal limits.";
+        } else if (p.planId === "POWER_BIDDER") {
+          description = "High-volume bidding across multiple workspaces with priority generation.";
+        }
+
+        return {
+          planId: p.planId,
+          code: p.code,
+          name: p.displayName,
+          description,
+          lifecycleState: p.lifecycleState,
+          features: Array.from(p.features),
+          limits: p.limits,
+          prices: pricesDto,
+          billingInterval: "MONTHLY",
+        };
+      });
+
+      sendJson(200, {
+        success: true,
+        plans: plansDto,
+      });
+    } catch (err) {
+      logger.error({ message: "Failed to fetch billing plans", error: err });
+      sendJson(500, { success: false, error: "Internal Server Error" });
+    }
+    return;
+  }
+
+  // GET /api/billing/subscription
+  if (pathname === "/api/billing/subscription" && req.method === "GET") {
+    const auth = await checkAuthentication();
+    const ownerId = requireAuthenticatedOwner(auth);
+    if (!ownerId) return;
+
+    const tenantId = `tenant_${ownerId}`;
+    const now = new Date();
+
+    try {
+      const effectivePlanResult = await entitlementResolver.resolveEffectivePlan(
+        tenantId,
+        ownerId,
+        now,
+      );
+      const plan = effectivePlanResult.plan;
+      const period = effectivePlanResult.period;
+      const source = effectivePlanResult.source;
+
+      // Construct usage keys
+      const proposalKey = `usage:${tenantId}:AI_PROPOSAL:${period.startedAt.getTime()}:${period.endsAt.getTime()}`;
+      const proposalsUsed = await usageRepo.getUsage(proposalKey);
+
+      const scanKey = `usage:${tenantId}:JOB_SCAN:${period.startedAt.getTime()}:${period.endsAt.getTime()}`;
+      const scansUsed = await usageRepo.getUsage(scanKey);
+
+      let trialDaysRemaining = null;
+      if (source === "TRIAL") {
+        const diffMs = period.endsAt.getTime() - now.getTime();
+        trialDaysRemaining = Math.max(0, Math.ceil(diffMs / (1000 * 60 * 60 * 24)));
+      }
+
+      // Check customer mapping for Stripe customer existence
+      const customerMapping = await customerMappingRepo.findByTenantId(tenantId);
+      let subStatus =
+        source === "SUBSCRIPTION" ? "active" : source === "TRIAL" ? "trialing" : "free";
+
+      const subRecord = await subscriptionRepo.findByTenantId(tenantId);
+      if (subRecord && subRecord.status) {
+        subStatus = subRecord.status;
+      }
+
+      sendJson(200, {
+        success: true,
+        planId: plan.planId,
+        planName: plan.displayName,
+        source,
+        status: subStatus,
+        billingInterval: "MONTHLY",
+        period: {
+          type: period.type,
+          startedAt: period.startedAt.toISOString(),
+          endsAt: period.endsAt.toISOString(),
+        },
+        trialDaysRemaining,
+        limits: {
+          jobScans: plan.limits.jobScans,
+          aiProposals: plan.limits.aiProposals,
+          maxWorkspaces: plan.limits.maxWorkspaces,
+        },
+        usage: {
+          jobScans: scansUsed,
+          aiProposals: proposalsUsed,
+        },
+        hasCustomer: Boolean(customerMapping),
+      });
+    } catch (err) {
+      logger.error({ message: "Failed to fetch billing subscription", error: err });
+      sendJson(500, { success: false, error: "Internal Server Error" });
+    }
+    return;
+  }
+
+  // POST /api/billing/checkout
+  if (pathname === "/api/billing/checkout" && req.method === "POST") {
+    const auth = await checkAuthentication();
+    const ownerId = requireAuthenticatedOwner(auth);
+    if (!ownerId) return;
+
+    const tenantId = `tenant_${ownerId}`;
+
+    try {
+      const body = await readJsonBody();
+      if (!body || typeof body !== "object") {
+        sendJson(400, { success: false, error: "Invalid request payload" });
+        return;
+      }
+
+      const planId = body.planId;
+      if (!planId || !["PRO", "POWER_BIDDER"].includes(planId)) {
+        sendJson(400, {
+          success: false,
+          error:
+            planId === "STARTER"
+              ? "Starter/free plan cannot be processed via paid checkout."
+              : "Invalid planId. Supported checkout plans are PRO and POWER_BIDDER.",
+        });
+        return;
+      }
+
+      const host = req.headers.host || "localhost";
+      const protocol = req.headers["x-forwarded-proto"] || "http";
+      const origin = `${protocol}://${host}`;
+
+      const successUrl = `${origin}/billing.html?checkout=success`;
+      const cancelUrl = `${origin}/billing.html?checkout=cancel`;
+
+      const checkoutResult = await stripeBillingProvider.createCheckoutSession({
+        tenantId,
+        ownerId,
+        planId,
+        version: typeof body.version === "number" ? body.version : 1,
+        countryCode: typeof body.countryCode === "string" ? body.countryCode : undefined,
+        successUrl,
+        cancelUrl,
+      });
+
+      if (!checkoutResult || !checkoutResult.checkoutUrl) {
+        sendJson(500, { success: false, error: "Failed to generate checkout URL." });
+        return;
+      }
+
+      sendJson(200, {
+        success: true,
+        sessionId: checkoutResult.sessionId,
+        checkoutUrl: checkoutResult.checkoutUrl,
+      });
+    } catch (err) {
+      logger.error({ message: "Failed to create checkout session", error: err });
+      const isStripeError = err instanceof StripeBillingError;
+      const isUserError =
+        isStripeError && err.code !== "STRIPE_TIMEOUT" && err.code !== "STRIPE_UNAVAILABLE";
+      const msg = isStripeError ? err.message : "Internal Server Error";
+      sendJson(isUserError ? 400 : 500, { success: false, error: msg });
+    }
+    return;
+  }
+
+  // POST /api/billing/portal
+  if (pathname === "/api/billing/portal" && req.method === "POST") {
+    const auth = await checkAuthentication();
+    const ownerId = requireAuthenticatedOwner(auth);
+    if (!ownerId) return;
+
+    const tenantId = `tenant_${ownerId}`;
+
+    try {
+      const host = req.headers.host || "localhost";
+      const protocol = req.headers["x-forwarded-proto"] || "http";
+      const origin = `${protocol}://${host}`;
+      const returnUrl = `${origin}/billing.html`;
+
+      const portalResult = await stripeBillingProvider.createPortalSession({
+        tenantId,
+        ownerId,
+        returnUrl,
+      });
+
+      if (!portalResult || !portalResult.portalUrl) {
+        sendJson(500, { success: false, error: "Failed to generate portal URL." });
+        return;
+      }
+
+      sendJson(200, {
+        success: true,
+        portalUrl: portalResult.portalUrl,
+      });
+    } catch (err) {
+      logger.error({ message: "Failed to create customer portal session", error: err });
+      const isStripeError = err instanceof StripeBillingError;
+      let statusCode = 500;
+      if (isStripeError && err.code === "CUSTOMER_NOT_FOUND") {
+        statusCode = 404;
+      } else if (
+        isStripeError &&
+        err.code !== "STRIPE_TIMEOUT" &&
+        err.code !== "STRIPE_UNAVAILABLE"
+      ) {
+        statusCode = 400;
+      }
+      const msg = isStripeError
+        ? err.message
+        : "Failed to create customer portal session. Please try again.";
+      sendJson(statusCode, { success: false, error: msg });
+    }
+    return;
+  }
+
   // 1F. GET /api/jobs
   if (pathname === "/api/jobs" && req.method === "GET") {
     const auth = await checkAuthentication();
@@ -2605,4 +2945,9 @@ export {
   jobSearchEngine,
   matchSearchEngine,
   timelineSearchEngine,
+  stripeBillingProvider,
+  planCatalog,
+  customerMappingRepo,
+  priceRegistry,
+  trialPersistence,
 };

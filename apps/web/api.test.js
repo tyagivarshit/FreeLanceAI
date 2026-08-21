@@ -14,6 +14,8 @@ import {
   entitlementResolver,
   brainAnalysisRepo,
   brainEngine,
+  stripeBillingProvider,
+  customerMappingRepo,
 } from "./server.js";
 import {
   JobImport,
@@ -2475,4 +2477,265 @@ test("Matching API 13. PATCH /api/matches/:id rejects invalid status mutation wi
   );
   assert.strictEqual(res.statusCode, 400);
   assert.strictEqual(res.body.success, false);
+});
+
+// =====================================================================
+// Phase 11F: Billing API Test Suite
+// =====================================================================
+
+test("Billing API 1. GET /api/billing/plans is publicly accessible and returns active catalog", async () => {
+  const res = await makeRequest("/api/billing/plans", "GET");
+  assert.strictEqual(res.statusCode, 200);
+  assert.strictEqual(res.body.success, true);
+  assert.ok(Array.isArray(res.body.plans));
+  assert.strictEqual(res.body.plans.length, 3);
+
+  const planIds = res.body.plans.map((p) => p.planId);
+  assert.deepStrictEqual(planIds, ["STARTER", "PRO", "POWER_BIDDER"]);
+});
+
+test("Billing API 2. GET /api/billing/plans returns safe DTO with regional prices without secret leakage", async () => {
+  const res = await makeRequest("/api/billing/plans", "GET");
+  assert.strictEqual(res.statusCode, 200);
+
+  const pro = res.body.plans.find((p) => p.planId === "PRO");
+  assert.ok(pro);
+  assert.strictEqual(pro.name, "Pro Plan");
+  assert.strictEqual(pro.lifecycleState, "ACTIVE");
+  assert.ok(Array.isArray(pro.features));
+  assert.ok(pro.features.includes("ADVANCED_MATCHING"));
+  assert.ok(pro.features.includes("FULL_MATCH_EXPLANATION"));
+
+  // Check prices structure
+  assert.ok(Array.isArray(pro.prices));
+  const usdPrice = pro.prices.find((pr) => pr.currency === "USD");
+  assert.ok(usdPrice);
+  assert.strictEqual(usdPrice.formatted, "$14.99");
+  assert.strictEqual(usdPrice.amountMinor, 1499);
+
+  // Check no Stripe internal IDs or secrets leaked
+  const rawJson = JSON.stringify(res.body);
+  assert.strictEqual(rawJson.includes("stripe_price_"), false);
+  assert.strictEqual(rawJson.includes("sk_test_"), false);
+  assert.strictEqual(rawJson.includes("secret"), false);
+});
+
+test("Billing API 3. GET /api/billing/plans succeeds with authenticated session", async () => {
+  const cookie = getSessionCookie("user-123", "user@example.com");
+  const res = await makeRequest("/api/billing/plans", "GET", { Cookie: cookie });
+  assert.strictEqual(res.statusCode, 200);
+  assert.strictEqual(res.body.success, true);
+  assert.strictEqual(res.body.plans.length, 3);
+});
+
+test("Billing API 4. GET /api/billing/subscription requires authentication (401)", async () => {
+  const res = await makeRequest("/api/billing/subscription", "GET");
+  assert.strictEqual(res.statusCode, 401);
+  assert.strictEqual(res.body.success, false);
+});
+
+test("Billing API 5. GET /api/billing/subscription returns starter subscription & usage for new user", async () => {
+  const cookie = getSessionCookie("user-sub-1", "sub1@example.com");
+  const res = await makeRequest("/api/billing/subscription", "GET", { Cookie: cookie });
+  assert.strictEqual(res.statusCode, 200);
+  assert.strictEqual(res.body.success, true);
+  assert.strictEqual(res.body.planId, "STARTER");
+  assert.strictEqual(res.body.source, "STARTER");
+  assert.strictEqual(res.body.status, "free");
+  assert.strictEqual(res.body.trialDaysRemaining, null);
+  assert.strictEqual(res.body.limits.jobScans.value, 5);
+  assert.strictEqual(res.body.limits.aiProposals.value, 3);
+  assert.strictEqual(typeof res.body.usage.aiProposals, "number");
+  assert.strictEqual(typeof res.body.usage.jobScans, "number");
+});
+
+test("Billing API 6. GET /api/billing/subscription respects tenant/owner isolation and ignores forged query/headers", async () => {
+  const cookie = getSessionCookie("user-tenant-A", "userA@example.com");
+
+  // Attempt to forge tenantId and ownerId in query and headers
+  const res = await makeRequest(
+    "/api/billing/subscription?tenantId=tenant_user-tenant-B&ownerId=user-tenant-B",
+    "GET",
+    {
+      Cookie: cookie,
+      "x-tenant-id": "tenant_user-tenant-B",
+      "x-owner-id": "user-tenant-B",
+    },
+  );
+
+  assert.strictEqual(res.statusCode, 200);
+  assert.strictEqual(res.body.success, true);
+  // Returned data is strictly derived from session identity
+  assert.strictEqual(res.body.planId, "STARTER");
+});
+
+test("Billing API 7. POST /api/billing/checkout requires authentication (401)", async () => {
+  const res = await makeRequest("/api/billing/checkout", "POST", {}, { planId: "PRO" });
+  assert.strictEqual(res.statusCode, 401);
+  assert.strictEqual(res.body.success, false);
+});
+
+test("Billing API 8. POST /api/billing/checkout rejects invalid or missing planId with 400", async () => {
+  const cookie = getSessionCookie("user-123", "user@example.com");
+
+  const res1 = await makeRequest("/api/billing/checkout", "POST", { Cookie: cookie }, {});
+  assert.strictEqual(res1.statusCode, 400);
+  assert.strictEqual(res1.body.success, false);
+
+  const res2 = await makeRequest(
+    "/api/billing/checkout",
+    "POST",
+    { Cookie: cookie },
+    { planId: "UNSUPPORTED_TIER" },
+  );
+  assert.strictEqual(res2.statusCode, 400);
+  assert.strictEqual(res2.body.success, false);
+});
+
+test("Billing API 9. POST /api/billing/checkout rejects Free/Starter checkout with 400", async () => {
+  const cookie = getSessionCookie("user-123", "user@example.com");
+  const res = await makeRequest(
+    "/api/billing/checkout",
+    "POST",
+    { Cookie: cookie },
+    { planId: "STARTER" },
+  );
+  assert.strictEqual(res.statusCode, 400);
+  assert.strictEqual(res.body.success, false);
+  assert.match(res.body.error, /starter\/free plan cannot be processed/i);
+});
+
+test("Billing API 10. POST /api/billing/checkout creates valid Stripe checkout session", async () => {
+  const cookie = getSessionCookie("user-123", "user@example.com");
+
+  // Mock createCheckoutSession on stripeBillingProvider
+  const orig = stripeBillingProvider.createCheckoutSession;
+  let receivedParams = null;
+  stripeBillingProvider.createCheckoutSession = async (params) => {
+    receivedParams = params;
+    return {
+      sessionId: "cs_test_session_123",
+      checkoutUrl: "https://checkout.stripe.com/c/pay/cs_test_session_123",
+    };
+  };
+
+  try {
+    const res = await makeRequest(
+      "/api/billing/checkout",
+      "POST",
+      { Cookie: cookie },
+      {
+        planId: "PRO",
+        version: 1,
+        countryCode: "US",
+        // Client attempts to pass arbitrary price/currency injection
+        price: 10,
+        amount: 500,
+        currency: "XYZ",
+      },
+    );
+
+    assert.strictEqual(res.statusCode, 200);
+    assert.strictEqual(res.body.success, true);
+    assert.strictEqual(res.body.sessionId, "cs_test_session_123");
+    assert.strictEqual(
+      res.body.checkoutUrl,
+      "https://checkout.stripe.com/c/pay/cs_test_session_123",
+    );
+
+    // Verify server passed session-derived identities and ignored injected amounts
+    assert.strictEqual(receivedParams.ownerId, "user-123");
+    assert.strictEqual(receivedParams.tenantId, "tenant_user-123");
+    assert.strictEqual(receivedParams.planId, "PRO");
+    assert.strictEqual(receivedParams.countryCode, "US");
+  } finally {
+    stripeBillingProvider.createCheckoutSession = orig;
+  }
+});
+
+test("Billing API 11. POST /api/billing/checkout sanitizes Stripe errors", async () => {
+  const cookie = getSessionCookie("user-123", "user@example.com");
+
+  const orig = stripeBillingProvider.createCheckoutSession;
+  stripeBillingProvider.createCheckoutSession = async () => {
+    throw new Error("Stripe secret key sk_live_secret123 failed connection to postgres://db:5432");
+  };
+
+  try {
+    const res = await makeRequest(
+      "/api/billing/checkout",
+      "POST",
+      { Cookie: cookie },
+      { planId: "PRO" },
+    );
+
+    assert.strictEqual(res.statusCode, 500);
+    assert.strictEqual(res.body.success, false);
+    // Secret and raw connection info must NOT be exposed
+    assert.strictEqual(JSON.stringify(res.body).includes("sk_live_secret123"), false);
+    assert.strictEqual(JSON.stringify(res.body).includes("postgres://"), false);
+    assert.strictEqual(res.body.error, "Internal Server Error");
+  } finally {
+    stripeBillingProvider.createCheckoutSession = orig;
+  }
+});
+
+test("Billing API 12. POST /api/billing/portal requires authentication (401)", async () => {
+  const res = await makeRequest("/api/billing/portal", "POST");
+  assert.strictEqual(res.statusCode, 401);
+  assert.strictEqual(res.body.success, false);
+});
+
+test("Billing API 13. POST /api/billing/portal without customer mapping returns 404/400", async () => {
+  const cookie = getSessionCookie("user-no-cust-999", "nocust@example.com");
+  const res = await makeRequest("/api/billing/portal", "POST", { Cookie: cookie });
+
+  assert.ok(res.statusCode === 404 || res.statusCode === 400);
+  assert.strictEqual(res.body.success, false);
+  assert.match(res.body.error, /customer not found|customer mapping/i);
+});
+
+test("Billing API 14. POST /api/billing/portal creates valid customer portal session", async () => {
+  const cookie = getSessionCookie("user-portal-1", "portal@example.com");
+
+  const orig = stripeBillingProvider.createPortalSession;
+  let receivedParams = null;
+  stripeBillingProvider.createPortalSession = async (params) => {
+    receivedParams = params;
+    return {
+      portalUrl: "https://billing.stripe.com/p/session/portal_session_abc",
+    };
+  };
+
+  try {
+    const res = await makeRequest("/api/billing/portal", "POST", { Cookie: cookie });
+    assert.strictEqual(res.statusCode, 200);
+    assert.strictEqual(res.body.success, true);
+    assert.strictEqual(
+      res.body.portalUrl,
+      "https://billing.stripe.com/p/session/portal_session_abc",
+    );
+
+    assert.strictEqual(receivedParams.ownerId, "user-portal-1");
+    assert.strictEqual(receivedParams.tenantId, "tenant_user-portal-1");
+  } finally {
+    stripeBillingProvider.createPortalSession = orig;
+  }
+});
+
+test("Billing API 15. POST /api/billing/portal isolates customer mapping and rejects ownership mismatch", async () => {
+  const cookie = getSessionCookie("user-attacker", "attacker@example.com");
+
+  // Save customer mapping belonging to victim
+  await customerMappingRepo.save({
+    tenantId: "tenant_user-attacker",
+    ownerId: "user-victim", // Different owner!
+    stripeCustomerId: "cus_victim_123",
+    createdAt: new Date(),
+  });
+
+  const res = await makeRequest("/api/billing/portal", "POST", { Cookie: cookie });
+  assert.strictEqual(res.statusCode, 400);
+  assert.strictEqual(res.body.success, false);
+  assert.match(res.body.error, /owner|mismatch/i);
 });
