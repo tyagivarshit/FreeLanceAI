@@ -662,7 +662,7 @@ document.addEventListener("DOMContentLoaded", () => {
       return "/dashboard.html";
     }
     if (item.resultType === "MATCH") {
-      return "/dashboard.html";
+      return `/matching.html?id=${encodeURIComponent(item.entityId)}`;
     }
     return "/dashboard.html";
   }

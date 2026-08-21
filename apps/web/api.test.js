@@ -72,6 +72,8 @@ let currentSessionId = "session-123";
 
 let mockScannedCount = 0;
 let mockMatchesCount = 0;
+let mockMatchesRows = null;
+let mockJobImportsRows = null;
 
 let mockJobs = [];
 let mockClients = [];
@@ -150,6 +152,8 @@ test.beforeEach(async () => {
 
   mockScannedCount = 0;
   mockMatchesCount = 0;
+  mockMatchesRows = null;
+  mockJobImportsRows = null;
 
   mockJobs = [];
   mockClients = [];
@@ -567,9 +571,15 @@ function mockTableResult(table) {
     ];
   }
   if (table === jobImports) {
+    if (mockJobImportsRows !== null) {
+      return mockJobImportsRows;
+    }
     return [{ count: mockScannedCount }];
   }
   if (table === jobMatches) {
+    if (mockMatchesRows !== null) {
+      return mockMatchesRows;
+    }
     return [{ count: mockMatchesCount }];
   }
   return [];
@@ -2268,4 +2278,201 @@ test("Search API 25. excluded result types do not invoke excluded providers", as
   assert.strictEqual(searchCalls.job, 0);
   assert.strictEqual(searchCalls.match, 0);
   assert.strictEqual(searchCalls.timeline, 0);
+});
+
+// =====================================================================
+// Matching API Tests (Phase 11E)
+// =====================================================================
+
+const sampleMatchRow = {
+  id: "match-101",
+  tenantId: "user-123",
+  ownerId: "user-123",
+  freelancerId: "user-123",
+  jobId: "job-202",
+  jobNormalizationId: "norm-1",
+  normalizationVersion: "v1",
+  matchingVersion: "v1",
+  matchSignals: {
+    matchedSkills: ["TypeScript", "Node.js"],
+    missingSkills: ["Docker"],
+    skillCoverage: 0.95,
+    semanticSimilarity: 0.9,
+    experienceCompatibility: "COMPATIBLE",
+    budgetCompatibility: "COMPATIBLE",
+    jobTypeCompatibility: "COMPATIBLE",
+    locationCompatibility: "COMPATIBLE",
+  },
+  status: "EVALUATED",
+  snapshots: [],
+  createdAt: new Date("2026-08-20T10:00:00.000Z"),
+  updatedAt: new Date("2026-08-20T10:00:00.000Z"),
+};
+
+const sampleJobRow = {
+  id: "job-202",
+  tenantId: "user-123",
+  ownerId: "user-123",
+  source: "Upwork",
+  sourceUrl: "https://upwork.com/jobs/202",
+  rawPayload: {
+    title: "Senior Backend Developer",
+    description: "Looking for expert Node.js backend developer.",
+    budget: { type: "hourly", min: 80, max: 120, currency: "USD" },
+  },
+  createdAt: new Date("2026-08-20T09:00:00.000Z"),
+};
+
+test("Matching API 1. GET /api/matches returns 401 when unauthorized", async () => {
+  const res = await makeRequest("/api/matches", "GET");
+  assert.strictEqual(res.statusCode, 401);
+  assert.strictEqual(res.body.success, false);
+});
+
+test("Matching API 2. GET /api/matches returns matches list with score, breakdown, and explanation", async () => {
+  const cookie = getSessionCookie("user-123", "user@example.com");
+  mockMatchesRows = [sampleMatchRow];
+  mockJobImportsRows = [sampleJobRow];
+
+  const res = await makeRequest("/api/matches", "GET", { Cookie: cookie });
+  assert.strictEqual(res.statusCode, 200);
+  assert.strictEqual(res.body.success, true);
+  assert.strictEqual(res.body.total, 1);
+  assert.strictEqual(res.body.page, 1);
+  assert.strictEqual(res.body.pageSize, 20);
+  assert.strictEqual(res.body.matches.length, 1);
+
+  const m = res.body.matches[0];
+  assert.strictEqual(m.id, "match-101");
+  assert.strictEqual(m.jobId, "job-202");
+  assert.strictEqual(m.jobTitle, "Senior Backend Developer");
+  assert.strictEqual(m.platform, "Upwork");
+  assert.strictEqual(m.score, 90);
+  assert.strictEqual(m.status, "EVALUATED");
+  assert.strictEqual(m.cacheState, "CACHED");
+  assert.ok(m.explanation.includes("TypeScript"));
+  assert.deepStrictEqual(m.strengths, ["TypeScript", "Node.js"]);
+  assert.deepStrictEqual(m.gaps, ["Docker"]);
+});
+
+test("Matching API 3. GET /api/matches filters by status", async () => {
+  const cookie = getSessionCookie("user-123", "user@example.com");
+  mockMatchesRows = [sampleMatchRow];
+  mockJobImportsRows = [sampleJobRow];
+
+  const res = await makeRequest("/api/matches?status=EVALUATED", "GET", { Cookie: cookie });
+  assert.strictEqual(res.statusCode, 200);
+  assert.strictEqual(res.body.success, true);
+  assert.strictEqual(res.body.matches.length, 1);
+});
+
+test("Matching API 4. GET /api/matches filters by minScore", async () => {
+  const cookie = getSessionCookie("user-123", "user@example.com");
+  mockMatchesRows = [sampleMatchRow];
+  mockJobImportsRows = [sampleJobRow];
+
+  const res = await makeRequest("/api/matches?minScore=95", "GET", { Cookie: cookie });
+  assert.strictEqual(res.statusCode, 200);
+  assert.strictEqual(res.body.success, true);
+  assert.strictEqual(res.body.matches.length, 0);
+});
+
+test("Matching API 5. GET /api/matches filters by platform", async () => {
+  const cookie = getSessionCookie("user-123", "user@example.com");
+  mockMatchesRows = [sampleMatchRow];
+  mockJobImportsRows = [sampleJobRow];
+
+  const resMatch = await makeRequest("/api/matches?platform=upwork", "GET", { Cookie: cookie });
+  assert.strictEqual(resMatch.statusCode, 200);
+  assert.strictEqual(resMatch.body.matches.length, 1);
+
+  const resNoMatch = await makeRequest("/api/matches?platform=linkedin", "GET", { Cookie: cookie });
+  assert.strictEqual(resNoMatch.statusCode, 200);
+  assert.strictEqual(resNoMatch.body.matches.length, 0);
+});
+
+test("Matching API 6. GET /api/matches rejects invalid status with 400", async () => {
+  const cookie = getSessionCookie("user-123", "user@example.com");
+  const res = await makeRequest("/api/matches?status=INVALID_STATUS", "GET", { Cookie: cookie });
+  assert.strictEqual(res.statusCode, 400);
+  assert.strictEqual(res.body.success, false);
+  assert.strictEqual(res.body.error, "Invalid status parameter");
+});
+
+test("Matching API 7. GET /api/matches rejects invalid minScore with 400", async () => {
+  const cookie = getSessionCookie("user-123", "user@example.com");
+  const res = await makeRequest("/api/matches?minScore=abc", "GET", { Cookie: cookie });
+  assert.strictEqual(res.statusCode, 400);
+  assert.strictEqual(res.body.success, false);
+  assert.strictEqual(res.body.error, "Invalid minScore parameter");
+});
+
+test("Matching API 8. GET /api/matches rejects invalid page with 400", async () => {
+  const cookie = getSessionCookie("user-123", "user@example.com");
+  const res = await makeRequest("/api/matches?page=0", "GET", { Cookie: cookie });
+  assert.strictEqual(res.statusCode, 400);
+  assert.strictEqual(res.body.success, false);
+  assert.strictEqual(res.body.error, "Invalid page parameter");
+});
+
+test("Matching API 9. GET /api/matches rejects invalid pageSize with 400", async () => {
+  const cookie = getSessionCookie("user-123", "user@example.com");
+  const res = await makeRequest("/api/matches?pageSize=50", "GET", { Cookie: cookie });
+  assert.strictEqual(res.statusCode, 400);
+  assert.strictEqual(res.body.success, false);
+  assert.strictEqual(res.body.error, "Invalid pageSize parameter");
+});
+
+test("Matching API 10. GET /api/matches/:id returns 404 if match not found", async () => {
+  const cookie = getSessionCookie("user-123", "user@example.com");
+  mockMatchesRows = [];
+
+  const res = await makeRequest("/api/matches/non-existent-match", "GET", { Cookie: cookie });
+  assert.strictEqual(res.statusCode, 404);
+  assert.strictEqual(res.body.success, false);
+  assert.strictEqual(res.body.error, "Match not found");
+});
+
+test("Matching API 11. GET /api/matches/:id returns single match detail", async () => {
+  const cookie = getSessionCookie("user-123", "user@example.com");
+  mockMatchesRows = [sampleMatchRow];
+  mockJobImportsRows = [sampleJobRow];
+
+  const res = await makeRequest("/api/matches/match-101", "GET", { Cookie: cookie });
+  assert.strictEqual(res.statusCode, 200);
+  assert.strictEqual(res.body.success, true);
+  assert.strictEqual(res.body.match.id, "match-101");
+  assert.strictEqual(res.body.match.jobTitle, "Senior Backend Developer");
+  assert.strictEqual(res.body.match.score, 90);
+});
+
+test("Matching API 12. PATCH /api/matches/:id updates status to ARCHIVED", async () => {
+  const cookie = getSessionCookie("user-123", "user@example.com");
+  mockMatchesRows = [{ ...sampleMatchRow }];
+  mockJobImportsRows = [sampleJobRow];
+
+  const res = await makeRequest(
+    "/api/matches/match-101",
+    "PATCH",
+    { Cookie: cookie },
+    { status: "ARCHIVED" },
+  );
+  assert.strictEqual(res.statusCode, 200);
+  assert.strictEqual(res.body.success, true);
+  assert.strictEqual(res.body.match.status, "ARCHIVED");
+});
+
+test("Matching API 13. PATCH /api/matches/:id rejects invalid status mutation with 400", async () => {
+  const cookie = getSessionCookie("user-123", "user@example.com");
+  mockMatchesRows = [sampleMatchRow];
+  mockJobImportsRows = [sampleJobRow];
+
+  const res = await makeRequest(
+    "/api/matches/match-101",
+    "PATCH",
+    { Cookie: cookie },
+    { status: "CREATED" },
+  );
+  assert.strictEqual(res.statusCode, 400);
+  assert.strictEqual(res.body.success, false);
 });

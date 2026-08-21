@@ -1,0 +1,470 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="FreelanceOS Matching — Review scored, ranked, and explained job opportunities matched to your profile."
+    />
+    <title>Job Matching — FreelanceOS</title>
+    <!-- Google Fonts Outfit & Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Outfit:wght@500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/style.css" />
+  </head>
+  <body class="dashboard-body">
+    <!-- Sidebar Navigation -->
+    <aside id="sidebar" class="sidebar" aria-label="Main Navigation">
+      <div class="sidebar-header">
+        <div class="logo" aria-hidden="true">F</div>
+        <span class="brand-name font-display">FreelanceOS</span>
+        <button id="sidebar-toggle" class="sidebar-toggle-btn" aria-label="Collapse sidebar">
+          <svg class="icon icon-chevron" viewBox="0 0 24 24" width="16" height="16">
+            <path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z" />
+          </svg>
+        </button>
+      </div>
+
+      <nav class="sidebar-nav" aria-label="Primary nav">
+        <a href="/dashboard.html" class="nav-item">
+          <svg class="icon" viewBox="0 0 24 24" width="20" height="20">
+            <path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z" />
+          </svg>
+          <span class="nav-label">Dashboard</span>
+          <span class="tooltip" role="tooltip">Dashboard</span>
+        </a>
+        <a href="/clients.html" class="nav-item">
+          <svg class="icon" viewBox="0 0 24 24" width="20" height="20">
+            <path
+              d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 1.34 5 8s1.34 3 8 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"
+            />
+          </svg>
+          <span class="nav-label">Clients</span>
+          <span class="tooltip" role="tooltip">Clients</span>
+        </a>
+        <a href="/brain.html" class="nav-item">
+          <svg class="icon" viewBox="0 0 24 24" width="20" height="20">
+            <path
+              d="M12 3c-4.97 0-9 4.03-9 9 0 2.12.74 4.07 1.97 5.61L4.35 19.4c-.39.39-.39 1.02 0 1.41.39.39 1.02.39 1.41 0l1.9-1.9C9.17 19.67 10.53 20 12 20c4.97 0 9-4.03 9-9s-4.03-9-9-9zm0 15c-3.31 0-6-2.69-6-6s2.69-6 6-6 6 2.69 6 6-2.69 6-6 6z"
+            />
+          </svg>
+          <span class="nav-label">Brain</span>
+          <span class="tooltip" role="tooltip">Brain</span>
+        </a>
+        <a href="/search.html" class="nav-item">
+          <svg class="icon" viewBox="0 0 24 24" width="20" height="20">
+            <path
+              d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"
+            />
+          </svg>
+          <span class="nav-label">Search</span>
+          <span class="tooltip" role="tooltip">Search</span>
+        </a>
+        <a href="/matching.html" class="nav-item active" aria-current="page">
+          <svg class="icon" viewBox="0 0 24 24" width="20" height="20">
+            <path
+              d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"
+            />
+          </svg>
+          <span class="nav-label">Matching</span>
+          <span class="tooltip" role="tooltip">Matching</span>
+        </a>
+        <a href="/billing.html" class="nav-item">
+          <svg class="icon" viewBox="0 0 24 24" width="20" height="20">
+            <path
+              d="M21 18v1c0 1.1-.9 2-2 2H5c-1.11 0-2-.9-2-2V5c0-1.1.89-2 2-2h14c1.1 0 2 .9 2 2v1h-9c-1.11 0-2 .9-2 2v8c0 1.1.89 2 2 2h9zm-9-2h10V8H12v8zm4-2.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"
+            />
+          </svg>
+          <span class="nav-label">Billing</span>
+          <span class="tooltip" role="tooltip">Billing</span>
+        </a>
+        <a href="/settings.html" class="nav-item">
+          <svg class="icon" viewBox="0 0 24 24" width="20" height="20">
+            <path
+              d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"
+            />
+          </svg>
+          <span class="nav-label">Settings</span>
+          <span class="tooltip" role="tooltip">Settings</span>
+        </a>
+      </nav>
+
+      <div class="sidebar-footer">
+        <button id="sidebar-logout-btn" class="sidebar-logout-btn" aria-label="Log out">
+          <svg class="icon" viewBox="0 0 24 24" width="20" height="20">
+            <path
+              d="M10.09 15.59L11.5 17l5-5-5-5-1.41 1.41L12.67 11H3v2h9.67l-2.58 2.59zM19 3H5c-1.11 0-2 .9-2 2v4h2V5h14v14H5v-4H3v4c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2z"
+            />
+          </svg>
+          <span class="logout-label">Log out</span>
+        </button>
+      </div>
+    </aside>
+
+    <!-- Main Layout Wrapper -->
+    <div class="main-layout">
+      <!-- Top Bar Navigation -->
+      <header class="topbar" aria-label="Top bar nav">
+        <div class="topbar-left">
+          <button
+            id="mobile-drawer-toggle"
+            class="mobile-menu-btn"
+            aria-label="Open mobile navigation"
+          >
+            <svg class="icon" viewBox="0 0 24 24" width="24" height="24">
+              <path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z" />
+            </svg>
+          </button>
+          <nav class="breadcrumbs" aria-label="Breadcrumb">
+            <span class="breadcrumb-item">Workspace</span>
+            <span class="breadcrumb-separator">/</span>
+            <span class="breadcrumb-item active">Matching</span>
+          </nav>
+        </div>
+
+        <div class="topbar-right">
+          <a
+            href="/search.html"
+            class="topbar-action-btn"
+            id="topbar-search-btn"
+            aria-label="Search items"
+          >
+            <svg class="icon" viewBox="0 0 24 24" width="20" height="20">
+              <path
+                d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"
+              />
+            </svg>
+          </a>
+          <div class="account-menu">
+            <div class="user-avatar" id="user-avatar-initials">U</div>
+          </div>
+        </div>
+      </header>
+
+      <!-- Main Content Area -->
+      <main class="dashboard-content matching-content" id="main-content" tabindex="-1">
+        <!-- Header Row -->
+        <section class="welcome-section matching-title-row" aria-label="Matching heading">
+          <div>
+            <h1 class="welcome-title font-display">Job Matching</h1>
+            <p class="welcome-subtitle">
+              Multidimensional evaluation of incoming opportunities ranked by compatibility and
+              skill fit.
+            </p>
+          </div>
+          <button
+            class="btn btn-secondary matching-refresh-btn"
+            id="matching-refresh-btn"
+            type="button"
+            aria-label="Refresh matches"
+          >
+            Refresh
+          </button>
+        </section>
+
+        <!-- Filter Controls Toolbar -->
+        <section
+          class="clients-toolbar matching-toolbar"
+          role="region"
+          aria-label="Match filtering controls"
+        >
+          <div class="matching-filters-group">
+            <!-- Status Filter -->
+            <div class="filter-item">
+              <label class="clients-filter-label" for="matching-status-filter">Status</label>
+              <select
+                id="matching-status-filter"
+                class="clients-select"
+                aria-label="Filter by lifecycle status"
+              >
+                <option value="">All statuses</option>
+                <option value="EVALUATED">Evaluated</option>
+                <option value="CREATED">Created</option>
+                <option value="ARCHIVED">Archived</option>
+              </select>
+            </div>
+
+            <!-- Score Threshold Filter -->
+            <div class="filter-item">
+              <label class="clients-filter-label" for="matching-score-filter">Min Score</label>
+              <select
+                id="matching-score-filter"
+                class="clients-select"
+                aria-label="Filter by minimum match score"
+              >
+                <option value="">All scores</option>
+                <option value="90">90%+ High Match</option>
+                <option value="75">75%+ Good Match</option>
+                <option value="50">50%+ Fair Match</option>
+              </select>
+            </div>
+
+            <!-- Platform Filter -->
+            <div class="filter-item">
+              <label class="clients-filter-label" for="matching-platform-filter">Platform</label>
+              <select
+                id="matching-platform-filter"
+                class="clients-select"
+                aria-label="Filter by platform"
+              >
+                <option value="">All platforms</option>
+                <option value="upwork">Upwork</option>
+                <option value="linkedin">LinkedIn</option>
+              </select>
+            </div>
+          </div>
+
+          <span class="badge" id="matching-count" aria-live="polite">0 matches</span>
+        </section>
+
+        <!-- Matching State Containers -->
+        <section class="matching-feed-section" aria-label="Matching feed content">
+          <!-- Progressive Skeleton Loader (4 Cards) -->
+          <div id="matching-skeleton" class="matching-skeleton-container hidden" aria-hidden="true">
+            <div class="progressive-skeleton matching-skeleton-card"></div>
+            <div class="progressive-skeleton matching-skeleton-card"></div>
+            <div class="progressive-skeleton matching-skeleton-card"></div>
+            <div class="progressive-skeleton matching-skeleton-card"></div>
+          </div>
+
+          <!-- Matches Cards List -->
+          <div
+            id="matching-list"
+            class="matching-list hidden"
+            role="feed"
+            aria-label="Job matches feed"
+          ></div>
+
+          <!-- Empty State Container -->
+          <div id="matching-empty" class="matching-empty-container empty-state hidden">
+            <div class="empty-icon-wrap" aria-hidden="true">
+              <svg class="icon" viewBox="0 0 24 24" width="40" height="40">
+                <path
+                  d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"
+                />
+              </svg>
+            </div>
+            <h2 class="empty-title font-display">No matches found</h2>
+            <p class="empty-desc" id="matching-empty-msg">
+              No job opportunities matched the selected criteria.
+            </p>
+            <div class="empty-tips">
+              <p>
+                Try lowering the minimum score threshold or selecting a different status filter.
+              </p>
+            </div>
+          </div>
+
+          <!-- Component Error State -->
+          <div id="matching-error" class="matching-error-container component-error hidden">
+            <span class="error-msg" id="matching-error-msg">Failed to load job matches.</span>
+            <button
+              class="btn btn-secondary btn-retry"
+              id="matching-error-retry"
+              type="button"
+              aria-label="Retry loading matches"
+            >
+              Retry
+            </button>
+          </div>
+
+          <!-- Pagination Controls -->
+          <nav
+            class="clients-pagination matching-pagination hidden"
+            id="matching-pagination"
+            aria-label="Matching pagination"
+          >
+            <button
+              class="btn btn-secondary pagination-btn"
+              id="matching-prev-page"
+              type="button"
+              aria-label="Previous page"
+            >
+              Previous
+            </button>
+            <span class="pagination-summary" id="matching-page-summary" aria-live="polite"
+              >Page 1 of 1</span
+            >
+            <button
+              class="btn btn-secondary pagination-btn"
+              id="matching-next-page"
+              type="button"
+              aria-label="Next page"
+            >
+              Next
+            </button>
+          </nav>
+        </section>
+      </main>
+    </div>
+
+    <!-- Match Detail Modal / Slide-out Drawer -->
+    <div
+      id="matching-detail-modal"
+      class="matching-detail-modal hidden"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="detail-title"
+    >
+      <div id="matching-detail-backdrop" class="matching-detail-backdrop" aria-hidden="true"></div>
+      <div class="matching-detail-drawer" id="matching-detail-drawer">
+        <header class="detail-header">
+          <div class="detail-header-top">
+            <div class="detail-tags">
+              <span class="platform-tag" id="detail-platform-tag">Upwork</span>
+              <span class="status-badge" id="detail-status-badge">EVALUATED</span>
+              <span class="cache-badge" id="detail-cache-badge">Cached</span>
+            </div>
+            <button
+              class="detail-close-btn"
+              id="matching-detail-close-btn"
+              aria-label="Close match details"
+            >
+              <svg class="icon" viewBox="0 0 24 24" width="20" height="20">
+                <path
+                  d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"
+                />
+              </svg>
+            </button>
+          </div>
+          <div class="detail-title-score-row">
+            <h2 class="detail-title font-display" id="detail-title">Job Title</h2>
+            <div class="detail-score-gauge" id="detail-score-gauge">
+              <span class="gauge-value" id="detail-score-val">0%</span>
+              <span class="gauge-label">Match</span>
+            </div>
+          </div>
+        </header>
+
+        <div class="detail-body">
+          <!-- Multidimensional Score Breakdown -->
+          <section class="detail-section" aria-labelledby="heading-breakdown">
+            <h3 class="detail-section-title font-display" id="heading-breakdown">
+              Score Breakdown
+            </h3>
+            <div class="breakdown-grid" id="detail-score-breakdown">
+              <div class="breakdown-item">
+                <div class="breakdown-label-row">
+                  <span>Skill Coverage</span>
+                  <span class="breakdown-val" id="breakdown-skills-val">0%</span>
+                </div>
+                <div class="progress-bar-wrap">
+                  <div class="progress-bar" id="breakdown-skills-bar" style="width: 0%"></div>
+                </div>
+              </div>
+              <div class="breakdown-item">
+                <div class="breakdown-label-row">
+                  <span>Semantic Fit</span>
+                  <span class="breakdown-val" id="breakdown-semantic-val">0%</span>
+                </div>
+                <div class="progress-bar-wrap">
+                  <div class="progress-bar" id="breakdown-semantic-bar" style="width: 0%"></div>
+                </div>
+              </div>
+              <div class="breakdown-item">
+                <div class="breakdown-label-row">
+                  <span>Experience Compatibility</span>
+                  <span class="breakdown-status-tag" id="breakdown-exp-tag">UNKNOWN</span>
+                </div>
+              </div>
+              <div class="breakdown-item">
+                <div class="breakdown-label-row">
+                  <span>Budget Compatibility</span>
+                  <span class="breakdown-status-tag" id="breakdown-budget-tag">UNKNOWN</span>
+                </div>
+              </div>
+              <div class="breakdown-item">
+                <div class="breakdown-label-row">
+                  <span>Job Type Fit</span>
+                  <span class="breakdown-status-tag" id="breakdown-jobtype-tag">UNKNOWN</span>
+                </div>
+              </div>
+              <div class="breakdown-item">
+                <div class="breakdown-label-row">
+                  <span>Location Fit</span>
+                  <span class="breakdown-status-tag" id="breakdown-location-tag">UNKNOWN</span>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- Match Explanation & Factors -->
+          <section class="detail-section" aria-labelledby="heading-explanation">
+            <h3 class="detail-section-title font-display" id="heading-explanation">
+              Match Explanation
+            </h3>
+            <p class="detail-explanation-summary" id="detail-explanation-text">
+              No explanation summary available.
+            </p>
+
+            <!-- Strengths -->
+            <div class="factor-group" id="factor-strengths-group">
+              <h4 class="factor-title factor-title-strengths">Strengths & Matched Skills</h4>
+              <div class="factor-tags" id="detail-strengths-list"></div>
+            </div>
+
+            <!-- Gaps -->
+            <div class="factor-group" id="factor-gaps-group">
+              <h4 class="factor-title factor-title-gaps">Missing Skills & Gaps</h4>
+              <div class="factor-tags" id="detail-gaps-list"></div>
+            </div>
+
+            <!-- Risks -->
+            <div class="factor-group" id="factor-risks-group">
+              <h4 class="factor-title factor-title-risks">Compatibility Risks</h4>
+              <p class="factor-text" id="detail-risks-text">None identified.</p>
+            </div>
+
+            <!-- Recommendations -->
+            <div class="factor-group" id="factor-recommendations-group">
+              <h4 class="factor-title factor-title-recommendations">Recommended Action</h4>
+              <p class="factor-text" id="detail-recommendations-text">Review job specifications.</p>
+            </div>
+          </section>
+
+          <!-- Job Context & Description -->
+          <section class="detail-section" aria-labelledby="heading-job-context">
+            <h3 class="detail-section-title font-display" id="heading-job-context">Job Overview</h3>
+            <p class="detail-job-budget" id="detail-job-budget">Budget: Flexible</p>
+            <p class="detail-job-description" id="detail-job-description">
+              No description provided.
+            </p>
+          </section>
+        </div>
+
+        <!-- Action Footer -->
+        <footer class="detail-footer" id="detail-action-bar">
+          <a
+            href="#"
+            class="btn btn-primary detail-platform-btn hidden"
+            id="detail-platform-link"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Open on Platform
+          </a>
+          <button
+            class="btn btn-secondary detail-archive-btn"
+            id="detail-archive-btn"
+            type="button"
+          >
+            Archive Match
+          </button>
+          <button class="btn btn-secondary" id="detail-close-bottom-btn" type="button">
+            Close
+          </button>
+        </footer>
+      </div>
+    </div>
+
+    <div id="drawer-overlay" class="drawer-overlay" aria-hidden="true"></div>
+
+    <script src="/auth-actions.js"></script>
+    <script src="/matching.js"></script>
+  </body>
+</html>

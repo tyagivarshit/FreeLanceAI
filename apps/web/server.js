@@ -937,6 +937,8 @@ const server = http.createServer(async (req, res) => {
     pathname === "/client-detail.html" ||
     pathname === "/search.html" ||
     pathname === "/search" ||
+    pathname === "/matching.html" ||
+    pathname === "/matching" ||
     clientDetailRouteMatch
   ) {
     const auth = await checkAuthentication();
@@ -954,6 +956,9 @@ const server = http.createServer(async (req, res) => {
     }
     if (pathname === "/search") {
       staticPathname = "/search.html";
+    }
+    if (pathname === "/matching") {
+      staticPathname = "/matching.html";
     }
     if (clientDetailRouteMatch) {
       staticPathname = "/client-detail.html";
@@ -1082,6 +1087,321 @@ const server = http.createServer(async (req, res) => {
       });
     } catch (err) {
       handleSearchApiError(err);
+    }
+    return;
+  }
+
+  // =====================================================================
+  // Matching API Endpoints (Phase 11E)
+  // =====================================================================
+
+  function mapMatchToDto(matchRow, jobRow) {
+    const signals = matchRow.matchSignals || null;
+    const baseScore =
+      signals && typeof signals.semanticSimilarity === "number"
+        ? signals.semanticSimilarity
+        : signals && typeof signals.skillCoverage === "number"
+          ? signals.skillCoverage
+          : 0;
+    const score = Math.round(baseScore * 100);
+
+    const matchedSkills = Array.isArray(signals?.matchedSkills) ? signals.matchedSkills : [];
+    const missingSkills = Array.isArray(signals?.missingSkills) ? signals.missingSkills : [];
+
+    let explanation = null;
+    if (matchedSkills.length > 0) {
+      explanation = `Strong fit with matched skills: ${matchedSkills.join(", ")}.`;
+    } else if (signals?.skillCoverage !== undefined) {
+      explanation = `Evaluated with ${Math.round(signals.skillCoverage * 100)}% skill coverage.`;
+    } else {
+      explanation = "Compatibility evaluated against your profile.";
+    }
+
+    let risks = null;
+    if (signals?.budgetCompatibility === "INCOMPATIBLE") {
+      risks = "Budget parameters do not align with target rates.";
+    } else if (signals?.experienceCompatibility === "INCOMPATIBLE") {
+      risks = "Experience requirements exceed current profile baseline.";
+    }
+
+    let recommendations = "Review job details and submit a tailored proposal.";
+    if (score >= 85) {
+      recommendations = "High priority match: highlight core skill strengths in proposal.";
+    } else if (score < 60) {
+      recommendations = "Moderate fit: address missing skill requirements directly.";
+    }
+
+    const rawJobData = jobRow?.rawPayload || jobRow?.rawPayload?.data || {};
+
+    return {
+      id: matchRow.id,
+      jobId: matchRow.jobId,
+      jobTitle: rawJobData.title || jobRow?.title || "Opportunity",
+      jobDescription: rawJobData.description || "",
+      platform: jobRow?.source || jobRow?.platform || "Upwork",
+      canonicalUrl: jobRow?.sourceUrl || jobRow?.canonicalUrl || "",
+      budget: formatBudget(rawJobData.budget),
+      score,
+      scoreBreakdown: {
+        skills: typeof signals?.skillCoverage === "number" ? signals.skillCoverage : 0,
+        semantic:
+          typeof signals?.semanticSimilarity === "number" ? signals.semanticSimilarity : null,
+        experience: signals?.experienceCompatibility || "UNKNOWN",
+        budget: signals?.budgetCompatibility || "UNKNOWN",
+        jobType: signals?.jobTypeCompatibility || "UNKNOWN",
+        location: signals?.locationCompatibility || "UNKNOWN",
+      },
+      matchSignals: signals,
+      explanation,
+      strengths: matchedSkills,
+      gaps: missingSkills,
+      risks,
+      recommendations,
+      status: matchRow.status,
+      cacheState: "CACHED",
+      createdAt:
+        matchRow.createdAt instanceof Date
+          ? matchRow.createdAt.toISOString()
+          : String(matchRow.createdAt),
+      updatedAt:
+        matchRow.updatedAt instanceof Date
+          ? matchRow.updatedAt.toISOString()
+          : String(matchRow.updatedAt),
+    };
+  }
+
+  const matchingSingleRegex = /^\/api\/matches\/([a-zA-Z0-9-]+)$/;
+  const matchingSingleMatch = pathname.match(matchingSingleRegex);
+
+  // GET /api/matches
+  if (pathname === "/api/matches" && req.method === "GET") {
+    const auth = await checkAuthentication();
+    const ownerId = requireAuthenticatedOwner(auth);
+    if (!ownerId) return;
+
+    const tenantId = ownerId;
+    const urlObj = new URL(req.url, `http://${req.headers.host || "localhost"}`);
+    const searchParams = urlObj.searchParams;
+
+    let page = 1;
+    let pageSize = 20;
+    const pageVal = searchParams.get("page");
+    const pageSizeVal = searchParams.get("pageSize");
+    const status = searchParams.get("status")?.trim().toUpperCase();
+    const minScoreVal = searchParams.get("minScore") || searchParams.get("score");
+    const platform = searchParams.get("platform")?.trim().toLowerCase();
+
+    if (pageVal) {
+      const p = parseInt(pageVal, 10);
+      if (isNaN(p) || p < 1 || String(p) !== pageVal) {
+        sendJson(400, { success: false, error: "Invalid page parameter" });
+        return;
+      }
+      page = p;
+    }
+
+    if (pageSizeVal) {
+      const ps = parseInt(pageSizeVal, 10);
+      if (isNaN(ps) || ps < 1 || ps > 20 || String(ps) !== pageSizeVal) {
+        sendJson(400, { success: false, error: "Invalid pageSize parameter" });
+        return;
+      }
+      pageSize = ps;
+    }
+
+    if (status && !["CREATED", "EVALUATED", "ARCHIVED"].includes(status)) {
+      sendJson(400, { success: false, error: "Invalid status parameter" });
+      return;
+    }
+
+    let minScore = null;
+    if (minScoreVal) {
+      const ms = parseInt(minScoreVal, 10);
+      if (isNaN(ms) || ms < 0 || ms > 100 || String(ms) !== minScoreVal) {
+        sendJson(400, { success: false, error: "Invalid minScore parameter" });
+        return;
+      }
+      minScore = ms;
+    }
+
+    try {
+      const whereConditions = [eq(jobMatches.tenantId, tenantId), eq(jobMatches.ownerId, ownerId)];
+
+      if (status) {
+        whereConditions.push(eq(jobMatches.status, status));
+      }
+
+      const matchRows = await db
+        .select()
+        .from(jobMatches)
+        .where(and(...whereConditions));
+
+      const jobIds = [...new Set(matchRows.map((m) => m.jobId))];
+      const jobRows =
+        jobIds.length > 0
+          ? await db
+              .select()
+              .from(jobImports)
+              .where(and(eq(jobImports.tenantId, tenantId), inArray(jobImports.id, jobIds)))
+          : [];
+
+      const jobMap = new Map();
+      jobRows.forEach((j) => {
+        jobMap.set(j.id, j);
+      });
+
+      let mappedMatches = matchRows.map((m) => mapMatchToDto(m, jobMap.get(m.jobId)));
+
+      if (minScore !== null) {
+        mappedMatches = mappedMatches.filter((m) => m.score >= minScore);
+      }
+
+      if (platform) {
+        mappedMatches = mappedMatches.filter(
+          (m) => m.platform && m.platform.toLowerCase() === platform,
+        );
+      }
+
+      // Deterministic sort: score DESC, createdAt DESC, id DESC
+      mappedMatches.sort((a, b) => {
+        if (b.score !== a.score) {
+          return b.score - a.score;
+        }
+        const timeA = new Date(a.createdAt).getTime();
+        const timeB = new Date(b.createdAt).getTime();
+        if (timeB !== timeA) {
+          return timeB - timeA;
+        }
+        return b.id.localeCompare(a.id);
+      });
+
+      const total = mappedMatches.length;
+      const offset = (page - 1) * pageSize;
+      const paginatedMatches = mappedMatches.slice(offset, offset + pageSize);
+      const totalPages = Math.max(1, Math.ceil(total / pageSize));
+
+      sendJson(200, {
+        success: true,
+        matches: paginatedMatches,
+        total,
+        page,
+        pageSize,
+        totalPages,
+        count: paginatedMatches.length,
+        isEmpty: paginatedMatches.length === 0,
+      });
+    } catch (err) {
+      logger.error({ message: "Failed to fetch matches API", error: err });
+      sendJson(500, { success: false, error: "Internal Server Error" });
+    }
+    return;
+  }
+
+  // GET /api/matches/:id
+  if (matchingSingleMatch && req.method === "GET") {
+    const auth = await checkAuthentication();
+    const ownerId = requireAuthenticatedOwner(auth);
+    if (!ownerId) return;
+
+    const matchId = matchingSingleMatch[1];
+    const tenantId = ownerId;
+
+    try {
+      const matchRows = await db
+        .select()
+        .from(jobMatches)
+        .where(
+          and(
+            eq(jobMatches.id, matchId),
+            eq(jobMatches.tenantId, tenantId),
+            eq(jobMatches.ownerId, ownerId),
+          ),
+        )
+        .limit(1);
+
+      if (matchRows.length === 0) {
+        sendJson(404, { success: false, error: "Match not found" });
+        return;
+      }
+
+      const matchRow = matchRows[0];
+      const jobRows = await db
+        .select()
+        .from(jobImports)
+        .where(and(eq(jobImports.id, matchRow.jobId), eq(jobImports.tenantId, tenantId)))
+        .limit(1);
+
+      const jobRow = jobRows[0] || null;
+      const dto = mapMatchToDto(matchRow, jobRow);
+
+      sendJson(200, { success: true, match: dto });
+    } catch (err) {
+      logger.error({ message: "Failed to fetch single match", error: err });
+      sendJson(500, { success: false, error: "Internal Server Error" });
+    }
+    return;
+  }
+
+  // PATCH /api/matches/:id
+  if (matchingSingleMatch && req.method === "PATCH") {
+    const auth = await checkAuthentication();
+    const ownerId = requireAuthenticatedOwner(auth);
+    if (!ownerId) return;
+
+    const matchId = matchingSingleMatch[1];
+    const tenantId = ownerId;
+
+    try {
+      const body = await readJsonBody();
+      if (!body || body.status !== "ARCHIVED") {
+        sendJson(400, {
+          success: false,
+          error: "Invalid status mutation. Only ARCHIVED status is supported.",
+        });
+        return;
+      }
+
+      const matchRows = await db
+        .select()
+        .from(jobMatches)
+        .where(
+          and(
+            eq(jobMatches.id, matchId),
+            eq(jobMatches.tenantId, tenantId),
+            eq(jobMatches.ownerId, ownerId),
+          ),
+        )
+        .limit(1);
+
+      if (matchRows.length === 0) {
+        sendJson(404, { success: false, error: "Match not found" });
+        return;
+      }
+
+      const matchRow = matchRows[0];
+      const updatedDate = new Date();
+
+      await db
+        .update(jobMatches)
+        .set({ status: "ARCHIVED", updatedAt: updatedDate })
+        .where(and(eq(jobMatches.id, matchId), eq(jobMatches.tenantId, tenantId)));
+
+      matchRow.status = "ARCHIVED";
+      matchRow.updatedAt = updatedDate;
+
+      const jobRows = await db
+        .select()
+        .from(jobImports)
+        .where(and(eq(jobImports.id, matchRow.jobId), eq(jobImports.tenantId, tenantId)))
+        .limit(1);
+
+      const jobRow = jobRows[0] || null;
+      const dto = mapMatchToDto(matchRow, jobRow);
+
+      sendJson(200, { success: true, match: dto });
+    } catch (err) {
+      logger.error({ message: "Failed to patch match", error: err });
+      sendJson(500, { success: false, error: "Internal Server Error" });
     }
     return;
   }
