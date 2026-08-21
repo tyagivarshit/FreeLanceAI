@@ -1013,8 +1013,14 @@ const server = http.createServer(async (req, res) => {
     sendJson(500, { success: false, error: "Internal Server Error" });
   }
 
-  // Redirect authenticated users away from signup/login pages to dashboard
-  if (pathname === "/" || pathname === "/index.html" || pathname === "/login.html") {
+  // Redirect authenticated users away from landing/signup/login pages to dashboard
+  if (
+    pathname === "/" ||
+    pathname === "/landing.html" ||
+    pathname === "/landing" ||
+    pathname === "/index.html" ||
+    pathname === "/login.html"
+  ) {
     const auth = await checkAuthentication();
     if (auth) {
       res.writeHead(302, { Location: "/dashboard.html" });
@@ -2841,6 +2847,246 @@ const server = http.createServer(async (req, res) => {
         );
         return;
       }
+      if (action === "summary") {
+        const ownerId = userId;
+        const billingTenantId = `tenant_${ownerId}`;
+
+        // Concurrently query domain aggregates with tenant/owner isolation
+        const [
+          userRows,
+          sessionRows,
+          timelineData,
+          clientData,
+          scannedRows,
+          matchRows,
+          effectivePlanResult,
+        ] = await Promise.all([
+          Promise.resolve(
+            db
+              .select({
+                id: users.id,
+                createdAt: users.createdAt,
+              })
+              .from(users)
+              .where(eq(users.id, userId))
+              .limit(1),
+          ).catch(() => []),
+          Promise.resolve(
+            db
+              .select({
+                id: sessions.id,
+                createdAt: sessions.createdAt,
+                lastActivityAt: sessions.lastActivityAt,
+                expiresAt: sessions.expiresAt,
+                revokedAt: sessions.revokedAt,
+              })
+              .from(sessions)
+              .where(eq(sessions.userId, userId)),
+          ).catch(() => []),
+          Promise.resolve(
+            timelineRepo.findTimelineEntriesByOwner(ownerId, { page: 1, pageSize: 100 }),
+          )
+            .then((r) => (r && r.items ? r.items : []))
+            .catch(() => []),
+          Promise.resolve(clientRepo.list(ownerId, { pageSize: 100 }))
+            .then((r) => (r && r.items ? r.items : []))
+            .catch(() => []),
+          Promise.resolve(
+            db
+              .select({
+                id: jobImports.id,
+                createdAt: jobImports.createdAt,
+              })
+              .from(jobImports)
+              .where(eq(jobImports.tenantId, tenantId)),
+          ).catch(() => []),
+          Promise.resolve(
+            db
+              .select({
+                id: jobMatches.id,
+                jobId: jobMatches.jobId,
+                status: jobMatches.status,
+                matchSignals: jobMatches.matchSignals,
+                createdAt: jobMatches.createdAt,
+              })
+              .from(jobMatches)
+              .where(eq(jobMatches.tenantId, tenantId)),
+          ).catch(() => []),
+          Promise.resolve(
+            entitlementResolver.resolveEffectivePlan(billingTenantId, userId, new Date()),
+          ).catch(() => null),
+        ]);
+
+        // 1. Activation domain
+        const user = userRows[0];
+        const registeredAt =
+          user && user.createdAt
+            ? new Date(user.createdAt).toISOString()
+            : new Date().toISOString();
+        const hasScannedJobs = (scannedRows?.length || 0) > 0;
+        const hasGeneratedMatches = (matchRows?.length || 0) > 0;
+        const hasCreatedClients = (clientData?.length || 0) > 0;
+        const isActivated = hasScannedJobs || hasGeneratedMatches || hasCreatedClients;
+
+        // 2. Retention domain
+        const now = new Date();
+        const activeSessions = (sessionRows || []).filter(
+          (s) => !s.revokedAt && new Date(s.expiresAt) > now,
+        );
+        const activeSessionsCount = activeSessions.length;
+
+        const activeDaysSet = new Set();
+        let mostRecentActivity = user?.createdAt
+          ? new Date(user.createdAt).getTime()
+          : now.getTime();
+
+        (sessionRows || []).forEach((s) => {
+          if (s.lastActivityAt) {
+            const d = new Date(s.lastActivityAt);
+            activeDaysSet.add(d.toISOString().slice(0, 10));
+            if (d.getTime() > mostRecentActivity) mostRecentActivity = d.getTime();
+          }
+          if (s.createdAt) {
+            const d = new Date(s.createdAt);
+            activeDaysSet.add(d.toISOString().slice(0, 10));
+            if (d.getTime() > mostRecentActivity) mostRecentActivity = d.getTime();
+          }
+        });
+
+        (timelineData || []).forEach((t) => {
+          if (t.timestamp) {
+            const d = new Date(t.timestamp);
+            activeDaysSet.add(d.toISOString().slice(0, 10));
+            if (d.getTime() > mostRecentActivity) mostRecentActivity = d.getTime();
+          }
+        });
+
+        const activeDaysCount = Math.max(1, activeDaysSet.size);
+        const lastActiveAt = new Date(mostRecentActivity).toISOString();
+
+        // 3. Matching domain
+        const totalScanned = scannedRows?.length || 0;
+        const totalMatches = matchRows?.length || 0;
+
+        let totalScore = 0;
+        let scoreCount = 0;
+        const scoreDistribution = {
+          high: 0,
+          medium: 0,
+          low: 0,
+        };
+        const statusBreakdown = {
+          created: 0,
+          evaluated: 0,
+          archived: 0,
+        };
+
+        (matchRows || []).forEach((m) => {
+          const signals = m.matchSignals || null;
+          const baseScore =
+            signals && typeof signals.semanticSimilarity === "number"
+              ? signals.semanticSimilarity
+              : signals && typeof signals.skillCoverage === "number"
+                ? signals.skillCoverage
+                : typeof m.score === "number"
+                  ? m.score / 100
+                  : 0;
+          const score = Math.round(baseScore * 100);
+
+          totalScore += score;
+          scoreCount++;
+
+          if (score >= 80) {
+            scoreDistribution.high++;
+          } else if (score >= 60) {
+            scoreDistribution.medium++;
+          } else {
+            scoreDistribution.low++;
+          }
+
+          const st = (m.status || "CREATED").toLowerCase();
+          if (st === "created") {
+            statusBreakdown.created++;
+          } else if (st === "evaluated") {
+            statusBreakdown.evaluated++;
+          } else if (st === "archived") {
+            statusBreakdown.archived++;
+          } else {
+            statusBreakdown[st] = (statusBreakdown[st] || 0) + 1;
+          }
+        });
+
+        const averageScore = scoreCount > 0 ? Number((totalScore / scoreCount).toFixed(1)) : 0;
+
+        // 4. Billing domain
+        const planId = effectivePlanResult?.planId || "STARTER";
+        const billingStatus = effectivePlanResult?.status || "active";
+        const isTrial =
+          effectivePlanResult?.isTrial || effectivePlanResult?.source === "TRIAL" || false;
+        const trialDaysRemaining = effectivePlanResult?.trialDaysRemaining ?? null;
+
+        let proposalsUsed = 0;
+        if (effectivePlanResult && effectivePlanResult.period) {
+          const period = effectivePlanResult.period;
+          const usageKey = `usage:${billingTenantId}:AI_PROPOSAL:${period.startedAt.getTime()}:${period.endsAt.getTime()}`;
+          proposalsUsed = (await usageRepo.getUsage(usageKey)) || 0;
+        }
+
+        const planConfig = planCatalog[planId] || planCatalog.STARTER;
+        const proposalsLimit =
+          planConfig?.limits?.AI_PROPOSALS ??
+          planConfig?.limits?.aiProposals ??
+          (planId === "ENTERPRISE" ? 999999 : planId === "PRO" ? 50 : 5);
+        const percentUsed =
+          proposalsLimit > 0 ? Number(((proposalsUsed / proposalsLimit) * 100).toFixed(1)) : 0;
+
+        // 5. Health domain
+        const healthStatus = "healthy";
+        const syncActive = true;
+        const lastCheckedAt = new Date().toISOString();
+
+        sendJson(200, {
+          success: true,
+          analytics: {
+            activation: {
+              registeredAt,
+              hasScannedJobs,
+              hasGeneratedMatches,
+              hasCreatedClients,
+              isActivated,
+            },
+            retention: {
+              activeDaysCount,
+              activeSessionsCount,
+              lastActiveAt,
+            },
+            matching: {
+              totalScanned,
+              totalMatches,
+              averageScore,
+              scoreDistribution,
+              statusBreakdown,
+            },
+            billing: {
+              planId,
+              status: billingStatus,
+              isTrial,
+              trialDaysRemaining,
+              usage: {
+                proposalsUsed,
+                proposalsLimit,
+                percentUsed,
+              },
+            },
+            health: {
+              status: healthStatus,
+              syncActive,
+              lastCheckedAt,
+            },
+          },
+        });
+        return;
+      }
 
       res.writeHead(404, { "Content-Type": "application/json" });
       res.end(JSON.stringify({ success: false, error: "Analytics endpoint not found" }));
@@ -3341,7 +3587,9 @@ const server = http.createServer(async (req, res) => {
   }
 
   // 2. Serve static pages
-  const filePath = path.join(__dirname, staticPathname === "/" ? "index.html" : staticPathname);
+  let targetFile =
+    staticPathname === "/" || staticPathname === "/landing" ? "landing.html" : staticPathname;
+  const filePath = path.join(__dirname, targetFile);
   const ext = path.extname(filePath);
   const contentType = MIME_TYPES[ext] || "text/plain";
 

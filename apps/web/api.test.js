@@ -3090,3 +3090,358 @@ test("Settings API 15. GET /api/settings/extension returns extension configurati
   assert.ok(platforms.includes("upwork"));
   assert.ok(platforms.includes("linkedin"));
 });
+
+// =====================================================================
+// Phase 12A: Analytics API Integration Tests
+// =====================================================================
+
+test("Analytics API 1. GET /api/analytics/summary requires authentication (401)", async () => {
+  const res = await makeRequest("/api/analytics/summary", "GET");
+  assert.strictEqual(res.statusCode, 401);
+  assert.strictEqual(res.body.success, false);
+  assert.strictEqual(res.body.error, "Unauthorized");
+});
+
+test("Analytics API 2. GET /api/analytics/summary returns 200 with valid envelope", async () => {
+  const cookie = getSessionCookie("user-123", "user@example.com");
+
+  const res = await makeRequest("/api/analytics/summary", "GET", { Cookie: cookie });
+  assert.strictEqual(res.statusCode, 200);
+  assert.strictEqual(res.body.success, true);
+  assert.ok(res.body.analytics);
+  assert.ok(res.body.analytics.activation);
+  assert.ok(res.body.analytics.retention);
+  assert.ok(res.body.analytics.matching);
+  assert.ok(res.body.analytics.billing);
+  assert.ok(res.body.analytics.health);
+});
+
+test("Analytics API 3. Activation domain computes correct signals and activation boolean", async () => {
+  const cookie = getSessionCookie("user-act-1", "act@example.com");
+
+  mockUsersRows = [
+    {
+      id: "user-act-1",
+      email: "act@example.com",
+      status: "active",
+      emailVerifiedAt: new Date(),
+      createdAt: new Date("2026-08-01T12:00:00Z"),
+    },
+  ];
+  mockJobImportsRows = [{ id: "job-1", createdAt: new Date() }];
+  mockMatchesRows = [
+    {
+      id: "match-1",
+      jobId: "job-1",
+      status: "EVALUATED",
+      matchSignals: { semanticSimilarity: 0.85 },
+      createdAt: new Date(),
+    },
+  ];
+  mockClients = [
+    buildTestClient({
+      id: "client-1",
+      ownerId: "user-act-1",
+      name: "Acme Corp",
+    }),
+  ];
+
+  const res = await makeRequest("/api/analytics/summary", "GET", { Cookie: cookie });
+  assert.strictEqual(res.statusCode, 200);
+  const act = res.body.analytics.activation;
+  assert.strictEqual(act.registeredAt, "2026-08-01T12:00:00.000Z");
+  assert.strictEqual(act.hasScannedJobs, true);
+  assert.strictEqual(act.hasGeneratedMatches, true);
+  assert.strictEqual(act.hasCreatedClients, true);
+  assert.strictEqual(act.isActivated, true);
+});
+
+test("Analytics API 4. Retention domain computes activeDaysCount, activeSessionsCount, and lastActiveAt", async () => {
+  const cookie = getSessionCookie("user-ret-1", "ret@example.com", "session-ret-1");
+
+  mockUsersRows = [
+    {
+      id: "user-ret-1",
+      email: "ret@example.com",
+      status: "active",
+      emailVerifiedAt: new Date(),
+      createdAt: new Date("2026-08-01T10:00:00Z"),
+    },
+  ];
+
+  mockSessionsRows = [
+    {
+      id: "session-ret-1",
+      userId: "user-ret-1",
+      refreshTokenHash: "hash-1",
+      expiresAt: new Date(Date.now() + 100000),
+      revokedAt: null,
+      lastActivityAt: new Date("2026-08-20T10:00:00Z"),
+      createdAt: new Date("2026-08-19T10:00:00Z"),
+      credentialVersion: 1,
+    },
+    {
+      id: "session-ret-2",
+      userId: "user-ret-1",
+      refreshTokenHash: "hash-2",
+      expiresAt: new Date(Date.now() + 100000),
+      revokedAt: null,
+      lastActivityAt: new Date("2026-08-21T08:00:00Z"),
+      createdAt: new Date("2026-08-21T08:00:00Z"),
+      credentialVersion: 1,
+    },
+  ];
+
+  const res = await makeRequest("/api/analytics/summary", "GET", { Cookie: cookie });
+  assert.strictEqual(res.statusCode, 200);
+  const ret = res.body.analytics.retention;
+  assert.strictEqual(ret.activeSessionsCount, 2);
+  assert.ok(ret.activeDaysCount >= 2);
+  assert.strictEqual(ret.lastActiveAt, "2026-08-21T08:00:00.000Z");
+});
+
+test("Analytics API 5. Matching domain computes totalScanned, totalMatches, averageScore, distribution, and status breakdown", async () => {
+  const cookie = getSessionCookie("user-match-1", "match@example.com");
+
+  mockJobImportsRows = [
+    { id: "job-1", createdAt: new Date() },
+    { id: "job-2", createdAt: new Date() },
+    { id: "job-3", createdAt: new Date() },
+  ];
+
+  mockMatchesRows = [
+    {
+      id: "m-1",
+      jobId: "job-1",
+      status: "EVALUATED",
+      matchSignals: { semanticSimilarity: 0.9 }, // 90% (High)
+      createdAt: new Date(),
+    },
+    {
+      id: "m-2",
+      jobId: "job-2",
+      status: "CREATED",
+      matchSignals: { semanticSimilarity: 0.7 }, // 70% (Medium)
+      createdAt: new Date(),
+    },
+    {
+      id: "m-3",
+      jobId: "job-3",
+      status: "ARCHIVED",
+      matchSignals: { semanticSimilarity: 0.5 }, // 50% (Low)
+      createdAt: new Date(),
+    },
+  ];
+
+  const res = await makeRequest("/api/analytics/summary", "GET", { Cookie: cookie });
+  assert.strictEqual(res.statusCode, 200);
+  const m = res.body.analytics.matching;
+  assert.strictEqual(m.totalScanned, 3);
+  assert.strictEqual(m.totalMatches, 3);
+  assert.strictEqual(m.averageScore, 70); // (90 + 70 + 50) / 3 = 70.0
+  assert.strictEqual(m.scoreDistribution.high, 1);
+  assert.strictEqual(m.scoreDistribution.medium, 1);
+  assert.strictEqual(m.scoreDistribution.low, 1);
+  assert.strictEqual(m.statusBreakdown.evaluated, 1);
+  assert.strictEqual(m.statusBreakdown.created, 1);
+  assert.strictEqual(m.statusBreakdown.archived, 1);
+});
+
+test("Analytics API 6. Billing domain computes planId, status, trial state, and quota usage", async () => {
+  const cookie = getSessionCookie("user-bill-1", "bill@example.com");
+
+  const res = await makeRequest("/api/analytics/summary", "GET", { Cookie: cookie });
+  assert.strictEqual(res.statusCode, 200);
+  const b = res.body.analytics.billing;
+  assert.ok(b.planId);
+  assert.ok(b.status);
+  assert.strictEqual(typeof b.isTrial, "boolean");
+  assert.ok(b.usage);
+  assert.strictEqual(typeof b.usage.proposalsUsed, "number");
+  assert.strictEqual(typeof b.usage.proposalsLimit, "number");
+  assert.strictEqual(typeof b.usage.percentUsed, "number");
+});
+
+test("Analytics API 7. Health domain computes system status and sync active state", async () => {
+  const cookie = getSessionCookie("user-123", "user@example.com");
+
+  const res = await makeRequest("/api/analytics/summary", "GET", { Cookie: cookie });
+  assert.strictEqual(res.statusCode, 200);
+  const h = res.body.analytics.health;
+  assert.strictEqual(h.status, "healthy");
+  assert.strictEqual(h.syncActive, true);
+  assert.ok(h.lastCheckedAt);
+});
+
+test("Analytics API 8. Tenant isolation: returns metrics strictly for authenticated tenant", async () => {
+  const cookieA = getSessionCookie("user-iso-A", "userA@example.com");
+  const cookieB = getSessionCookie("user-iso-B", "userB@example.com");
+
+  mockJobImportsRows = [{ id: "job-A", tenantId: "user-iso-A", createdAt: new Date() }];
+
+  const resA = await makeRequest("/api/analytics/summary", "GET", { Cookie: cookieA });
+  assert.strictEqual(resA.statusCode, 200);
+  assert.strictEqual(resA.body.success, true);
+
+  const resB = await makeRequest("/api/analytics/summary", "GET", { Cookie: cookieB });
+  assert.strictEqual(resB.statusCode, 200);
+  assert.strictEqual(resB.body.success, true);
+});
+
+test("Analytics API 9. Forged ?tenantId parameter is completely ignored", async () => {
+  const cookie = getSessionCookie("user-123", "user@example.com");
+
+  const res = await makeRequest("/api/analytics/summary?tenantId=attacker-victim", "GET", {
+    Cookie: cookie,
+  });
+  assert.strictEqual(res.statusCode, 200);
+  assert.strictEqual(res.body.success, true);
+});
+
+test("Analytics API 10. Forged ?ownerId parameter is completely ignored", async () => {
+  const cookie = getSessionCookie("user-123", "user@example.com");
+
+  const res = await makeRequest("/api/analytics/summary?ownerId=attacker-victim", "GET", {
+    Cookie: cookie,
+  });
+  assert.strictEqual(res.statusCode, 200);
+  assert.strictEqual(res.body.success, true);
+});
+
+test("Analytics API 11. Forged ?userId parameter is completely ignored", async () => {
+  const cookie = getSessionCookie("user-123", "user@example.com");
+
+  const res = await makeRequest("/api/analytics/summary?userId=attacker-victim", "GET", {
+    Cookie: cookie,
+  });
+  assert.strictEqual(res.statusCode, 200);
+  assert.strictEqual(res.body.success, true);
+});
+
+test("Analytics API 12. No PII leakage in analytics response", async () => {
+  const cookie = getSessionCookie("user-sec-1", "confidential-email@secret.com");
+
+  mockUsersRows = [
+    {
+      id: "user-sec-1",
+      email: "confidential-email@secret.com",
+      status: "active",
+      emailVerifiedAt: new Date(),
+      createdAt: new Date(),
+    },
+  ];
+
+  const res = await makeRequest("/api/analytics/summary", "GET", { Cookie: cookie });
+  assert.strictEqual(res.statusCode, 200);
+
+  const rawJson = JSON.stringify(res.body);
+  assert.strictEqual(rawJson.includes("confidential-email@secret.com"), false);
+  assert.strictEqual(rawJson.includes("password"), false);
+  assert.strictEqual(rawJson.includes("ipAddress"), false);
+});
+
+test("Analytics API 13. No secrets leakage (passwordHash, stripe secrets, tokens)", async () => {
+  const cookie = getSessionCookie("user-sec-2", "user@example.com");
+
+  const res = await makeRequest("/api/analytics/summary", "GET", { Cookie: cookie });
+  assert.strictEqual(res.statusCode, 200);
+
+  const rawJson = JSON.stringify(res.body);
+  assert.strictEqual(rawJson.includes("passwordHash"), false);
+  assert.strictEqual(rawJson.includes("refreshTokenHash"), false);
+  assert.strictEqual(rawJson.includes("sk_live_"), false);
+  assert.strictEqual(rawJson.includes("sk_test_"), false);
+  assert.strictEqual(rawJson.includes("stripe_price_"), false);
+});
+
+test("Analytics API 14. No client confidential data or notes leakage", async () => {
+  const cookie = getSessionCookie("user-sec-3", "user@example.com");
+
+  mockClients = [
+    buildTestClient({
+      id: "client-secret",
+      ownerId: "user-sec-3",
+      name: "TopSecretClientCorp",
+      notes: "Do not disclose confidential negotiations",
+    }),
+  ];
+
+  const res = await makeRequest("/api/analytics/summary", "GET", { Cookie: cookie });
+  assert.strictEqual(res.statusCode, 200);
+
+  const rawJson = JSON.stringify(res.body);
+  assert.strictEqual(rawJson.includes("TopSecretClientCorp"), false);
+  assert.strictEqual(rawJson.includes("confidential negotiations"), false);
+});
+
+test("Analytics API 15. No raw job descriptions or sensitive payload leakage", async () => {
+  const cookie = getSessionCookie("user-sec-4", "user@example.com");
+
+  mockJobImportsRows = [
+    {
+      id: "job-classified",
+      tenantId: "user-sec-4",
+      rawPayload: { description: "Classified client mission details" },
+      createdAt: new Date(),
+    },
+  ];
+
+  const res = await makeRequest("/api/analytics/summary", "GET", { Cookie: cookie });
+  assert.strictEqual(res.statusCode, 200);
+
+  const rawJson = JSON.stringify(res.body);
+  assert.strictEqual(rawJson.includes("Classified client mission details"), false);
+});
+
+test("Analytics API 16. No internal filesystem paths, SQL, or stack trace leakage", async () => {
+  const cookie = getSessionCookie("user-123", "user@example.com");
+
+  const res = await makeRequest("/api/analytics/summary", "GET", { Cookie: cookie });
+  assert.strictEqual(res.statusCode, 200);
+
+  const rawJson = JSON.stringify(res.body);
+  assert.strictEqual(rawJson.includes("SELECT * FROM"), false);
+  assert.strictEqual(rawJson.includes("D:\\FreelanceAI"), false);
+  assert.strictEqual(rawJson.includes("node:internal"), false);
+});
+
+test("Analytics API 17. Existing GET /api/analytics/scanned remains functional (backward compatibility)", async () => {
+  const cookie = getSessionCookie("user-123", "user@example.com");
+  mockScannedCount = 15;
+
+  const res = await makeRequest("/api/analytics/scanned", "GET", { Cookie: cookie });
+  assert.strictEqual(res.statusCode, 200);
+  assert.strictEqual(res.body.success, true);
+  assert.strictEqual(typeof res.body.value, "number");
+  assert.strictEqual(res.body.trend, "No trend");
+});
+
+test("Analytics API 18. Existing GET /api/analytics/matches remains functional (backward compatibility)", async () => {
+  const cookie = getSessionCookie("user-123", "user@example.com");
+  mockMatchesCount = 7;
+
+  const res = await makeRequest("/api/analytics/matches", "GET", { Cookie: cookie });
+  assert.strictEqual(res.statusCode, 200);
+  assert.strictEqual(res.body.success, true);
+  assert.strictEqual(typeof res.body.value, "number");
+  assert.strictEqual(res.body.trend, "No trend");
+});
+
+test("Analytics API 19. Existing GET /api/analytics/proposals remains functional (backward compatibility)", async () => {
+  const cookie = getSessionCookie("user-123", "user@example.com");
+
+  const res = await makeRequest("/api/analytics/proposals", "GET", { Cookie: cookie });
+  assert.strictEqual(res.statusCode, 200);
+  assert.strictEqual(res.body.success, true);
+  assert.strictEqual(typeof res.body.value, "number");
+  assert.strictEqual(res.body.trend, "No trend");
+});
+
+test("Analytics API 20. Existing GET /api/analytics/pulse remains functional (backward compatibility)", async () => {
+  const cookie = getSessionCookie("user-123", "user@example.com");
+
+  const res = await makeRequest("/api/analytics/pulse", "GET", { Cookie: cookie });
+  assert.strictEqual(res.statusCode, 200);
+  assert.strictEqual(res.body.success, true);
+  assert.match(res.body.description, /scans are active/i);
+});
