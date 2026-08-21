@@ -24,10 +24,10 @@
     "@freelanceos/db": "*",
     "@freelanceos/logger": "*",
     "drizzle-orm": "0.32.1",
-    "jsonwebtoken": "9.0.2"
+    "jsonwebtoken": "9.0.3"
   },
   "devDependencies": {
     "@freelanceos/ts-config": "*",
-    "@types/jsonwebtoken": "9.0.6"
+    "@types/jsonwebtoken": "9.0.10"
   }
 }
