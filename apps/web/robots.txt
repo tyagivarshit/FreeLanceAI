@@ -1,0 +1,21 @@
+User-agent: *
+Allow: /
+Allow: /index.html
+Allow: /login.html
+
+Disallow: /dashboard.html
+Disallow: /dashboard
+Disallow: /clients.html
+Disallow: /clients/
+Disallow: /client-detail.html
+Disallow: /matching.html
+Disallow: /matching
+Disallow: /search.html
+Disallow: /search
+Disallow: /billing.html
+Disallow: /billing
+Disallow: /settings.html
+Disallow: /settings
+Disallow: /api/
+
+Sitemap: https://freelanceos.com/sitemap.xml
