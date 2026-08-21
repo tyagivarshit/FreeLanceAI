@@ -1,0 +1,558 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>FreelanceOS — Settings</title>
+    <link rel="stylesheet" href="/style.css" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+  <body class="app-layout">
+    <!-- Sidebar Navigation -->
+    <aside class="sidebar" aria-label="Main Navigation">
+      <div class="brand">
+        <a href="/dashboard.html" class="brand-link">
+          <svg class="brand-icon" viewBox="0 0 24 24" width="24" height="24">
+            <path
+              d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              fill="none"
+            />
+          </svg>
+          <span class="brand-text">FreelanceOS</span>
+        </a>
+      </div>
+
+      <nav class="nav-menu">
+        <a href="/dashboard.html" class="nav-item">
+          <svg class="icon" viewBox="0 0 24 24" width="20" height="20">
+            <path
+              d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"
+            />
+          </svg>
+          <span class="nav-label">Dashboard</span>
+          <span class="tooltip" role="tooltip">Dashboard</span>
+        </a>
+        <a href="/clients.html" class="nav-item">
+          <svg class="icon" viewBox="0 0 24 24" width="20" height="20">
+            <path
+              d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5s-3 1.34-3 3 1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"
+            />
+          </svg>
+          <span class="nav-label">Clients</span>
+          <span class="tooltip" role="tooltip">Clients</span>
+        </a>
+        <a href="/brain.html" class="nav-item">
+          <svg class="icon" viewBox="0 0 24 24" width="20" height="20">
+            <path
+              d="M12 3c-4.97 0-9 4.03-9 9 0 2.12.74 4.07 1.97 5.61L4.35 19.4c-.39.39-.39 1.02 0 1.41.39.39 1.02.39 1.41 0l1.9-1.9C9.17 19.67 10.53 20 12 20c4.97 0 9-4.03 9-9s-4.03-9-9-9zm0 15c-3.31 0-6-2.69-6-6s2.69-6 6-6 6 2.69 6 6-2.69 6-6 6z"
+            />
+          </svg>
+          <span class="nav-label">Brain</span>
+          <span class="tooltip" role="tooltip">Brain</span>
+        </a>
+        <a href="/search.html" class="nav-item">
+          <svg class="icon" viewBox="0 0 24 24" width="20" height="20">
+            <path
+              d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"
+            />
+          </svg>
+          <span class="nav-label">Search</span>
+          <span class="tooltip" role="tooltip">Search</span>
+        </a>
+        <a href="/matching.html" class="nav-item">
+          <svg class="icon" viewBox="0 0 24 24" width="20" height="20">
+            <path
+              d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"
+            />
+          </svg>
+          <span class="nav-label">Matching</span>
+          <span class="tooltip" role="tooltip">Matching</span>
+        </a>
+        <a href="/billing.html" class="nav-item">
+          <svg class="icon" viewBox="0 0 24 24" width="20" height="20">
+            <path
+              d="M21 18v1c0 1.1-.9 2-2 2H5c-1.11 0-2-.9-2-2V5c0-1.1.89-2 2-2h14c1.1 0 2 .9 2 2v1h-9c-1.11 0-2 .9-2 2v8c0 1.1.89 2 2 2h9zm-9-2h10V8H12v8zm4-2.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"
+            />
+          </svg>
+          <span class="nav-label">Billing</span>
+          <span class="tooltip" role="tooltip">Billing</span>
+        </a>
+        <a href="/settings.html" class="nav-item active" aria-current="page">
+          <svg class="icon" viewBox="0 0 24 24" width="20" height="20">
+            <path
+              d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"
+            />
+          </svg>
+          <span class="nav-label">Settings</span>
+          <span class="tooltip" role="tooltip">Settings</span>
+        </a>
+      </nav>
+
+      <div class="sidebar-footer">
+        <button id="btn-logout" class="nav-item btn-logout" aria-label="Sign out">
+          <svg class="icon" viewBox="0 0 24 24" width="20" height="20">
+            <path
+              d="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.58L17 17l5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z"
+            />
+          </svg>
+          <span class="nav-label">Log Out</span>
+        </button>
+      </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <div class="main-wrapper">
+      <header class="topbar">
+        <div class="topbar-left">
+          <h1 class="page-title">Settings</h1>
+          <p class="topbar-subtitle">
+            Manage your profile, security credentials, active devices, data export, and preferences.
+          </p>
+        </div>
+        <div class="topbar-right">
+          <div class="user-profile">
+            <div id="user-avatar" class="avatar" aria-label="User profile">U</div>
+          </div>
+        </div>
+      </header>
+
+      <main id="settings-main-container" class="content-container">
+        <!-- Settings Navigation Tabs -->
+        <div class="settings-tabs-nav" role="tablist" aria-label="Settings Categories">
+          <button
+            id="tab-profile"
+            class="settings-tab-btn active"
+            role="tab"
+            aria-selected="true"
+            aria-controls="panel-profile"
+            data-tab="profile"
+          >
+            Profile
+          </button>
+          <button
+            id="tab-security"
+            class="settings-tab-btn"
+            role="tab"
+            aria-selected="false"
+            aria-controls="panel-security"
+            data-tab="security"
+          >
+            Security &amp; Sessions
+          </button>
+          <button
+            id="tab-data"
+            class="settings-tab-btn"
+            role="tab"
+            aria-selected="false"
+            aria-controls="panel-data"
+            data-tab="data"
+          >
+            Data &amp; Privacy
+          </button>
+          <button
+            id="tab-extension"
+            class="settings-tab-btn"
+            role="tab"
+            aria-selected="false"
+            aria-controls="panel-extension"
+            data-tab="extension"
+          >
+            Extension
+          </button>
+          <button
+            id="tab-billing"
+            class="settings-tab-btn"
+            role="tab"
+            aria-selected="false"
+            aria-controls="panel-billing"
+            data-tab="billing"
+          >
+            Billing
+          </button>
+        </div>
+
+        <!-- Loading Skeleton -->
+        <div id="settings-skeleton" class="settings-skeleton-container">
+          <div class="skeleton skeleton-card"></div>
+          <div class="skeleton skeleton-card"></div>
+        </div>
+
+        <!-- Global Error State -->
+        <div id="settings-error" class="settings-error-container hidden" role="alert">
+          <div class="error-card">
+            <svg class="error-icon" viewBox="0 0 24 24" width="40" height="40">
+              <path
+                d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"
+                fill="currentColor"
+              />
+            </svg>
+            <h3 id="settings-error-msg" class="error-title">Failed to load settings.</h3>
+            <p class="error-desc">Please check your network connection and try again.</p>
+            <button id="settings-retry-btn" class="btn btn-secondary">Retry</button>
+          </div>
+        </div>
+
+        <!-- Settings Content Container -->
+        <div id="settings-content" class="settings-content hidden">
+          <!-- 1. Profile Tab Panel -->
+          <section
+            id="panel-profile"
+            class="settings-panel active"
+            role="tabpanel"
+            aria-labelledby="tab-profile"
+          >
+            <div class="settings-card">
+              <div class="settings-card-header">
+                <h2 class="settings-card-title">Account Profile</h2>
+                <p class="settings-card-desc">Your primary FreelanceOS identity and account status.</p>
+              </div>
+              <div class="settings-card-body">
+                <div class="form-grid">
+                  <div class="form-group">
+                    <label for="profile-email" class="form-label">Email Address</label>
+                    <input
+                      id="profile-email"
+                      type="email"
+                      class="form-input"
+                      readonly
+                      disabled
+                      aria-describedby="profile-email-desc"
+                    />
+                    <span id="profile-email-desc" class="form-hint">Primary login identifier.</span>
+                  </div>
+
+                  <div class="form-group">
+                    <label for="profile-user-id" class="form-label">Account Identifier</label>
+                    <input
+                      id="profile-user-id"
+                      type="text"
+                      class="form-input code-font"
+                      readonly
+                      disabled
+                    />
+                    <span class="form-hint">Unique tenant owner ID.</span>
+                  </div>
+
+                  <div class="form-group">
+                    <label class="form-label">Account Status</label>
+                    <div class="status-badge-wrapper">
+                      <span id="profile-status-badge" class="badge badge-success">Active</span>
+                    </div>
+                  </div>
+
+                  <div class="form-group">
+                    <label class="form-label">Member Since</label>
+                    <span id="profile-created-at" class="form-value-text">—</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- 2. Security Tab Panel -->
+          <section
+            id="panel-security"
+            class="settings-panel hidden"
+            role="tabpanel"
+            aria-labelledby="tab-security"
+          >
+            <!-- Password Change Card -->
+            <div class="settings-card">
+              <div class="settings-card-header">
+                <h2 class="settings-card-title">Change Password</h2>
+                <p class="settings-card-desc">
+                  Update your login password. Must be at least 8 characters.
+                </p>
+              </div>
+              <div class="settings-card-body">
+                <form id="form-password-change" class="settings-form" novalidate>
+                  <div class="form-group">
+                    <label for="current-password" class="form-label">Current Password</label>
+                    <input
+                      id="current-password"
+                      type="password"
+                      class="form-input"
+                      required
+                      autocomplete="current-password"
+                    />
+                  </div>
+
+                  <div class="form-row">
+                    <div class="form-group">
+                      <label for="new-password" class="form-label">New Password</label>
+                      <input
+                        id="new-password"
+                        type="password"
+                        class="form-input"
+                        minlength="8"
+                        required
+                        autocomplete="new-password"
+                      />
+                      <span class="form-hint">Minimum 8 characters.</span>
+                    </div>
+
+                    <div class="form-group">
+                      <label for="confirm-password" class="form-label">Confirm New Password</label>
+                      <input
+                        id="confirm-password"
+                        type="password"
+                        class="form-input"
+                        minlength="8"
+                        required
+                        autocomplete="new-password"
+                      />
+                    </div>
+                  </div>
+
+                  <div id="password-alert" class="alert-box hidden" role="alert"></div>
+
+                  <div class="form-actions">
+                    <button id="btn-change-password" type="submit" class="btn btn-primary">
+                      Update Password
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+
+            <!-- Active Sessions Card -->
+            <div class="settings-card">
+              <div class="settings-card-header session-header-flex">
+                <div>
+                  <h2 class="settings-card-title">Active Devices &amp; Sessions</h2>
+                  <p class="settings-card-desc">
+                    Manage signed-in browsers and devices connected to your account.
+                  </p>
+                </div>
+                <button
+                  id="btn-revoke-all-sessions"
+                  class="btn btn-secondary btn-sm"
+                  aria-label="Revoke all other sessions"
+                >
+                  Log Out All Other Devices
+                </button>
+              </div>
+              <div class="settings-card-body">
+                <div id="sessions-list" class="sessions-list-grid" role="list">
+                  <!-- Dynamic session items inserted by JS -->
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- 3. Data & Privacy Tab Panel -->
+          <section
+            id="panel-data"
+            class="settings-panel hidden"
+            role="tabpanel"
+            aria-labelledby="tab-data"
+          >
+            <div class="settings-card">
+              <div class="settings-card-header">
+                <h2 class="settings-card-title">Export Account Data</h2>
+                <p class="settings-card-desc">
+                  Download a complete JSON export of your tenant data, including Clients, Matches,
+                  Timeline entries, Brain analyses, and Job imports.
+                </p>
+              </div>
+              <div class="settings-card-body">
+                <div class="export-box">
+                  <p class="export-text">
+                    Your export is generated in real-time and formatted in standard JSON according
+                    to FreelanceOS Privacy Policy.
+                  </p>
+                  <button id="btn-export-data" class="btn btn-secondary">
+                    <svg class="btn-icon" viewBox="0 0 24 24" width="16" height="16">
+                      <path
+                        d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"
+                        fill="currentColor"
+                      />
+                    </svg>
+                    Download Data Archive (.json)
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div class="settings-card danger-card">
+              <div class="settings-card-header">
+                <h2 class="settings-card-title text-danger">Danger Zone</h2>
+                <p class="settings-card-desc">
+                  Irreversible account and data management actions.
+                </p>
+              </div>
+              <div class="settings-card-body">
+                <div class="danger-action-row">
+                  <div>
+                    <h3 class="danger-action-title">Reset Workspace Data</h3>
+                    <p class="danger-action-desc">
+                      Permanently wipe all cached matches, timeline activity, and imported jobs.
+                    </p>
+                  </div>
+                  <button id="btn-danger-reset" class="btn btn-danger-outline">
+                    Reset Workspace
+                  </button>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- 4. Extension Tab Panel -->
+          <section
+            id="panel-extension"
+            class="settings-panel hidden"
+            role="tabpanel"
+            aria-labelledby="tab-extension"
+          >
+            <div class="settings-card">
+              <div class="settings-card-header">
+                <div class="flex-between">
+                  <div>
+                    <h2 class="settings-card-title">FreelanceOS Job Matcher Extension</h2>
+                    <p class="settings-card-desc">
+                      Browser extension for automatic job opportunity extraction and background matching.
+                    </p>
+                  </div>
+                  <span id="extension-status-badge" class="badge badge-info">Available</span>
+                </div>
+              </div>
+              <div class="settings-card-body">
+                <div class="extension-details-grid">
+                  <div class="ext-detail-item">
+                    <span class="ext-label">Version</span>
+                    <span id="ext-version" class="ext-value">0.1.0 (Manifest V3)</span>
+                  </div>
+                  <div class="ext-detail-item">
+                    <span class="ext-label">Environment</span>
+                    <span id="ext-env" class="ext-value">Production API</span>
+                  </div>
+                </div>
+
+                <div class="platforms-section">
+                  <h3 class="section-subtitle">Supported Platforms</h3>
+                  <div id="ext-platforms-list" class="platform-tags-list">
+                    <span class="platform-badge platform-upwork">Upwork</span>
+                    <span class="platform-badge platform-linkedin">LinkedIn</span>
+                  </div>
+                </div>
+
+                <div class="sync-toggles-section">
+                  <h3 class="section-subtitle">Sync Preferences</h3>
+                  <div class="toggle-row">
+                    <label for="toggle-auto-import" class="toggle-label">
+                      <span>Automatic Job Capture</span>
+                      <span class="form-hint">Capture job posts automatically when browsing job feeds.</span>
+                    </label>
+                    <input id="toggle-auto-import" type="checkbox" class="toggle-input" checked />
+                  </div>
+                  <div class="toggle-row">
+                    <label for="toggle-bg-sync" class="toggle-label">
+                      <span>Background Matching Sync</span>
+                      <span class="form-hint">Run heuristic AI scoring in the background when new jobs are detected.</span>
+                    </label>
+                    <input id="toggle-bg-sync" type="checkbox" class="toggle-input" checked />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- 5. Billing Tab Panel -->
+          <section
+            id="panel-billing"
+            class="settings-panel hidden"
+            role="tabpanel"
+            aria-labelledby="tab-billing"
+          >
+            <div class="settings-card">
+              <div class="settings-card-header flex-between">
+                <div>
+                  <h2 class="settings-card-title">Current Plan &amp; Subscription</h2>
+                  <p class="settings-card-desc">
+                    Manage tier subscriptions, billing intervals, and payment methods.
+                  </p>
+                </div>
+                <span id="billing-status-badge" class="badge badge-primary">Free</span>
+              </div>
+              <div class="settings-card-body">
+                <div class="billing-summary-box">
+                  <div class="plan-hero-row">
+                    <div>
+                      <h3 id="billing-plan-name" class="plan-hero-name">Starter Plan</h3>
+                      <p id="billing-period-info" class="plan-period-text">
+                        Free tier with standard limits
+                      </p>
+                      <div id="billing-trial-info" class="badge badge-trial hidden">
+                        7 days remaining on Pro Trial
+                      </div>
+                    </div>
+                    <div class="billing-actions-group">
+                      <button
+                        id="btn-settings-portal"
+                        class="btn btn-secondary hidden"
+                        aria-label="Manage subscription in Stripe Portal"
+                      >
+                        Manage in Stripe Portal ↗
+                      </button>
+                      <a
+                        id="link-settings-upgrade"
+                        href="/billing.html"
+                        class="btn btn-primary"
+                      >
+                        View Plans &amp; Upgrade
+                      </a>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+        </div>
+      </main>
+    </div>
+
+    <!-- Accessible Confirmation Modal -->
+    <div
+      id="confirmation-modal"
+      class="modal-backdrop hidden"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="modal-title"
+    >
+      <div class="modal-dialog">
+        <div class="modal-header">
+          <h3 id="modal-title" class="modal-title">Confirm Action</h3>
+          <button id="modal-close-btn" class="modal-close" aria-label="Close dialog">×</button>
+        </div>
+        <div class="modal-body">
+          <p id="modal-msg" class="modal-message">Are you sure you want to proceed?</p>
+        </div>
+        <div class="modal-footer">
+          <button id="modal-cancel-btn" class="btn btn-secondary">Cancel</button>
+          <button id="modal-confirm-btn" class="btn btn-danger">Confirm</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Toast Notification Container -->
+    <div
+      id="toast-container"
+      class="toast-notification hidden"
+      role="status"
+      aria-live="polite"
+    >
+      <span id="toast-msg"></span>
+    </div>
+
+    <script type="module" src="/settings.js"></script>
+  </body>
+</html>

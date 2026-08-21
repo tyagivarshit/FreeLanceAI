@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert";
 import http from "http";
-import { signAccessToken } from "@freelanceos/auth";
+import { signAccessToken, hashPassword } from "@freelanceos/auth";
 import { db, sessions, userPasswordHashes, users, jobImports, jobMatches } from "@freelanceos/db";
 import {
   server,
@@ -76,6 +76,9 @@ let mockScannedCount = 0;
 let mockMatchesCount = 0;
 let mockMatchesRows = null;
 let mockJobImportsRows = null;
+let mockSessionsRows = null;
+let mockUserPasswordHashesRows = null;
+let mockUsersRows = null;
 
 let mockJobs = [];
 let mockClients = [];
@@ -156,6 +159,9 @@ test.beforeEach(async () => {
   mockMatchesCount = 0;
   mockMatchesRows = null;
   mockJobImportsRows = null;
+  mockSessionsRows = null;
+  mockUserPasswordHashesRows = null;
+  mockUsersRows = null;
 
   mockJobs = [];
   mockClients = [];
@@ -179,13 +185,13 @@ test.beforeEach(async () => {
     const builder = {
       from: function (table) {
         const fromBuilder = {
-          where: function () {
+          where: function (condition) {
             const whereBuilder = {
               limit: function () {
-                return Promise.resolve(mockTableResult(table));
+                return Promise.resolve(mockTableResult(table, condition));
               },
               then: function (resolve) {
-                resolve(mockTableResult(table));
+                resolve(mockTableResult(table, condition));
               },
             };
             return whereBuilder;
@@ -540,9 +546,39 @@ test.beforeEach(async () => {
   };
 });
 
+function extractConditionValues(condition) {
+  const values = [];
+  if (!condition) {
+    return values;
+  }
+  if (typeof condition.value === "string") {
+    values.push(condition.value);
+  }
+  if (condition.queryChunks && Array.isArray(condition.queryChunks)) {
+    for (const chunk of condition.queryChunks) {
+      if (chunk && typeof chunk.value === "string") {
+        values.push(chunk.value);
+      }
+    }
+  }
+  return values;
+}
+
 // Database result resolver for session/user/counts queries
-function mockTableResult(table) {
+function mockTableResult(table, condition) {
   if (table === sessions) {
+    if (mockSessionsRows !== null) {
+      if (condition) {
+        const condVals = extractConditionValues(condition);
+        for (const val of condVals) {
+          const matched = mockSessionsRows.filter((s) => s.id === val);
+          if (matched.length > 0) {
+            return matched;
+          }
+        }
+      }
+      return mockSessionsRows;
+    }
     return [
       {
         id: currentSessionId,
@@ -556,6 +592,9 @@ function mockTableResult(table) {
     ];
   }
   if (table === userPasswordHashes) {
+    if (mockUserPasswordHashesRows !== null) {
+      return mockUserPasswordHashesRows;
+    }
     return [
       {
         id: "pwd-hash-1",
@@ -565,6 +604,9 @@ function mockTableResult(table) {
     ];
   }
   if (table === users) {
+    if (mockUsersRows !== null) {
+      return mockUsersRows;
+    }
     return [
       {
         id: currentUserId,
@@ -2738,4 +2780,313 @@ test("Billing API 15. POST /api/billing/portal isolates customer mapping and rej
   assert.strictEqual(res.statusCode, 400);
   assert.strictEqual(res.body.success, false);
   assert.match(res.body.error, /owner|mismatch/i);
+});
+
+// =====================================================================
+// Phase 11G: Settings API Test Suite
+// =====================================================================
+
+test("Settings API 1. GET /api/settings/profile requires authentication (401)", async () => {
+  const res = await makeRequest("/api/settings/profile", "GET");
+  assert.strictEqual(res.statusCode, 401);
+  assert.strictEqual(res.body.success, false);
+});
+
+test("Settings API 2. GET /api/settings/profile returns safe user profile DTO", async () => {
+  const cookie = getSessionCookie("user-settings-1", "settings1@example.com");
+  mockUsersRows = [
+    {
+      id: "user-settings-1",
+      email: "settings1@example.com",
+      status: "active",
+      emailVerifiedAt: new Date("2026-08-01T12:00:00Z"),
+      createdAt: new Date("2026-07-01T08:00:00Z"),
+    },
+  ];
+
+  const res = await makeRequest("/api/settings/profile", "GET", { Cookie: cookie });
+  assert.strictEqual(res.statusCode, 200);
+  assert.strictEqual(res.body.success, true);
+  assert.strictEqual(res.body.profile.userId, "user-settings-1");
+  assert.strictEqual(res.body.profile.email, "settings1@example.com");
+  assert.strictEqual(res.body.profile.status, "active");
+
+  // Check no password hashes or secret tokens leaked
+  const raw = JSON.stringify(res.body);
+  assert.strictEqual(raw.includes("passwordHash"), false);
+  assert.strictEqual(raw.includes("refreshTokenHash"), false);
+  assert.strictEqual(raw.includes("credentialVersion"), false);
+});
+
+test("Settings API 3. POST /api/settings/security/password requires authentication (401)", async () => {
+  const res = await makeRequest(
+    "/api/settings/security/password",
+    "POST",
+    {},
+    {
+      currentPassword: "OldPassword123!",
+      newPassword: "NewPassword123!",
+    },
+  );
+  assert.strictEqual(res.statusCode, 401);
+  assert.strictEqual(res.body.success, false);
+});
+
+test("Settings API 4. POST /api/settings/security/password validates input length and presence (400)", async () => {
+  const cookie = getSessionCookie("user-123", "user@example.com");
+
+  // Missing fields
+  const res1 = await makeRequest("/api/settings/security/password", "POST", { Cookie: cookie }, {});
+  assert.strictEqual(res1.statusCode, 400);
+  assert.strictEqual(res1.body.success, false);
+
+  // Short password (< 8 chars)
+  const res2 = await makeRequest(
+    "/api/settings/security/password",
+    "POST",
+    { Cookie: cookie },
+    {
+      currentPassword: "ValidCurrentPassword123!",
+      newPassword: "short",
+    },
+  );
+  assert.strictEqual(res2.statusCode, 400);
+  assert.strictEqual(res2.body.success, false);
+  assert.match(res2.body.error, /at least 8 characters/i);
+});
+
+test("Settings API 5. POST /api/settings/security/password rejects wrong current password (400)", async () => {
+  const cookie = getSessionCookie("user-123", "user@example.com");
+
+  const hashedOld = await hashPassword("RealCurrentPassword123!");
+  mockUserPasswordHashesRows = [
+    {
+      id: "pwd-1",
+      userId: "user-123",
+      passwordHash: hashedOld.passwordHash,
+      algorithm: hashedOld.algorithm,
+      hashVersion: hashedOld.hashVersion,
+      credentialVersion: 1,
+    },
+  ];
+
+  const res = await makeRequest(
+    "/api/settings/security/password",
+    "POST",
+    { Cookie: cookie },
+    {
+      currentPassword: "WrongCurrentPassword!",
+      newPassword: "NewStrongPassword123!",
+    },
+  );
+
+  assert.strictEqual(res.statusCode, 400);
+  assert.strictEqual(res.body.success, false);
+  assert.match(res.body.error, /incorrect current password/i);
+});
+
+test("Settings API 6. POST /api/settings/security/password updates password and increments credentialVersion", async () => {
+  const cookie = getSessionCookie("user-123", "user@example.com");
+
+  const hashedOld = await hashPassword("RealCurrentPassword123!");
+  mockUserPasswordHashesRows = [
+    {
+      id: "pwd-1",
+      userId: "user-123",
+      passwordHash: hashedOld.passwordHash,
+      algorithm: hashedOld.algorithm,
+      hashVersion: hashedOld.hashVersion,
+      credentialVersion: 1,
+    },
+  ];
+
+  const res = await makeRequest(
+    "/api/settings/security/password",
+    "POST",
+    { Cookie: cookie },
+    {
+      currentPassword: "RealCurrentPassword123!",
+      newPassword: "BrandNewSecurePassword123!",
+    },
+  );
+
+  assert.strictEqual(res.statusCode, 200);
+  assert.strictEqual(res.body.success, true);
+  assert.match(res.body.message, /updated successfully/i);
+});
+
+test("Settings API 7. GET /api/settings/security/sessions requires authentication (401)", async () => {
+  const res = await makeRequest("/api/settings/security/sessions", "GET");
+  assert.strictEqual(res.statusCode, 401);
+  assert.strictEqual(res.body.success, false);
+});
+
+test("Settings API 8. GET /api/settings/security/sessions returns active user sessions and current session ID", async () => {
+  const cookie = getSessionCookie("user-123", "user@example.com", "session-active-current");
+  mockSessionsRows = [
+    {
+      id: "session-active-current",
+      userId: "user-123",
+      deviceName: "MacBook Pro",
+      platform: "macOS",
+      browser: "Chrome",
+      ipAddress: "192.168.1.1",
+      lastActivityAt: new Date(),
+      createdAt: new Date("2026-08-01"),
+      expiresAt: new Date(Date.now() + 86400000),
+      revokedAt: null,
+    },
+    {
+      id: "session-active-other",
+      userId: "user-123",
+      deviceName: "iPhone",
+      platform: "iOS",
+      browser: "Safari",
+      ipAddress: "10.0.0.2",
+      lastActivityAt: new Date(Date.now() - 3600000),
+      createdAt: new Date("2026-08-05"),
+      expiresAt: new Date(Date.now() + 86400000),
+      revokedAt: null,
+    },
+  ];
+
+  const res = await makeRequest("/api/settings/security/sessions", "GET", { Cookie: cookie });
+  assert.strictEqual(res.statusCode, 200);
+  assert.strictEqual(res.body.success, true);
+  assert.strictEqual(res.body.currentSessionId, "session-active-current");
+  assert.strictEqual(res.body.sessions.length, 2);
+
+  const current = res.body.sessions.find((s) => s.sessionId === "session-active-current");
+  assert.ok(current);
+  assert.strictEqual(current.isCurrent, true);
+  assert.strictEqual(current.deviceName, "MacBook Pro");
+
+  const other = res.body.sessions.find((s) => s.sessionId === "session-active-other");
+  assert.ok(other);
+  assert.strictEqual(other.isCurrent, false);
+
+  // Verify no secret token hashes leaked
+  const raw = JSON.stringify(res.body);
+  assert.strictEqual(raw.includes("refreshTokenHash"), false);
+});
+
+test("Settings API 9. DELETE /api/settings/security/sessions/:id requires authentication (401)", async () => {
+  const res = await makeRequest("/api/settings/security/sessions/some-session-id", "DELETE");
+  assert.strictEqual(res.statusCode, 401);
+  assert.strictEqual(res.body.success, false);
+});
+
+test("Settings API 10. DELETE /api/settings/security/sessions/:id rejects foreign session revocation (404)", async () => {
+  const cookie = getSessionCookie("user-attacker", "attacker@example.com", "session-attacker-1");
+  mockSessionsRows = [
+    {
+      id: "session-attacker-1",
+      userId: "user-attacker",
+      refreshTokenHash: "hashed-token",
+      expiresAt: new Date(Date.now() + 100000),
+      revokedAt: null,
+      lastActivityAt: new Date(),
+      credentialVersion: 1,
+    },
+    {
+      id: "session-victim-999",
+      userId: "user-victim", // Different user!
+      refreshTokenHash: "hashed-token",
+      expiresAt: new Date(Date.now() + 100000),
+      revokedAt: null,
+      lastActivityAt: new Date(),
+      credentialVersion: 1,
+    },
+  ];
+
+  const res = await makeRequest("/api/settings/security/sessions/session-victim-999", "DELETE", {
+    Cookie: cookie,
+  });
+
+  assert.strictEqual(res.statusCode, 404);
+  assert.strictEqual(res.body.success, false);
+});
+
+test("Settings API 11. DELETE /api/settings/security/sessions/:id revokes user's target session", async () => {
+  const cookie = getSessionCookie("user-123", "user@example.com", "session-current-1");
+  mockSessionsRows = [
+    {
+      id: "session-current-1",
+      userId: "user-123",
+      refreshTokenHash: "hashed-token",
+      expiresAt: new Date(Date.now() + 100000),
+      revokedAt: null,
+      lastActivityAt: new Date(),
+      credentialVersion: 1,
+    },
+    {
+      id: "session-to-revoke-123",
+      userId: "user-123",
+      refreshTokenHash: "hashed-token",
+      expiresAt: new Date(Date.now() + 100000),
+      revokedAt: null,
+      lastActivityAt: new Date(),
+      credentialVersion: 1,
+    },
+  ];
+
+  const res = await makeRequest("/api/settings/security/sessions/session-to-revoke-123", "DELETE", {
+    Cookie: cookie,
+  });
+
+  assert.strictEqual(res.statusCode, 200);
+  assert.strictEqual(res.body.success, true);
+  assert.match(res.body.message, /revoked successfully/i);
+});
+
+test("Settings API 12. DELETE /api/settings/security/sessions revokes all other sessions", async () => {
+  const cookie = getSessionCookie("user-123", "user@example.com", "session-current-stay");
+
+  const res = await makeRequest("/api/settings/security/sessions", "DELETE", { Cookie: cookie });
+  assert.strictEqual(res.statusCode, 200);
+  assert.strictEqual(res.body.success, true);
+  assert.match(res.body.message, /all other sessions revoked/i);
+});
+
+test("Settings API 13. GET /api/settings/data/export requires authentication (401)", async () => {
+  const res = await makeRequest("/api/settings/data/export", "GET");
+  assert.strictEqual(res.statusCode, 401);
+  assert.strictEqual(res.body.success, false);
+});
+
+test("Settings API 14. GET /api/settings/data/export returns tenant-scoped archive without leaking secrets", async () => {
+  const cookie = getSessionCookie("user-export-1", "export@example.com");
+
+  const res = await makeRequest("/api/settings/data/export", "GET", { Cookie: cookie });
+  assert.strictEqual(res.statusCode, 200);
+  assert.strictEqual(res.body.success, true);
+  assert.ok(res.body.export);
+  assert.strictEqual(res.body.export.ownerId, "user-export-1");
+  assert.strictEqual(res.body.export.tenantId, "tenant_user-export-1");
+  assert.ok(Array.isArray(res.body.export.clients));
+  assert.ok(Array.isArray(res.body.export.jobs));
+  assert.ok(Array.isArray(res.body.export.matches));
+  assert.ok(Array.isArray(res.body.export.timeline));
+  assert.ok(Array.isArray(res.body.export.brainAnalyses));
+
+  // Check secret exclusion
+  const raw = JSON.stringify(res.body);
+  assert.strictEqual(raw.includes("passwordHash"), false);
+  assert.strictEqual(raw.includes("stripe_price_"), false);
+  assert.strictEqual(raw.includes("sk_test_"), false);
+});
+
+test("Settings API 15. GET /api/settings/extension returns extension configuration and supported platforms", async () => {
+  const cookie = getSessionCookie("user-123", "user@example.com");
+
+  const res = await makeRequest("/api/settings/extension", "GET", { Cookie: cookie });
+  assert.strictEqual(res.statusCode, 200);
+  assert.strictEqual(res.body.success, true);
+  assert.ok(res.body.extension);
+  assert.strictEqual(res.body.extension.name, "FreelanceOS Job Matcher");
+  assert.strictEqual(res.body.extension.manifestVersion, 3);
+  assert.ok(Array.isArray(res.body.extension.supportedPlatforms));
+  const platforms = res.body.extension.supportedPlatforms.map((p) => p.id);
+  assert.ok(platforms.includes("upwork"));
+  assert.ok(platforms.includes("linkedin"));
 });

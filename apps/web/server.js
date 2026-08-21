@@ -3,7 +3,7 @@ import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 import { randomUUID } from "crypto";
-import { eq, and, desc, inArray, sql } from "drizzle-orm";
+import { eq, and, desc, inArray, sql, ne, gt, isNull } from "drizzle-orm";
 import {
   signupUser,
   loginUser,
@@ -13,6 +13,12 @@ import {
   logoutUser,
   issueClearSessionCookie,
   authenticateRequest,
+  verifyAccessToken,
+  hashPassword,
+  verifyPassword,
+  revokeSession,
+  revokeAllSessions,
+  findActiveSession,
 } from "@freelanceos/auth";
 import { runtimeConfig } from "@freelanceos/config";
 import { logger } from "@freelanceos/logger";
@@ -58,8 +64,15 @@ import {
 } from "@freelanceos/core";
 import {
   db,
+  users,
+  userPasswordHashes,
+  sessions,
+  clients,
   jobImports,
   jobMatches,
+  clientTimelines,
+  timelineEntries,
+  brainAnalyses,
   PostgresJobsRepository,
   PostgresJobMatchRepository,
   PostgresTimelineRepository,
@@ -567,6 +580,14 @@ const server = http.createServer(async (req, res) => {
         ipAddress: req.socket.remoteAddress || "127.0.0.1",
       });
       if (authResult.status === "Authenticated") {
+        try {
+          const decoded = verifyAccessToken(refreshToken);
+          if (decoded && decoded.sessionId) {
+            authResult.context.identity.sessionId = decoded.sessionId;
+          }
+        } catch {
+          // Token decode fallback
+        }
         return authResult;
       }
     } catch (err) {
@@ -1017,6 +1038,8 @@ const server = http.createServer(async (req, res) => {
     pathname === "/matching" ||
     pathname === "/billing.html" ||
     pathname === "/billing" ||
+    pathname === "/settings.html" ||
+    pathname === "/settings" ||
     clientDetailRouteMatch
   ) {
     const auth = await checkAuthentication();
@@ -1040,6 +1063,9 @@ const server = http.createServer(async (req, res) => {
     }
     if (pathname === "/billing") {
       staticPathname = "/billing.html";
+    }
+    if (pathname === "/settings") {
+      staticPathname = "/settings.html";
     }
     if (clientDetailRouteMatch) {
       staticPathname = "/client-detail.html";
@@ -2882,6 +2908,417 @@ const server = http.createServer(async (req, res) => {
       logger.error({ message: "Failed to fetch activity timeline API", error: err });
       res.writeHead(500, { "Content-Type": "application/json" });
       res.end(JSON.stringify({ success: false, error: "Internal Server Error" }));
+    }
+    return;
+  }
+
+  // =====================================================================
+  // Phase 11G: Settings API Endpoints
+  // =====================================================================
+
+  // 1J. GET /api/settings/profile
+  if (pathname === "/api/settings/profile" && req.method === "GET") {
+    const auth = await checkAuthentication();
+    if (!auth) {
+      sendJson(401, { success: false, error: "Unauthorized" });
+      return;
+    }
+
+    try {
+      const userId = auth.context.identity.userId;
+      const userRows = await db
+        .select({
+          id: users.id,
+          email: users.email,
+          status: users.status,
+          emailVerifiedAt: users.emailVerifiedAt,
+          createdAt: users.createdAt,
+        })
+        .from(users)
+        .where(eq(users.id, userId))
+        .limit(1);
+
+      const user = userRows[0];
+      const profile = {
+        userId,
+        email: user ? user.email : auth.context.identity.email,
+        status: user ? user.status : "active",
+        emailVerifiedAt: user ? user.emailVerifiedAt : null,
+        createdAt: user && user.createdAt ? user.createdAt : new Date().toISOString(),
+      };
+
+      sendJson(200, {
+        success: true,
+        profile,
+      });
+    } catch (err) {
+      logger.error({
+        message: "Failed to retrieve user profile",
+        error: err instanceof Error ? err : new Error(String(err)),
+      });
+      sendJson(500, { success: false, error: "Internal Server Error" });
+    }
+    return;
+  }
+
+  // 1K. POST /api/settings/security/password
+  if (pathname === "/api/settings/security/password" && req.method === "POST") {
+    const auth = await checkAuthentication();
+    if (!auth) {
+      sendJson(401, { success: false, error: "Unauthorized" });
+      return;
+    }
+
+    try {
+      const payload = await readJsonBody();
+      const { currentPassword, newPassword } = payload || {};
+
+      if (
+        !currentPassword ||
+        typeof currentPassword !== "string" ||
+        !newPassword ||
+        typeof newPassword !== "string"
+      ) {
+        sendJson(400, {
+          success: false,
+          error: "Current password and new password are required.",
+        });
+        return;
+      }
+
+      if (newPassword.length < 8) {
+        sendJson(400, {
+          success: false,
+          error: "New password must be at least 8 characters long.",
+        });
+        return;
+      }
+
+      const userId = auth.context.identity.userId;
+
+      // Retrieve existing password hash
+      const storedHashes = await db
+        .select({
+          id: userPasswordHashes.id,
+          passwordHash: userPasswordHashes.passwordHash,
+          algorithm: userPasswordHashes.algorithm,
+          hashVersion: userPasswordHashes.hashVersion,
+          credentialVersion: userPasswordHashes.credentialVersion,
+        })
+        .from(userPasswordHashes)
+        .where(eq(userPasswordHashes.userId, userId))
+        .limit(1);
+
+      const stored = storedHashes[0];
+      if (!stored) {
+        sendJson(400, {
+          success: false,
+          error: "Incorrect current password.",
+        });
+        return;
+      }
+
+      // Verify current password
+      const isCurrentValid = await verifyPassword(
+        currentPassword,
+        stored.passwordHash,
+        stored.algorithm,
+        stored.hashVersion,
+      );
+
+      if (!isCurrentValid) {
+        sendJson(400, {
+          success: false,
+          error: "Incorrect current password.",
+        });
+        return;
+      }
+
+      // Hash new password using modern auth configuration
+      const newHash = await hashPassword(newPassword);
+      const nextCredentialVersion = (stored.credentialVersion || 1) + 1;
+
+      // Update password hash and increment credential version
+      await db
+        .update(userPasswordHashes)
+        .set({
+          passwordHash: newHash.passwordHash,
+          algorithm: newHash.algorithm,
+          hashVersion: newHash.hashVersion,
+          passwordChangedAt: new Date(),
+          credentialVersion: nextCredentialVersion,
+        })
+        .where(eq(userPasswordHashes.userId, userId));
+
+      sendJson(200, {
+        success: true,
+        message: "Password updated successfully.",
+      });
+    } catch (err) {
+      if (err && err.statusCode === 400) {
+        sendJson(400, { success: false, error: "Malformed JSON payload." });
+        return;
+      }
+      if (err && err.statusCode === 413) {
+        sendJson(413, { success: false, error: "Payload too large." });
+        return;
+      }
+      logger.error({
+        message: "Failed to update user password",
+        error: err instanceof Error ? err : new Error(String(err)),
+      });
+      sendJson(500, { success: false, error: "Internal Server Error" });
+    }
+    return;
+  }
+
+  // 1L. GET /api/settings/security/sessions
+  if (pathname === "/api/settings/security/sessions" && req.method === "GET") {
+    const auth = await checkAuthentication();
+    if (!auth) {
+      sendJson(401, { success: false, error: "Unauthorized" });
+      return;
+    }
+
+    try {
+      const userId = auth.context.identity.userId;
+      const currentSessionId = auth.context.identity.sessionId;
+
+      const activeSessions = await db
+        .select({
+          id: sessions.id,
+          deviceName: sessions.deviceName,
+          platform: sessions.platform,
+          browser: sessions.browser,
+          ipAddress: sessions.ipAddress,
+          lastActivityAt: sessions.lastActivityAt,
+          createdAt: sessions.createdAt,
+          expiresAt: sessions.expiresAt,
+          revokedAt: sessions.revokedAt,
+        })
+        .from(sessions)
+        .where(
+          and(
+            eq(sessions.userId, userId),
+            isNull(sessions.revokedAt),
+            gt(sessions.expiresAt, new Date()),
+          ),
+        );
+
+      const sessionDtos = activeSessions.map((s) => ({
+        sessionId: s.id,
+        deviceName: s.deviceName || "Desktop Device",
+        platform: s.platform || "Web",
+        browser: s.browser || "Browser",
+        ipAddress: s.ipAddress,
+        lastActivityAt: s.lastActivityAt,
+        createdAt: s.createdAt,
+        expiresAt: s.expiresAt,
+        isCurrent: s.id === currentSessionId,
+      }));
+
+      sendJson(200, {
+        success: true,
+        currentSessionId,
+        sessions: sessionDtos,
+      });
+    } catch (err) {
+      logger.error({
+        message: "Failed to retrieve user active sessions",
+        error: err instanceof Error ? err : new Error(String(err)),
+      });
+      sendJson(500, { success: false, error: "Internal Server Error" });
+    }
+    return;
+  }
+
+  // 1M. DELETE /api/settings/security/sessions/:id
+  const deleteSessionMatch = pathname.match(
+    /^\/api\/settings\/security\/sessions\/([a-zA-Z0-9-]+)$/,
+  );
+  if (deleteSessionMatch && req.method === "DELETE") {
+    const auth = await checkAuthentication();
+    if (!auth) {
+      sendJson(401, { success: false, error: "Unauthorized" });
+      return;
+    }
+
+    try {
+      const targetSessionId = deleteSessionMatch[1];
+      const userId = auth.context.identity.userId;
+
+      // Verify target session exists and belongs to the authenticated user
+      const existing = await db
+        .select({
+          id: sessions.id,
+          userId: sessions.userId,
+        })
+        .from(sessions)
+        .where(eq(sessions.id, targetSessionId))
+        .limit(1);
+
+      const session = existing[0];
+      if (!session || session.userId !== userId) {
+        sendJson(404, { success: false, error: "Session not found." });
+        return;
+      }
+
+      await revokeSession(targetSessionId);
+
+      sendJson(200, {
+        success: true,
+        message: "Session revoked successfully.",
+      });
+    } catch (err) {
+      logger.error({
+        message: "Failed to revoke session",
+        error: err instanceof Error ? err : new Error(String(err)),
+      });
+      sendJson(500, { success: false, error: "Internal Server Error" });
+    }
+    return;
+  }
+
+  // 1N. DELETE /api/settings/security/sessions (Revoke all OTHER sessions)
+  if (pathname === "/api/settings/security/sessions" && req.method === "DELETE") {
+    const auth = await checkAuthentication();
+    if (!auth) {
+      sendJson(401, { success: false, error: "Unauthorized" });
+      return;
+    }
+
+    try {
+      const userId = auth.context.identity.userId;
+      const currentSessionId = auth.context.identity.sessionId;
+
+      await db
+        .update(sessions)
+        .set({ revokedAt: new Date() })
+        .where(
+          and(
+            eq(sessions.userId, userId),
+            ne(sessions.id, currentSessionId),
+            isNull(sessions.revokedAt),
+          ),
+        );
+
+      sendJson(200, {
+        success: true,
+        message: "All other sessions revoked successfully.",
+      });
+    } catch (err) {
+      logger.error({
+        message: "Failed to revoke other sessions",
+        error: err instanceof Error ? err : new Error(String(err)),
+      });
+      sendJson(500, { success: false, error: "Internal Server Error" });
+    }
+    return;
+  }
+
+  // 1O. GET /api/settings/data/export
+  if (pathname === "/api/settings/data/export" && req.method === "GET") {
+    const auth = await checkAuthentication();
+    if (!auth) {
+      sendJson(401, { success: false, error: "Unauthorized" });
+      return;
+    }
+
+    try {
+      const ownerId = auth.context.identity.userId;
+      const tenantId = `tenant_${ownerId}`;
+
+      // Query tenant-scoped domain aggregates safely
+      const [clientsList, jobsList, matchesList, timelineList, brainList] = await Promise.all([
+        Promise.resolve(clientRepo.list(ownerId, { pageSize: 100 }))
+          .then((r) => (r && r.items ? r.items : []))
+          .catch(() => []),
+        Promise.resolve(jobsRepo.findByTenant(tenantId)).catch(() => []),
+        Promise.resolve(
+          matchRepo.findByTenant
+            ? matchRepo.findByTenant(tenantId)
+            : db.select().from(jobMatches).where(eq(jobMatches.tenantId, tenantId)),
+        ).catch(() => []),
+        Promise.resolve(
+          timelineRepo.findTimelineEntriesByOwner(ownerId, { page: 1, pageSize: 100 }),
+        )
+          .then((r) => (r && r.items ? r.items : []))
+          .catch(() => []),
+        Promise.resolve(
+          brainAnalysisRepo.listByScope({ ownerId, tenantId, actorId: ownerId }, { limit: 100 }),
+        )
+          .then((r) => (r && r.items ? r.items : []))
+          .catch(() => []),
+      ]);
+
+      const exportData = {
+        version: "1.0.0",
+        exportedAt: new Date().toISOString(),
+        tenantId,
+        ownerId,
+        clients: Array.isArray(clientsList) ? clientsList : [],
+        jobs: Array.isArray(jobsList) ? jobsList : [],
+        matches: Array.isArray(matchesList) ? matchesList : [],
+        timeline: Array.isArray(timelineList) ? timelineList : [],
+        brainAnalyses: Array.isArray(brainList) ? brainList : [],
+      };
+
+      sendJson(200, {
+        success: true,
+        export: exportData,
+      });
+    } catch (err) {
+      logger.error({
+        message: "Failed to generate data export",
+        error: err instanceof Error ? err : new Error(String(err)),
+      });
+      sendJson(500, { success: false, error: "Internal Server Error" });
+    }
+    return;
+  }
+
+  // 1P. GET /api/settings/extension
+  if (pathname === "/api/settings/extension" && req.method === "GET") {
+    const auth = await checkAuthentication();
+    if (!auth) {
+      sendJson(401, { success: false, error: "Unauthorized" });
+      return;
+    }
+
+    try {
+      sendJson(200, {
+        success: true,
+        extension: {
+          name: "FreelanceOS Job Matcher",
+          version: "0.1.0",
+          manifestVersion: 3,
+          supportedPlatforms: [
+            {
+              id: "upwork",
+              name: "Upwork",
+              supported: true,
+              matchPattern: "https://*.upwork.com/*",
+            },
+            {
+              id: "linkedin",
+              name: "LinkedIn",
+              supported: true,
+              matchPattern: "https://*.linkedin.com/*",
+            },
+          ],
+          syncPreferences: {
+            autoImport: true,
+            backgroundSync: true,
+          },
+          connectionStatus: "available",
+        },
+      });
+    } catch (err) {
+      logger.error({
+        message: "Failed to retrieve extension settings",
+        error: err instanceof Error ? err : new Error(String(err)),
+      });
+      sendJson(500, { success: false, error: "Internal Server Error" });
     }
     return;
   }
