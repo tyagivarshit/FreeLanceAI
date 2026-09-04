@@ -14,11 +14,13 @@ import {
   issueClearSessionCookie,
   authenticateRequest,
   verifyAccessToken,
+  signAccessToken,
   hashPassword,
   verifyPassword,
   revokeSession,
   revokeAllSessions,
   findActiveSession,
+  verifyEmailToken,
 } from "@freelanceos/auth";
 import { runtimeConfig } from "@freelanceos/config";
 import { logger } from "@freelanceos/logger";
@@ -35,6 +37,12 @@ import {
   PlanCatalog,
   Plan,
   InMemoryUsageRepository,
+  JobImport,
+  JobSource,
+  JobExternalIdentity,
+  JobImportProvenance,
+  JobRawPayload,
+  JobImportFingerprint,
   JobMatch,
   JobMatchScore,
   ScoreWeightProfile,
@@ -61,6 +69,8 @@ import {
   JobSearchEngine,
   MatchSearchEngine,
   TimelineSearchEngine,
+  normalizeEmailAddress,
+  validatePasswordStrength,
 } from "@freelanceos/core";
 import {
   db,
@@ -220,19 +230,69 @@ const entitlementResolver = new EntitlementResolver({
   usageRepo,
 });
 
-// Instantiate StripeBillingProvider
+// Instantiate StripeBillingProvider with safe test/mock fallback for development
+const hasRealStripeKey =
+  runtimeConfig.STRIPE_SECRET_KEY &&
+  runtimeConfig.STRIPE_SECRET_KEY !== "sk_test_placeholder" &&
+  !runtimeConfig.STRIPE_SECRET_KEY.includes("placeholder");
+
+const devMockStripeClient = !hasRealStripeKey
+  ? {
+      customers: {
+        create: async (data) => ({
+          id: `cus_mock_${randomUUID().slice(0, 8)}`,
+          ...data,
+        }),
+      },
+      prices: {
+        retrieve: async (id) => ({
+          id,
+          unit_amount: 1499,
+          currency: "usd",
+          recurring: { interval: "month" },
+        }),
+      },
+      checkout: {
+        sessions: {
+          create: async (data) => ({
+            id: `cs_mock_${randomUUID().slice(0, 8)}`,
+            url: data.success_url || "http://localhost:4000/billing.html?checkout=success",
+            ...data,
+          }),
+        },
+      },
+      billingPortal: {
+        sessions: {
+          create: async (data) => ({
+            id: `portal_mock_${randomUUID().slice(0, 8)}`,
+            url: data.return_url || "http://localhost:4000/billing.html",
+            ...data,
+          }),
+        },
+      },
+      subscriptions: {
+        retrieve: async (id) => ({
+          id,
+          status: "active",
+          items: { data: [{ price: { id: "price_pro_monthly" } }] },
+        }),
+      },
+    }
+  : undefined;
+
 const stripeBillingProvider = new StripeBillingProviderImpl({
-  secretKey: runtimeConfig.STRIPE_SECRET_KEY || "mock_secret_key",
+  secretKey: runtimeConfig.STRIPE_SECRET_KEY || "sk_test_mock",
   env: runtimeConfig.NODE_ENV === "production" ? "production" : "development",
   priceRegistry,
   customerMappingRepo,
   planCatalog,
+  stripeClientMock: devMockStripeClient,
 });
 
 // Instantiate the StripeWebhookProcessor
 const webhookProcessor = new StripeWebhookProcessor({
-  stripeSecretKey: runtimeConfig.STRIPE_SECRET_KEY || "mock_secret_key",
-  webhookSecret: runtimeConfig.STRIPE_WEBHOOK_SECRET || "mock_webhook_secret",
+  stripeSecretKey: runtimeConfig.STRIPE_SECRET_KEY,
+  webhookSecret: runtimeConfig.STRIPE_WEBHOOK_SECRET,
   env: runtimeConfig.NODE_ENV || "development",
   priceRegistry,
   customerMappingRepo,
@@ -313,19 +373,146 @@ function getCookie(cookieHeader, name) {
   return undefined;
 }
 
+let healthModule = null;
+async function getHealthModule() {
+  if (!healthModule) {
+    healthModule = await import("@freelanceos/health");
+  }
+  return healthModule;
+}
+
+const healthService = {
+  checkLiveness: async () => {
+    const mod = await getHealthModule();
+    return mod.checkLiveness();
+  },
+  checkReadiness: async () => {
+    const mod = await getHealthModule();
+    return mod.checkReadiness();
+  },
+};
+
 const server = http.createServer(async (req, res) => {
+  const startTime = performance.now();
   const parsedUrl = new URL(req.url, "http://localhost");
   const pathname = parsedUrl.pathname;
   let staticPathname = pathname;
 
-  res.setHeader("Access-Control-Allow-Origin", "*");
-  res.setHeader("Access-Control-Allow-Methods", "POST, GET, PATCH, OPTIONS");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+  // Non-blocking structured request logging
+  res.on("finish", () => {
+    const durationMs = Math.round(performance.now() - startTime);
+    logger.info({
+      message: "HTTP Request completed",
+      method: req.method,
+      route: pathname,
+      statusCode: res.statusCode,
+      durationMs,
+    });
+  });
+
+  // CORS: resolve permitted origins from config.
+  // ALLOWED_ORIGINS is a comma-separated list (e.g. "https://freelanceos.com,https://staging.freelanceos.com").
+  // In development/test the localhost dev server is always permitted as a safe fallback.
+  // Vary: Origin is always emitted so shared caches never serve a credentialed response to the wrong origin.
+  const rawAllowedOrigins = runtimeConfig.ALLOWED_ORIGINS
+    ? runtimeConfig.ALLOWED_ORIGINS.split(",")
+        .map((o) => o.trim())
+        .filter(Boolean)
+    : [];
+  if (!rawAllowedOrigins.includes("http://localhost:4000")) {
+    rawAllowedOrigins.push("http://localhost:4000");
+  }
+  const requestOrigin = req.headers.origin || "";
+  res.setHeader("Vary", "Origin");
+  if (requestOrigin && rawAllowedOrigins.includes(requestOrigin)) {
+    res.setHeader("Access-Control-Allow-Origin", requestOrigin);
+    res.setHeader("Access-Control-Allow-Methods", "POST, GET, PATCH, OPTIONS");
+    res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+    res.setHeader("Access-Control-Allow-Credentials", "true");
+  }
 
   if (req.method === "OPTIONS") {
     res.writeHead(204);
     res.end();
     return;
+  }
+
+  // Public Health & Liveness Endpoints (GET /healthz, /livez)
+  if ((pathname === "/healthz" || pathname === "/livez") && req.method === "GET") {
+    const liveness = await healthService.checkLiveness();
+    res.writeHead(200, { "Content-Type": "application/json" });
+    res.end(JSON.stringify(liveness));
+    return;
+  }
+
+  // Public Health & Readiness Endpoints (GET /readyz, /api/health)
+  if ((pathname === "/readyz" || pathname === "/api/health") && req.method === "GET") {
+    try {
+      const readiness = await healthService.checkReadiness();
+      const statusCode = readiness.status === "unhealthy" ? 503 : 200;
+      res.writeHead(statusCode, { "Content-Type": "application/json" });
+      res.end(JSON.stringify(readiness));
+    } catch (err) {
+      logger.error({
+        message: "Readiness check failure",
+        error: err instanceof Error ? err : new Error(String(err)),
+      });
+      res.writeHead(500, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({ status: "unhealthy", error: "Internal Server Error" }));
+    }
+    return;
+  }
+
+  // 1. Beta Access Evaluation Helper (Phase 12H)
+  function evaluateBetaSignupAccess(email) {
+    if (process.env.BETA_REGISTRATION_ENABLED === "false") {
+      return {
+        allowed: false,
+        code: "BETA_DISABLED",
+        message: "New beta registrations are temporarily paused.",
+      };
+    }
+
+    const mode = (process.env.BETA_ACCESS_MODE || "BETA_ENABLED").toUpperCase().trim();
+
+    if (mode === "BETA_ENABLED" || mode === "PUBLIC_BETA" || mode === "OPEN") {
+      return { allowed: true };
+    }
+
+    if (
+      mode === "BETA_RESTRICTED" ||
+      mode === "CLOSED_BETA" ||
+      mode === "ALLOWLIST" ||
+      mode === "INVITE_ONLY"
+    ) {
+      const rawAllowlist = process.env.BETA_INVITE_ALLOWLIST || "";
+      const allowlist = rawAllowlist
+        .split(",")
+        .map((entry) => entry.trim().toLowerCase())
+        .filter(Boolean);
+
+      const normalizedEmail = (email || "").trim().toLowerCase();
+
+      const isAllowlisted = allowlist.some((entry) => {
+        if (entry.startsWith("@")) {
+          return normalizedEmail.endsWith(entry);
+        }
+        return normalizedEmail === entry;
+      });
+
+      if (isAllowlisted) {
+        return { allowed: true };
+      }
+
+      return {
+        allowed: false,
+        code: "BETA_RESTRICTED",
+        message:
+          "Registration is currently restricted to approved beta invitees. Please join the early access waitlist.",
+      };
+    }
+
+    return { allowed: true };
   }
 
   // 1. Hook the Signup use case to POST /api/signup
@@ -340,6 +527,20 @@ const server = http.createServer(async (req, res) => {
         const payload = JSON.parse(body);
         const { email, password } = payload;
 
+        // Enforce server-side Beta Rollout Access Control (Phase 12H)
+        const betaAccess = evaluateBetaSignupAccess(email);
+        if (!betaAccess.allowed) {
+          res.writeHead(403, { "Content-Type": "application/json" });
+          res.end(
+            JSON.stringify({
+              success: false,
+              error: betaAccess.message,
+              code: betaAccess.code,
+            }),
+          );
+          return;
+        }
+
         // Build session metadata from request details
         const userAgent = req.headers["user-agent"] || "unknown";
         const ipAddress = req.socket.remoteAddress || "127.0.0.1";
@@ -351,9 +552,9 @@ const server = http.createServer(async (req, res) => {
           sessionMetadata,
         });
 
-        // Set stateful refresh token cookie securely
+        // Set stateful access token cookie securely
         if (result.tokens) {
-          res.setHeader("Set-Cookie", issueSessionCookie(result.tokens.refreshToken));
+          res.setHeader("Set-Cookie", issueSessionCookie(result.tokens.signedAccessToken));
         }
 
         res.writeHead(201, { "Content-Type": "application/json" });
@@ -367,6 +568,73 @@ const server = http.createServer(async (req, res) => {
       } catch (err) {
         logger.error({
           message: "Signup API request failed",
+          error: err instanceof Error ? err : new Error(String(err)),
+        });
+
+        const httpResponse = mapAuthError(err);
+        res.writeHead(httpResponse.statusCode, { "Content-Type": "application/json" });
+        res.end(JSON.stringify(httpResponse.body));
+      }
+    });
+    return;
+  }
+
+  // 1A. Hook Email Verification to GET/POST /api/auth/verify-email
+  if (
+    (pathname === "/api/auth/verify-email" || pathname === "/api/verify-email") &&
+    req.method === "GET"
+  ) {
+    const token = parsedUrl.searchParams.get("token") || "";
+    try {
+      await verifyEmailToken(token);
+      res.writeHead(302, { Location: "/login.html?verified=true" });
+      res.end();
+    } catch (err) {
+      logger.error({
+        message: "Email verification failed",
+        error: err instanceof Error ? err : new Error(String(err)),
+      });
+      const code =
+        err && typeof err === "object" && "code" in err && typeof err.code === "string"
+          ? err.code
+          : "INVALID_TOKEN";
+      const message = err instanceof Error ? err.message : "Email verification failed.";
+      res.writeHead(302, {
+        Location: `/login.html?verifyError=${encodeURIComponent(code)}&message=${encodeURIComponent(message)}`,
+      });
+      res.end();
+    }
+    return;
+  }
+
+  if (
+    (pathname === "/api/auth/verify-email" || pathname === "/api/verify-email") &&
+    req.method === "POST"
+  ) {
+    let body = "";
+    req.on("data", (chunk) => {
+      body += chunk;
+    });
+
+    req.on("end", async () => {
+      try {
+        const payload = body ? JSON.parse(body) : {};
+        const { token } = payload;
+        const result = await verifyEmailToken(token);
+        res.writeHead(200, { "Content-Type": "application/json" });
+        res.end(
+          JSON.stringify({
+            success: true,
+            message: "Email verified successfully.",
+            user: {
+              id: result.userId,
+              email: result.email,
+            },
+          }),
+        );
+      } catch (err) {
+        logger.error({
+          message: "Email verification API request failed",
           error: err instanceof Error ? err : new Error(String(err)),
         });
 
@@ -401,9 +669,9 @@ const server = http.createServer(async (req, res) => {
           sessionMetadata,
         });
 
-        // Set stateful refresh token cookie securely
+        // Set stateful access token cookie securely
         if (result.tokens) {
-          res.setHeader("Set-Cookie", issueSessionCookie(result.tokens.refreshToken));
+          res.setHeader("Set-Cookie", issueSessionCookie(result.tokens.signedAccessToken));
         }
 
         res.writeHead(200, { "Content-Type": "application/json" });
@@ -443,15 +711,17 @@ const server = http.createServer(async (req, res) => {
         // Extract credentials from cookies and headers
         const cookieHeader = req.headers.cookie || "";
         const cookieName = runtimeConfig.SESSION_COOKIE_NAME;
-        const refreshToken = getCookie(cookieHeader, cookieName);
+        const sessionToken = getCookie(cookieHeader, cookieName);
 
         const authHeader = req.headers["authorization"] || "";
-        const accessToken = authHeader.startsWith("Bearer ") ? authHeader.substring(7) : undefined;
+        const accessToken = authHeader.startsWith("Bearer ")
+          ? authHeader.substring(7)
+          : sessionToken;
         const ipAddress = req.socket.remoteAddress || "127.0.0.1";
 
         const result = await logoutUser({
           accessToken,
-          refreshToken,
+          refreshToken: sessionToken,
           global,
           ipAddress,
         });
@@ -570,20 +840,20 @@ const server = http.createServer(async (req, res) => {
   // 1E. Authentication & Entitlements API & Redirects
   const cookieHeader = req.headers.cookie || "";
   const cookieName = runtimeConfig.SESSION_COOKIE_NAME;
-  const refreshToken = getCookie(cookieHeader, cookieName);
+  const sessionToken = getCookie(cookieHeader, cookieName);
 
   // Authenticate user check helper
   async function checkAuthentication() {
-    if (!refreshToken) return null;
+    if (!sessionToken) return null;
     try {
       const authResult = await authenticateRequest({
-        credentialToken: refreshToken,
+        credentialToken: sessionToken,
         routePolicy: "Protected",
         ipAddress: req.socket.remoteAddress || "127.0.0.1",
       });
       if (authResult.status === "Authenticated") {
         try {
-          const decoded = verifyAccessToken(refreshToken);
+          const decoded = verifyAccessToken(sessionToken);
           if (decoded && decoded.sessionId) {
             authResult.context.identity.sessionId = decoded.sessionId;
           }
@@ -1104,6 +1374,7 @@ const server = http.createServer(async (req, res) => {
 
   // 1F. Search API Error Handler (Phase 11D-8)
   function handleSearchApiError(err) {
+    logger.error({ message: "Search API error occurred", error: err });
     if (err instanceof SearchDomainError) {
       let statusCode = 400;
       if (err.code === "UNAUTHORIZED_SCOPE") {
@@ -1203,6 +1474,89 @@ const server = http.createServer(async (req, res) => {
     } catch (err) {
       handleSearchApiError(err);
     }
+    return;
+  }
+
+  // =====================================================================
+  // Beta Feedback API (Phase 12H)
+  // =====================================================================
+
+  if (pathname === "/api/feedback" && req.method === "POST") {
+    const auth = await checkAuthentication();
+    const ownerId = requireAuthenticatedOwner(auth);
+    if (!ownerId) return;
+
+    let body = "";
+    req.on("data", (chunk) => {
+      body += chunk;
+      if (body.length > 16384) {
+        req.destroy();
+      }
+    });
+
+    req.on("end", async () => {
+      try {
+        const payload = JSON.parse(body || "{}");
+        const { category, subject, message, metadata } = payload;
+
+        const ALLOWED_CATEGORIES = ["BUG", "FEATURE_REQUEST", "USABILITY", "AI_QUALITY", "OTHER"];
+        if (!category || !ALLOWED_CATEGORIES.includes(String(category).toUpperCase())) {
+          sendJson(400, {
+            success: false,
+            error:
+              "Valid category is required (BUG, FEATURE_REQUEST, USABILITY, AI_QUALITY, OTHER)",
+            code: "INVALID_CATEGORY",
+          });
+          return;
+        }
+
+        const trimmedMessage = typeof message === "string" ? message.trim() : "";
+        if (trimmedMessage.length < 10 || trimmedMessage.length > 2000) {
+          sendJson(400, {
+            success: false,
+            error: "Message must be between 10 and 2000 characters",
+            code: "INVALID_MESSAGE_LENGTH",
+          });
+          return;
+        }
+
+        const trimmedSubject =
+          typeof subject === "string" ? subject.trim().substring(0, 120) : undefined;
+
+        // Safe metadata extraction
+        const cleanMetadata = {};
+        if (metadata && typeof metadata === "object") {
+          if (typeof metadata.appVersion === "string") {
+            cleanMetadata.appVersion = metadata.appVersion.substring(0, 20);
+          }
+          if (typeof metadata.currentPath === "string") {
+            cleanMetadata.currentPath = metadata.currentPath.substring(0, 100);
+          }
+        }
+
+        const feedbackId = `fb_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+
+        logger.info({
+          message: "Beta feedback received",
+          feedbackId,
+          ownerId,
+          category: String(category).toUpperCase(),
+          subject: trimmedSubject,
+        });
+
+        sendJson(200, {
+          success: true,
+          feedbackId,
+          message: "Feedback received successfully",
+        });
+      } catch (err) {
+        sendJson(400, {
+          success: false,
+          error: "Invalid feedback payload JSON",
+          code: "INVALID_PAYLOAD",
+        });
+      }
+    });
     return;
   }
 
@@ -1887,6 +2241,7 @@ const server = http.createServer(async (req, res) => {
   }
 
   function handleBrainApiError(err) {
+    logger.error({ message: "Brain API error occurred", error: err });
     if (err instanceof BrainDomainError) {
       sendJson(brainFailureStatus(err.code), {
         success: false,
@@ -2750,22 +3105,30 @@ const server = http.createServer(async (req, res) => {
       // Save match to repository
       await matchRepo.save(finalMatch);
 
-      // Log activity to timeline
-      let timeline = await timelineRepo.findById(userId, userId);
-      if (!timeline) {
-        timeline = ClientTimeline.create(userId, userId, userId);
+      // Log activity to timeline if client exists
+      try {
+        const userClients = await clientRepo.list(userId, { page: 1, pageSize: 1 });
+        if (userClients.items.length > 0) {
+          const client = userClients.items[0];
+          let timeline = await timelineRepo.findByClientId(client.id, userId);
+          if (!timeline) {
+            timeline = ClientTimeline.create(randomUUID(), client.id, userId);
+          }
+          timeline.appendEntry(userId, "system", {
+            entryId: randomUUID(),
+            category: "Lifecycle Event",
+            timestamp: new Date(),
+            metadata: {
+              message: `Job "${jobImport.rawPayload.data.title}" matched with score ${finalScore}%.`,
+              jobId: jobImport.id,
+            },
+            visibility: "Public",
+          });
+          await timelineRepo.save(timeline);
+        }
+      } catch (timelineErr) {
+        logger.warn({ message: "Failed to append activity entry to timeline", error: timelineErr });
       }
-      timeline.appendEntry(userId, "system", {
-        entryId: randomUUID(),
-        category: "Lifecycle Event",
-        timestamp: new Date(),
-        metadata: {
-          message: `Job "${jobImport.rawPayload.data.title}" matched with score ${finalScore}%.`,
-          jobId: jobImport.id,
-        },
-        visibility: "Public",
-      });
-      await timelineRepo.save(timeline);
 
       res.writeHead(201, { "Content-Type": "application/json" });
       res.end(
@@ -2781,6 +3144,210 @@ const server = http.createServer(async (req, res) => {
       res.writeHead(500, { "Content-Type": "application/json" });
       res.end(JSON.stringify({ success: false, error: "Internal Server Error" }));
     }
+    return;
+  }
+
+  // 1H-1. POST /api/jobs/import (Extension endpoint — session-cookie authenticated)
+  if (pathname === "/api/jobs/import" && req.method === "POST") {
+    const auth = await checkAuthentication();
+    const userId = requireAuthenticatedOwner(auth);
+    if (!userId) return;
+
+    // tenantId derived exclusively from server-side auth — never from request body
+    const tenantId = userId;
+
+    let body;
+    try {
+      body = await readJsonBody();
+    } catch (err) {
+      sendJson(err.statusCode || 400, {
+        success: false,
+        error: err.message || "Invalid request body",
+      });
+      return;
+    }
+
+    // Validate required fields — reject anything missing or malformed
+    if (!body || typeof body !== "object" || Array.isArray(body)) {
+      sendJson(400, { success: false, error: "Request body must be a JSON object" });
+      return;
+    }
+
+    const { jobId, title, url, platform, description, skills, budget } = body;
+
+    if (!jobId || typeof jobId !== "string" || !jobId.trim()) {
+      sendJson(400, { success: false, error: "jobId is required and must be a non-empty string" });
+      return;
+    }
+    if (!title || typeof title !== "string" || !title.trim()) {
+      sendJson(400, { success: false, error: "title is required and must be a non-empty string" });
+      return;
+    }
+    if (!url || typeof url !== "string" || !url.trim()) {
+      sendJson(400, { success: false, error: "url is required and must be a non-empty string" });
+      return;
+    }
+    if (!platform || typeof platform !== "string" || !platform.trim()) {
+      sendJson(400, {
+        success: false,
+        error: "platform is required and must be a non-empty string",
+      });
+      return;
+    }
+
+    // Validate platform against approved vocabulary
+    const ALLOWED_PLATFORMS = ["upwork", "linkedin", "freelancer", "toptal", "indeed"];
+    if (!ALLOWED_PLATFORMS.includes(platform.trim().toLowerCase())) {
+      sendJson(400, {
+        success: false,
+        error: `platform must be one of: ${ALLOWED_PLATFORMS.join(", ")}`,
+      });
+      return;
+    }
+
+    // Validate url format
+    try {
+      const parsed = new URL(url);
+      if (!["http:", "https:"].includes(parsed.protocol)) {
+        throw new Error("Invalid protocol");
+      }
+    } catch {
+      sendJson(400, { success: false, error: "url must be a valid http or https URL" });
+      return;
+    }
+
+    // Clamp optional string fields
+    const trimmedJobId = jobId.trim().substring(0, 255);
+    const trimmedTitle = title.trim().substring(0, 500);
+    const trimmedUrl = url.trim().substring(0, 2048);
+    const trimmedPlatform = platform.trim().toLowerCase();
+    const trimmedDescription =
+      typeof description === "string" ? description.trim().substring(0, 10000) : "";
+    const normalizedSkills = Array.isArray(skills)
+      ? skills
+          .filter((s) => typeof s === "string")
+          .map((s) => s.trim().substring(0, 100))
+          .filter(Boolean)
+          .slice(0, 50)
+      : [];
+
+    try {
+      // Build the domain aggregate — tenantId and ownerId are sourced exclusively from auth
+      const jobImportId = randomUUID();
+      const jobSource = new JobSource(trimmedPlatform);
+      const externalIdentity = new JobExternalIdentity(jobSource, trimmedJobId);
+      const provenance = new JobImportProvenance({
+        source: jobSource,
+        externalJobId: trimmedJobId,
+        sourceUrl: trimmedUrl,
+        importedAt: new Date(),
+      });
+      const rawPayloadData = {
+        title: trimmedTitle,
+        description: trimmedDescription,
+        skills: normalizedSkills,
+        budget: budget && typeof budget === "object" && !Array.isArray(budget) ? budget : undefined,
+        url: trimmedUrl,
+      };
+      const rawPayload = new JobRawPayload(rawPayloadData);
+      const fingerprintValue = `${trimmedPlatform}:${trimmedJobId}:${tenantId}`;
+      const fingerprint = new JobImportFingerprint(fingerprintValue);
+
+      const jobImport = JobImport.create(
+        jobImportId,
+        tenantId,
+        userId,
+        externalIdentity,
+        provenance,
+        rawPayload,
+        fingerprint,
+      );
+
+      // Enforce tenant ownership: save under authenticated tenant, never body-supplied ids
+      await jobsRepo.save(jobImport);
+
+      logger.info({
+        message: "Extension job import persisted",
+        jobImportId,
+        tenantId,
+        platform: trimmedPlatform,
+        externalJobId: trimmedJobId,
+      });
+
+      sendJson(201, {
+        success: true,
+        jobImportId,
+        status: jobImport.status,
+      });
+    } catch (err) {
+      logger.error({ message: "Failed to persist extension job import", error: err });
+      sendJson(500, { success: false, error: "Internal Server Error" });
+    }
+    return;
+  }
+
+  // 1H-2. POST /api/jobs/detect (Extension endpoint — session-cookie authenticated)
+  if (pathname === "/api/jobs/detect" && req.method === "POST") {
+    const auth = await checkAuthentication();
+    const userId = requireAuthenticatedOwner(auth);
+    if (!userId) return;
+
+    // tenantId derived exclusively from server-side auth — never from request body
+    const tenantId = userId;
+
+    let body;
+    try {
+      body = await readJsonBody();
+    } catch (err) {
+      sendJson(err.statusCode || 400, {
+        success: false,
+        error: err.message || "Invalid request body",
+      });
+      return;
+    }
+
+    if (!body || typeof body !== "object" || Array.isArray(body)) {
+      sendJson(400, { success: false, error: "Request body must be a JSON object" });
+      return;
+    }
+
+    const { jobId, title, url } = body;
+
+    if (!jobId || typeof jobId !== "string" || !jobId.trim()) {
+      sendJson(400, { success: false, error: "jobId is required and must be a non-empty string" });
+      return;
+    }
+    if (!title || typeof title !== "string" || !title.trim()) {
+      sendJson(400, { success: false, error: "title is required and must be a non-empty string" });
+      return;
+    }
+    if (!url || typeof url !== "string" || !url.trim()) {
+      sendJson(400, { success: false, error: "url is required and must be a non-empty string" });
+      return;
+    }
+
+    // Validate url format
+    try {
+      const parsed = new URL(url);
+      if (!["http:", "https:"].includes(parsed.protocol)) {
+        throw new Error("Invalid protocol");
+      }
+    } catch {
+      sendJson(400, { success: false, error: "url must be a valid http or https URL" });
+      return;
+    }
+
+    // Log the detection signal under the authenticated tenant — no persistence side-effect
+    logger.info({
+      message: "Extension job detection signal received",
+      tenantId,
+      userId,
+      jobId: jobId.trim().substring(0, 255),
+      title: title.trim().substring(0, 500),
+      url: url.trim().substring(0, 2048),
+    });
+
+    sendJson(200, { success: true, status: "ACK" });
     return;
   }
 
@@ -3637,4 +4204,5 @@ export {
   customerMappingRepo,
   priceRegistry,
   trialPersistence,
+  healthService,
 };

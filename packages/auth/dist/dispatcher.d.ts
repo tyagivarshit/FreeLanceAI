@@ -1,7 +1,13 @@
+import { EmailService } from "./email-service.js";
 export interface IdentityRegisteredPayload {
     userId: string;
     normalizedEmail: string;
     registeredAt: string;
+}
+export interface EmailVerifiedPayload {
+    userId: string;
+    email: string;
+    verifiedAt: string;
 }
 export interface RegistrationAttemptExistingEmailPayload {
     email: string;
@@ -66,6 +72,7 @@ export interface IdentityInvalidatedPayload {
 }
 export interface EventDispatcher {
     publish(eventName: "IDENTITY_REGISTERED", payload: IdentityRegisteredPayload): Promise<void>;
+    publish(eventName: "EMAIL_VERIFIED", payload: EmailVerifiedPayload): Promise<void>;
     publish(eventName: "REGISTRATION_ATTEMPT_ON_EXISTING_EMAIL", payload: RegistrationAttemptExistingEmailPayload): Promise<void>;
     publish(eventName: "LOGIN_SUCCEEDED", payload: LoginSucceededPayload): Promise<void>;
     publish(eventName: "LOGIN_FAILED", payload: LoginFailedPayload): Promise<void>;
@@ -91,10 +98,13 @@ export declare class QueueEventDispatcher implements EventDispatcher {
 }
 /**
  * Concrete implementation of the Background Task Dispatcher.
- * Offloads execution out of the main request-response thread.
+ * Offloads execution out of the main request-response thread and dispatches transactional emails.
  */
 export declare class QueueBackgroundTaskDispatcher implements BackgroundTaskDispatcher {
-    dispatch(taskName: string, data: unknown): Promise<void>;
+    private emailService?;
+    constructor(emailService?: EmailService);
+    setEmailService(service: EmailService): void;
+    dispatch(taskName: "SEND_VERIFICATION_EMAIL", data: SendVerificationEmailPayload): Promise<void>;
 }
 export declare const eventDispatcher: EventDispatcher;
 export declare const backgroundTaskDispatcher: BackgroundTaskDispatcher;

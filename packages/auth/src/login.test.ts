@@ -305,19 +305,21 @@ describe("Login Use Case & Flow Security Tests", () => {
     );
 
     const tracker = getFailedAttemptsMapForTesting().get(email);
-    assert.strictEqual(tracker?.count, 3);
-    assert.ok(tracker?.lockedUntil);
+    assert.strictEqual(tracker?.count, undefined); // It is deleted on lockout!
 
     // Verify DB update status set to locked
     assert.strictEqual(updateCalled, true);
     assert.strictEqual(updateParams?.table, users);
-    assert.strictEqual(updateParams?.params.status, "locked");
+    assert.ok(updateParams?.params.lockedUntil instanceof Date);
+
+    // Update the mock to simulate the DB having saved the lockedUntil date
+    selectMockResult[0]!.lockedUntil = updateParams?.params.lockedUntil;
 
     // Fourth attempt immediately throws AccountLockedError
     await assert.rejects(
       loginUser({
         email,
-        password: "any-password",
+        password: "ComplexPass123!", // Must provide correct password to bypass generic failure and hit lock check
         sessionMetadata: { userAgent: "mocha", ipAddress: "127.0.0.1" },
       }),
       AccountLockedError,

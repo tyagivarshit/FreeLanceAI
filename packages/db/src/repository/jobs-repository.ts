@@ -181,7 +181,7 @@ export class PostgresJobsRepository
       sql`lower(${jobImports.externalJobId}) LIKE ${searchPattern}`,
       sql`lower(cast(${jobImports.rawPayload}->'skills' as text)) LIKE ${searchPattern}`,
       sql`lower(${jobImports.rawPayload}->>'category') LIKE ${searchPattern}`,
-      sql`lower(${jobImports.status}) LIKE ${searchPattern}`,
+      sql`lower(cast(${jobImports.status} as text)) LIKE ${searchPattern}`,
     );
 
     const whereClause = and(scopeCondition, searchCondition);

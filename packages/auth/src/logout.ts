@@ -56,7 +56,8 @@ export async function logoutUser(input: LogoutInput): Promise<LogoutResult> {
   // 2. If identity is not resolved yet, resolve from refresh token cookie
   if ((!userId || !sessionId) && refreshToken) {
     try {
-      const hashed = hashRefreshToken(refreshToken);
+      const rawToken = refreshToken.includes(".") ? refreshToken.split(".")[1]! : refreshToken;
+      const hashed = hashRefreshToken(rawToken);
       const sessionRecords = await db
         .select({
           id: sessions.id,

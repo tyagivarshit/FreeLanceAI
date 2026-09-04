@@ -65,4 +65,12 @@ export async function verifyPassword(password, storedHash, algorithm, hashVersio
         return false;
     }
 }
+export async function runEquivalentComputationalWork(password) {
+    const dummyHash = "32303030303030303030303030303030303030303030303030303030303030303230303030303030303030303030303030303030303030303030303030303030";
+    const dummySalt = "73616c74313233343536373839303132";
+    const rounds = runtimeConfig.CONFIG_PASSWORD_HASH_ROUNDS;
+    const N = Math.pow(2, Math.max(10, Math.min(rounds, 20))); // Default is 14 -> 16384
+    const dummyVersion = JSON.stringify({ N, r: 8, p: 1 });
+    await verifyPassword(password, `${dummySalt}:${dummyHash}`, "scrypt", dummyVersion);
+}
 //# sourceMappingURL=hash.js.map

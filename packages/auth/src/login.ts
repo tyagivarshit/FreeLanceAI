@@ -84,7 +84,6 @@ export class MaxSessionsExceededError extends LoginError {
 
 interface FailedAttemptTracker {
   count: number;
-  lockedUntil?: Date;
 }
 
 const failedAttemptsMap = new Map<string, FailedAttemptTracker>();
@@ -93,16 +92,6 @@ export function getFailedAttemptsMapForTesting(): Map<string, FailedAttemptTrack
   return failedAttemptsMap;
 }
 
-async function runEquivalentComputationalWork(password: string): Promise<void> {
-  const dummyHash = "3230303030303030303030303030303030303030303030303030303030303030";
-  const dummySalt = "salt123456789012";
-  const dummyVersion = JSON.stringify({ N: 16384, r: 8, p: 1 });
-  await verifyPassword(password, `${dummySalt}:${dummyHash}`, "scrypt", dummyVersion);
-}
-
-/**
- * Orchestrates user authentication according to the frozen Login blueprint.
- */
 export async function loginUser(input: LoginInput): Promise<LoginResult> {
   const { email, password, sessionMetadata } = input;
   const ipAddress = sessionMetadata.ipAddress || "unknown";
@@ -113,159 +102,174 @@ export async function loginUser(input: LoginInput): Promise<LoginResult> {
     stripDots: runtimeConfig.CONFIG_EMAIL_STRIP_DOTS,
   });
 
-  // 2. Check transient account lockout state
-  const tracker = failedAttemptsMap.get(normalized);
-  if (tracker && tracker.lockedUntil && tracker.lockedUntil > new Date()) {
-    await runEquivalentComputationalWork(password);
-    throw new AccountLockedError();
-  }
+  const startTime = performance.now();
+  const MIN_LOGIN_TIME_MS = 100;
+  
+  const enforceTiming = async () => {
+    const elapsed = performance.now() - startTime;
+    if (elapsed < MIN_LOGIN_TIME_MS) {
+      await new Promise(r => setTimeout(r, MIN_LOGIN_TIME_MS - elapsed));
+    }
+  };
 
-  // 3. User Identity Lookup
-  const foundUsers = await db
-    .select()
-    .from(users)
-    .where(eq(users.normalizedEmail, normalized))
-    .limit(1);
+  try {
+    // 2. User Identity Lookup
+    const foundUsers = await db
+      .select()
+      .from(users)
+      .where(eq(users.normalizedEmail, normalized))
+      .limit(1);
 
-  const user = foundUsers[0];
+    const user = foundUsers[0];
 
-  if (!user) {
-    await runEquivalentComputationalWork(password);
-    await eventDispatcher.publish("LOGIN_FAILED", {
-      email: normalized,
-      reason: "USER_NOT_FOUND",
-      ipAddress,
-    });
-    throw new AuthenticationFailureError();
-  }
-
-  // 4. Account Status Policy evaluation
-  if (user.status === "suspended") {
-    await runEquivalentComputationalWork(password);
-    await eventDispatcher.publish("LOGIN_FAILED", {
-      email: normalized,
-      reason: "ACCOUNT_SUSPENDED",
-      ipAddress,
-    });
-    throw new AccountSuspendedError();
-  }
-
-  if (user.status === "disabled") {
-    await runEquivalentComputationalWork(password);
-    await eventDispatcher.publish("LOGIN_FAILED", {
-      email: normalized,
-      reason: "ACCOUNT_DISABLED",
-      ipAddress,
-    });
-    throw new AccountDisabledError();
-  }
-
-  if (user.status === "locked") {
-    await runEquivalentComputationalWork(password);
-    await eventDispatcher.publish("LOGIN_FAILED", {
-      email: normalized,
-      reason: "ACCOUNT_LOCKED",
-      ipAddress,
-    });
-    throw new AccountLockedError();
-  }
-
-  if (user.status === "pending" && runtimeConfig.CONFIG_REQUIRE_VERIFICATION_FOR_SESSION) {
-    await runEquivalentComputationalWork(password);
-    await eventDispatcher.publish("LOGIN_FAILED", {
-      email: normalized,
-      reason: "PENDING_VERIFICATION",
-      ipAddress,
-    });
-    throw new PendingVerificationError();
-  }
-
-  // 5. Query credential hashes
-  const credentialRecords = await db
-    .select()
-    .from(userPasswordHashes)
-    .where(eq(userPasswordHashes.userId, user.id))
-    .limit(1);
-
-  const credentials = credentialRecords[0];
-
-  if (!credentials) {
-    await runEquivalentComputationalWork(password);
-    await eventDispatcher.publish("LOGIN_FAILED", {
-      email: normalized,
-      reason: "CREDENTIALS_NOT_FOUND",
-      ipAddress,
-    });
-    throw new AuthenticationFailureError();
-  }
-
-  // 6. Verify credentials hash match in timing-safe way
-  const passwordMatch = await verifyPassword(
-    password,
-    credentials.passwordHash,
-    credentials.algorithm,
-    credentials.hashVersion,
-  );
-
-  if (!passwordMatch) {
-    const currentTracker = failedAttemptsMap.get(normalized) || { count: 0 };
-    currentTracker.count += 1;
-
-    const maxAttempts = runtimeConfig.CONFIG_MAX_LOGIN_ATTEMPTS;
-    if (currentTracker.count >= maxAttempts) {
-      const lockoutDurationMs = runtimeConfig.CONFIG_LOCKOUT_DURATION_SEC * 1000;
-      currentTracker.lockedUntil = new Date(Date.now() + lockoutDurationMs);
-
-      // Mutate user state in DB to locked
-      await db.update(users).set({ status: "locked" }).where(eq(users.id, user.id));
-
-      await eventDispatcher.publish("ACCOUNT_LOCKED", {
-        userId: user.id,
-        email: user.email,
+    if (!user) {
+      await eventDispatcher.publish("LOGIN_FAILED", {
+        email: normalized,
+        reason: "USER_NOT_FOUND",
+        ipAddress,
       });
+      throw new AuthenticationFailureError();
     }
 
-    failedAttemptsMap.set(normalized, currentTracker);
 
-    await eventDispatcher.publish("LOGIN_FAILED", {
-      email: normalized,
-      reason: "INVALID_CREDENTIALS",
+    // 4. Query credential hashes
+    const credentialRecords = await db
+      .select()
+      .from(userPasswordHashes)
+      .where(eq(userPasswordHashes.userId, user.id))
+      .limit(1);
+
+    const credentials = credentialRecords[0];
+
+    if (!credentials) {
+      await eventDispatcher.publish("LOGIN_FAILED", {
+        email: normalized,
+        reason: "CREDENTIALS_NOT_FOUND",
+        ipAddress,
+      });
+      throw new AuthenticationFailureError();
+    }
+
+    // 5. Verify credentials hash match in timing-safe way
+    const passwordMatch = await verifyPassword(
+      password,
+      credentials.passwordHash,
+      credentials.algorithm,
+      credentials.hashVersion,
+    );
+
+    if (!passwordMatch) {
+      const currentTracker = failedAttemptsMap.get(normalized) || { count: 0 };
+      currentTracker.count += 1;
+
+      const maxAttempts = runtimeConfig.CONFIG_MAX_LOGIN_ATTEMPTS;
+      if (currentTracker.count >= maxAttempts) {
+        const lockoutDurationMs = runtimeConfig.CONFIG_LOCKOUT_DURATION_SEC * 1000;
+        const lockedUntil = new Date(Date.now() + lockoutDurationMs);
+
+        // Mutate user state in DB to temporarily locked
+        await db.update(users).set({ lockedUntil }).where(eq(users.id, user.id));
+        failedAttemptsMap.delete(normalized);
+
+        await eventDispatcher.publish("ACCOUNT_LOCKED", {
+          userId: user.id,
+          email: user.email,
+        });
+      } else {
+        failedAttemptsMap.set(normalized, currentTracker);
+      }
+
+      await eventDispatcher.publish("LOGIN_FAILED", {
+        email: normalized,
+        reason: "INVALID_CREDENTIALS",
+        ipAddress,
+      });
+
+      throw new AuthenticationFailureError();
+    }
+
+    // 6. Clear failed trackers upon successful login
+    failedAttemptsMap.delete(normalized);
+
+    // 6.5. Check Account Lockout State
+    if (user.lockedUntil && user.lockedUntil > new Date()) {
+      throw new AccountLockedError();
+    }
+    
+    if (user.lockedUntil && user.lockedUntil <= new Date()) {
+      await db.update(users).set({ lockedUntil: null }).where(eq(users.id, user.id));
+      user.lockedUntil = null;
+    }
+
+    // 7. Account Status Policy evaluation
+    if (user.status === "suspended") {
+      await eventDispatcher.publish("LOGIN_FAILED", {
+        email: normalized,
+        reason: "ACCOUNT_SUSPENDED",
+        ipAddress,
+      });
+      throw new AccountSuspendedError();
+    }
+
+    if (user.status === "disabled") {
+      await eventDispatcher.publish("LOGIN_FAILED", {
+        email: normalized,
+        reason: "ACCOUNT_DISABLED",
+        ipAddress,
+      });
+      throw new AccountDisabledError();
+    }
+
+    if (user.status === "locked") {
+      await eventDispatcher.publish("LOGIN_FAILED", {
+        email: normalized,
+        reason: "ACCOUNT_LOCKED",
+        ipAddress,
+      });
+      throw new AccountLockedError();
+    }
+
+    if (user.status === "pending" && runtimeConfig.CONFIG_REQUIRE_VERIFICATION_FOR_SESSION) {
+      await eventDispatcher.publish("LOGIN_FAILED", {
+        email: normalized,
+        reason: "PENDING_VERIFICATION",
+        ipAddress,
+      });
+      throw new PendingVerificationError();
+    }
+
+    // 8. Invoke Device Recognition Service to evaluate telemetry
+    const deviceMetadata = await deviceRecognitionService.evaluateDevice(user.id, {
+      userAgent: sessionMetadata.userAgent,
       ipAddress,
     });
 
-    throw new AuthenticationFailureError();
+    // 9. Invoke Session Service to manage concurrency limits and save active session
+    const sessionResult = await sessionService.establishSession(user.id, deviceMetadata);
+
+    // 10. Audit successful login
+    await eventDispatcher.publish("LOGIN_SUCCEEDED", {
+      userId: user.id,
+      ipAddress,
+      deviceName: deviceMetadata.deviceName || "unknown",
+    });
+
+    await enforceTiming();
+    return {
+      user: {
+        id: user.id,
+        email: user.email,
+        status: user.status,
+        createdAt: user.createdAt,
+      },
+      tokens: {
+        signedAccessToken: sessionResult.signedAccessToken,
+        refreshToken: sessionResult.rawRefreshToken,
+      },
+      verificationTriggered: false,
+    };
+  } catch (err) {
+    await enforceTiming();
+    throw err;
   }
-
-  // 7. Clear failed trackers upon successful login
-  failedAttemptsMap.delete(normalized);
-
-  // 8. Invoke Device Recognition Service to evaluate telemetry
-  const deviceMetadata = await deviceRecognitionService.evaluateDevice(user.id, {
-    userAgent: sessionMetadata.userAgent,
-    ipAddress,
-  });
-
-  // 9. Invoke Session Service to manage concurrency limits and save active session
-  const sessionResult = await sessionService.establishSession(user.id, deviceMetadata);
-
-  // 10. Audit successful login
-  await eventDispatcher.publish("LOGIN_SUCCEEDED", {
-    userId: user.id,
-    ipAddress,
-    deviceName: deviceMetadata.deviceName || "unknown",
-  });
-
-  return {
-    user: {
-      id: user.id,
-      email: user.email,
-      status: user.status,
-      createdAt: user.createdAt,
-    },
-    tokens: {
-      signedAccessToken: sessionResult.signedAccessToken,
-      refreshToken: sessionResult.rawRefreshToken,
-    },
-    verificationTriggered: false,
-  };
 }

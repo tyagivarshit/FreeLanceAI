@@ -12,6 +12,7 @@ export interface HealthReport {
     components: {
         database: ComponentHealth;
         redis: ComponentHealth;
+        ai_gateway: ComponentHealth;
     };
 }
 export declare const HEALTH_POLICY: {

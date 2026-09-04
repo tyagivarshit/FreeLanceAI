@@ -149,8 +149,8 @@ export const SUPPORTED_EVENTS = new Set([
 ]);
 
 export interface WebhookProcessorParams {
-  stripeSecretKey: string;
-  webhookSecret: string;
+  stripeSecretKey?: string;
+  webhookSecret?: string;
   env: "development" | "staging" | "production";
   priceRegistry: StripePriceRegistry;
   customerMappingRepo: StripeCustomerMappingRepository;
@@ -164,7 +164,7 @@ export interface WebhookProcessorParams {
 }
 
 export class StripeWebhookProcessor {
-  private readonly _webhookSecret: string;
+  private readonly _webhookSecret?: string | undefined;
   private readonly _priceRegistry: StripePriceRegistry;
   private readonly _customerMappingRepo: StripeCustomerMappingRepository;
   private readonly _subscriptionRepo: StripeSubscriptionRepository;
@@ -197,7 +197,7 @@ export class StripeWebhookProcessor {
 
     this._stripeClient =
       (params.stripeClientMock as Stripe) ??
-      new Stripe(params.stripeSecretKey, {
+      new Stripe(params.stripeSecretKey || "sk_test_placeholder", {
         apiVersion: "2023-10-16" as unknown as Stripe.LatestApiVersion,
       });
   }

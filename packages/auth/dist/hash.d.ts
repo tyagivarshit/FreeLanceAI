@@ -13,4 +13,5 @@ export declare function hashPassword(password: string): Promise<{
  * Verifies a password against a stored hash using the appropriate algorithm.
  */
 export declare function verifyPassword(password: string, storedHash: string, algorithm: string, hashVersion: string): Promise<boolean>;
+export declare function runEquivalentComputationalWork(password: string): Promise<void>;
 //# sourceMappingURL=hash.d.ts.map

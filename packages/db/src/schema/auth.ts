@@ -31,6 +31,7 @@ export const users = pgTable(
     normalizedEmail: varchar("normalized_email", { length: 255 }).notNull(),
     emailVerifiedAt: timestamp("email_verified_at", { withTimezone: true }),
     status: userStatusEnum("status").default("pending").notNull(),
+    lockedUntil: timestamp("locked_until", { withTimezone: true }),
     ...auditTimestamps,
   },
   (table) => {

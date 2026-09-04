@@ -160,6 +160,7 @@ dispatcher.registerHandler("EXTRACT_JOB", async (payload: unknown) => {
       await fetch(`${config.apiUrl}/api/jobs/import`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify(result),
       });
     } catch (err) {
@@ -181,6 +182,7 @@ dispatcher.registerHandler("JOB_DETECTED", async (payload: unknown) => {
     await fetch(`${config.apiUrl}/api/jobs/detect`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
+      credentials: "include",
       body: JSON.stringify(data),
     });
   } catch (err) {

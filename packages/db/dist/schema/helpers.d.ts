@@ -17,6 +17,6 @@ export declare const primaryKeyColumn: (name?: string) => {
  */
 export declare const auditTimestamps: {
     createdAt: import("drizzle-orm").NotNull<import("drizzle-orm").HasDefault<import("drizzle-orm/pg-core").PgTimestampBuilderInitial<"created_at">>>;
-    updatedAt: import("drizzle-orm").NotNull<import("drizzle-orm").HasDefault<import("drizzle-orm/pg-core").PgTimestampBuilderInitial<"updated_at">>>;
+    updatedAt: import("drizzle-orm").NotNull<import("drizzle-orm").HasDefault<import("drizzle-orm").HasDefault<import("drizzle-orm/pg-core").PgTimestampBuilderInitial<"updated_at">>>>;
 };
 //# sourceMappingURL=helpers.d.ts.map

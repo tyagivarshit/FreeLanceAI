@@ -224,10 +224,10 @@ export class PostgresTimelineRepository
     );
 
     const searchCondition = or(
-      sql`lower(${timelineEntries.category}) LIKE ${searchPattern}`,
+      sql`lower(cast(${timelineEntries.category} as text)) LIKE ${searchPattern}`,
       sql`lower(${timelineEntries.eventRef}) LIKE ${searchPattern}`,
       sql`lower(${timelineEntries.actorRef}) LIKE ${searchPattern}`,
-      sql`lower(${timelineEntries.visibility}) LIKE ${searchPattern}`,
+      sql`lower(cast(${timelineEntries.visibility} as text)) LIKE ${searchPattern}`,
       sql`cast(${timelineEntries.id} as text) LIKE ${searchPattern}`,
       sql`cast(${timelineEntries.timelineId} as text) LIKE ${searchPattern}`,
       sql`cast(${clientTimelines.clientId} as text) LIKE ${searchPattern}`,

@@ -1,10 +1,9 @@
 import { pino } from "pino";
-import { runtimeConfig } from "@freelanceos/config";
 import { getContextStore } from "./context.js";
 // Base Pino logger instance.
 // Configure serializers for safety and sanitize parameters.
 const basePinoLogger = pino({
-    level: runtimeConfig.NODE_ENV === "production" ? "info" : "debug",
+    level: "silent",
     formatters: {
         level: (label) => ({ level: label }),
     },

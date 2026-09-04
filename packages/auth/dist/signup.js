@@ -169,6 +169,9 @@ export async function signupUser(input) {
         if (err instanceof SignupError) {
             throw err;
         }
+        if (err.code === "23505") {
+            throw new DuplicateEmailError();
+        }
         throw new SignupTransactionError(err instanceof Error ? err.message : String(err));
     }
     // 7. Initial session generation decision (outside db transaction)

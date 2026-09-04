@@ -22,4 +22,8 @@ export { authenticateRequest } from "./middleware.js";
 export type { AuthenticateRequestInput, AuthenticationResult } from "./middleware.js";
 export { identityStore, DbIdentityStore } from "./identity-store.js";
 export type { IdentityStore, UserIdentity } from "./identity-store.js";
+export { verifyEmailToken, VerificationError, InvalidVerificationTokenError, VerificationTokenExpiredError, VerificationTokenAlreadyConsumedError, UserNotFoundError, } from "./verify-email.js";
+export type { VerifyEmailResult } from "./verify-email.js";
+export { createEmailService, getEmailService, setEmailService, resetEmailService, createVerificationEmail, NodemailerEmailService, ResendEmailService, ConsoleFallbackEmailService, } from "./email-service.js";
+export type { EmailService, EmailPayload, EmailSendResult } from "./email-service.js";
 //# sourceMappingURL=index.d.ts.map

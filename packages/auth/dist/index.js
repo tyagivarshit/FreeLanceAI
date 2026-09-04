@@ -47,4 +47,6 @@ export { sessionService, SessionService } from "./session-service.js";
 export { logoutUser } from "./logout.js";
 export { authenticateRequest } from "./middleware.js";
 export { identityStore, DbIdentityStore } from "./identity-store.js";
+export { verifyEmailToken, VerificationError, InvalidVerificationTokenError, VerificationTokenExpiredError, VerificationTokenAlreadyConsumedError, UserNotFoundError, } from "./verify-email.js";
+export { createEmailService, getEmailService, setEmailService, resetEmailService, createVerificationEmail, NodemailerEmailService, ResendEmailService, ConsoleFallbackEmailService, } from "./email-service.js";
 //# sourceMappingURL=index.js.map

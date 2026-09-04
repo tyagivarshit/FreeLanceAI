@@ -29,7 +29,7 @@ permissions:
 
 jobs:
   validate:
-    name: Lint, Typecheck, & Build
+    name: Lint, Typecheck, Build, & Test
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -64,3 +64,6 @@ jobs:
 
       - name: Build Monorepo Workspaces
         run: npm run build
+
+      - name: Execute Test Suite
+        run: npm run test

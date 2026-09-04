@@ -12,7 +12,7 @@ const RETRY_DELAY_MS = 2000;
 // Future production tuning will be driven by active container quotas and telemetry metrics.
 const poolConfig: pg.PoolConfig = {
   connectionString: runtimeConfig.DATABASE_URL,
-  max: 10, // Max concurrent connections allowed per instance
+  max: 80, // Target capacity: 100 concurrent requests * 1 query/request = 100. Set to 80 to leave DB headroom.
   idleTimeoutMillis: 30000, // Close idle connections after 30 seconds
   connectionTimeoutMillis: 5000, // Timeout connection attempts after 5 seconds
   maxUses: 7500, // Recycle connection socket after 7,500 operations to prevent memory leaks
@@ -22,6 +22,22 @@ export const pool = new Pool(poolConfig);
 
 // Initialize the Drizzle compiler client wrapper. Kept internal to prevent public API leakage.
 export const db = drizzle(pool);
+
+setInterval(() => {
+  if (pool.totalCount > 0) {
+    console.log(`[PG Pool Metrics] Total: ${pool.totalCount}, Idle: ${pool.idleCount}, Waiting: ${pool.waitingCount}`);
+  }
+}, 1000).unref();
+
+let lastElTime = performance.now();
+setInterval(() => {
+  const now = performance.now();
+  const lag = now - lastElTime - 100;
+  if (lag > 20) {
+    console.log(`[Event Loop Lag] ${lag.toFixed(2)}ms`);
+  }
+  lastElTime = now;
+}, 100).unref();
 
 // Listen to pool errors to prevent process crashes. direct console logging is a temporary MVP choice.
 pool.on("error", (err) => {

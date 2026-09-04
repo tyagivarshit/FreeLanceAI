@@ -11,6 +11,20 @@ document.addEventListener("DOMContentLoaded", () => {
   const errorList = document.getElementById("error-list");
   const successPanel = document.getElementById("success-panel");
 
+  // Check URL parameters for email verification notifications
+  const urlParams = new URLSearchParams(window.location.search);
+  if (urlParams.get("verified") === "true") {
+    const notice = document.createElement("div");
+    notice.id = "verification-success-banner";
+    notice.style.cssText =
+      "background-color: rgba(35, 134, 54, 0.15); border: 1px solid #238636; color: #3fb950; padding: 12px 16px; border-radius: 8px; margin-bottom: 20px; font-size: 14px; display: flex; align-items: center; gap: 10px;";
+    notice.innerHTML = `<span style="font-weight: bold; font-size: 16px;">✓</span> <span>Email verified successfully! You can now log in to your account.</span>`;
+    form.parentNode.insertBefore(notice, form);
+  } else if (urlParams.get("verifyError")) {
+    const errorMsg = urlParams.get("message") || "Email verification link is invalid or expired.";
+    showErrors("Email Verification Failed", [errorMsg]);
+  }
+
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
 

@@ -27,7 +27,8 @@
     "format:check": "prettier --check \"**/*.{ts,tsx,js,json,md}\"",
     "format:staged": "lint-staged",
     "clean": "turbo run clean",
-    "prepare": "husky"
+    "prepare": "husky",
+    "db:seed": "turbo run db:seed"
   },
   "devDependencies": {
     "turbo": "2.0.14",

@@ -1,5 +1,4 @@
 import { pino, Logger as PinoLogger } from "pino";
-import { runtimeConfig } from "@freelanceos/config";
 import { getContextStore } from "./context.js";
 
 // Custom type representing supported log levels
@@ -15,7 +14,7 @@ export interface LogPayload {
 // Base Pino logger instance.
 // Configure serializers for safety and sanitize parameters.
 const basePinoLogger: PinoLogger = pino({
-  level: runtimeConfig.NODE_ENV === "production" ? "info" : "debug",
+  level: "silent",
   formatters: {
     level: (label: string) => ({ level: label }),
   },

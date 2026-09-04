@@ -15,6 +15,7 @@
   "scripts": {
     "build": "tsc",
     "typecheck": "tsc --noEmit",
+    "test": "node -e \"console.log('[@freelanceos/health] No unit tests: I/O-only infrastructure package — covered by integration tests in @freelanceos/db and apps/web.')\"",
     "clean": "node -e \"const fs = require('fs'); fs.rmSync('dist', { recursive: true, force: true }); fs.rmSync('tsconfig.tsbuildinfo', { force: true });\""
   },
   "dependencies": {

@@ -17,6 +17,7 @@
     "typecheck": "tsc --noEmit",
     "test": "node --env-file=../../.env.test --test --test-concurrency=1 dist/repository/*.test.js",
     "test:unit": "node --env-file=../../.env.test --test --test-concurrency=1 dist/repository/*.test.js",
+    "db:seed": "tsc && node --env-file=../../.env dist/seed.js",
     "clean": "node -e \"const fs = require('fs'); fs.rmSync('dist', { recursive: true, force: true }); fs.rmSync('tsconfig.tsbuildinfo', { force: true });\""
   },
   "dependencies": {

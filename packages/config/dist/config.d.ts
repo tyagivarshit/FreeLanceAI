@@ -28,10 +28,21 @@ export declare function loadRuntimeConfig(): Readonly<{
     CONFIG_CONCURRENT_SESSION_STRATEGY: "revoke_oldest" | "deny_access";
     STRIPE_API_VERSION: string;
     STRIPE_TIMEOUT_MS: number;
+    APP_URL: string;
+    EMAIL_FROM: string;
+    SMTP_PORT: number;
+    AI_GATEWAY_URL: string;
+    MAX_CONCURRENT_SESSIONS: number;
     SESSION_COOKIE_DOMAIN?: string | undefined;
     STRIPE_SECRET_KEY?: string | undefined;
     STRIPE_PUBLISHABLE_KEY?: string | undefined;
     STRIPE_WEBHOOK_SECRET?: string | undefined;
+    ALLOWED_ORIGINS?: string | undefined;
+    SMTP_HOST?: string | undefined;
+    SMTP_SECURE?: boolean | undefined;
+    SMTP_USER?: string | undefined;
+    SMTP_PASS?: string | undefined;
+    RESEND_API_KEY?: string | undefined;
 }>;
 export declare const runtimeConfig: Readonly<{
     NODE_ENV: "development" | "production" | "test";
@@ -63,9 +74,20 @@ export declare const runtimeConfig: Readonly<{
     CONFIG_CONCURRENT_SESSION_STRATEGY: "revoke_oldest" | "deny_access";
     STRIPE_API_VERSION: string;
     STRIPE_TIMEOUT_MS: number;
+    APP_URL: string;
+    EMAIL_FROM: string;
+    SMTP_PORT: number;
+    AI_GATEWAY_URL: string;
+    MAX_CONCURRENT_SESSIONS: number;
     SESSION_COOKIE_DOMAIN?: string | undefined;
     STRIPE_SECRET_KEY?: string | undefined;
     STRIPE_PUBLISHABLE_KEY?: string | undefined;
     STRIPE_WEBHOOK_SECRET?: string | undefined;
+    ALLOWED_ORIGINS?: string | undefined;
+    SMTP_HOST?: string | undefined;
+    SMTP_SECURE?: boolean | undefined;
+    SMTP_USER?: string | undefined;
+    SMTP_PASS?: string | undefined;
+    RESEND_API_KEY?: string | undefined;
 }>;
 //# sourceMappingURL=config.d.ts.map

@@ -115,6 +115,22 @@ export declare const users: import("drizzle-orm/pg-core").PgTableWithColumns<{
             baseColumn: never;
             generated: undefined;
         }, {}, {}>;
+        lockedUntil: import("drizzle-orm/pg-core").PgColumn<{
+            name: "locked_until";
+            tableName: "users";
+            dataType: "date";
+            columnType: "PgTimestamp";
+            data: Date;
+            driverParam: string;
+            notNull: false;
+            hasDefault: false;
+            isPrimaryKey: false;
+            isAutoincrement: false;
+            hasRuntimeDefault: false;
+            enumValues: undefined;
+            baseColumn: never;
+            generated: undefined;
+        }, {}, {}>;
     };
     dialect: "pg";
 }>;

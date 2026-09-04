@@ -1,7 +1,7 @@
 import crypto from "crypto";
 import { validateSession } from "./session.js";
 import { eventDispatcher } from "./dispatcher.js";
-import { identityStore } from "./identity-store.js";
+
 import {
   InvalidTokenError,
   SessionNotFoundError,
@@ -64,18 +64,8 @@ export async function authenticateRequest(
   }
 
   try {
-    // 3. Execute sequential validation pipeline
+    // 3. Execute validation pipeline (now returns user email as well)
     const validated = await validateSession(credentialToken);
-
-    // Fetch user details through the Identity Store abstraction
-    const user = await identityStore.findUserById(validated.userId);
-    if (!user) {
-      await eventDispatcher.publish("AUTHENTICATION_FAILED", {
-        ipAddress,
-        reason: "User record associated with session not found",
-      });
-      return { status: "Unauthenticated" };
-    }
 
     const authenticatedAt = new Date();
 
@@ -94,7 +84,7 @@ export async function authenticateRequest(
       context: {
         identity: {
           userId: validated.userId,
-          email: user.email,
+          email: validated.email,
         },
         sessionRef,
         authenticatedAt,

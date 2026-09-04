@@ -5,7 +5,6 @@ import { db, sessions, userPasswordHashes } from "@freelanceos/db";
 import { authenticateRequest } from "./middleware.js";
 import { signAccessToken } from "./token.js";
 import { eventDispatcher } from "./dispatcher.js";
-import { identityStore } from "./identity-store.js";
 
 describe("Authentication Middleware Logic Validation Tests", () => {
   let selectResultMap: Map<unknown, Record<string, unknown>[]>;
@@ -23,39 +22,41 @@ describe("Authentication Middleware Logic Validation Tests", () => {
       return Promise.resolve();
     } as unknown as typeof eventDispatcher.publish;
 
-    // Mock IdentityStore
-    identityStore.findUserById = function (
-      userId: string,
-    ): Promise<{ id: string; email: string } | null> {
-      if (mockUserResult && mockUserResult.id === userId) {
-        return Promise.resolve(mockUserResult);
-      }
-      return Promise.resolve(null);
-    };
+
 
     // Mock db.select
     // @ts-expect-error db.select is read-only
     db.select = function () {
       return {
-        from: function (table: unknown) {
-          return {
-            where: function () {
-              return {
-                limit: function () {
-                  const result = selectResultMap.get(table) || [];
-                  return Promise.resolve(result);
-                },
-                then: function (resolve: (val: unknown) => void) {
-                  const result = selectResultMap.get(table) || [];
-                  resolve(result);
-                },
-              };
+        from: function (_table: unknown) {
+          const builder = {
+            innerJoin: function () { return builder; },
+            where: function () { return builder; },
+            limit: function () { return builder; },
+            execute: function () {
+              return new Promise((resolve) => builder.then(resolve));
             },
             then: function (resolve: (val: unknown) => void) {
-              const result = selectResultMap.get(table) || [];
-              resolve(result);
+              const sessionsData = selectResultMap.get(sessions) || [];
+              const session = sessionsData[0];
+              
+              if (!session) {
+                resolve([]);
+                return;
+              }
+
+              const pwdData = selectResultMap.get(userPasswordHashes) || [];
+              const pwd = pwdData[0] as { credentialVersion?: number } | undefined;
+              const cv = pwd?.credentialVersion ?? 1;
+
+              resolve([{
+                credentialVersion: cv,
+                session: session,
+                userEmail: mockUserResult ? mockUserResult.email : "test@freelanceos.com"
+              }]);
             },
           };
+          return builder;
         },
       };
     };

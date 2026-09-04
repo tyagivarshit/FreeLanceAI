@@ -4,6 +4,8 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "build": "node build.js",
+    "typecheck": "tsc --noEmit",
     "dev": "node --env-file=../../.env server.js",
     "start": "node --env-file=../../.env server.js",
     "test": "node --env-file=../../.env.test --test *.test.js"
@@ -13,6 +15,10 @@
     "@freelanceos/config": "*",
     "@freelanceos/core": "*",
     "@freelanceos/db": "*",
-    "@freelanceos/logger": "*"
+    "@freelanceos/logger": "*",
+    "@types/react": "^19.2.18",
+    "@types/react-dom": "^19.2.5",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8"
   }
 }

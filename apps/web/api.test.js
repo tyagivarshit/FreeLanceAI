@@ -3445,3 +3445,211 @@ test("Analytics API 20. Existing GET /api/analytics/pulse remains functional (ba
   assert.strictEqual(res.body.success, true);
   assert.match(res.body.description, /scans are active/i);
 });
+
+// =============================================================================
+// CHAPTER 1H-1: Extension Endpoint Authentication Tests
+// =============================================================================
+
+// Valid import payload used by the real Upwork extension flow
+const validImportPayload = {
+  jobId: "upwork-job-ext-001",
+  title: "Senior Node.js Developer",
+  url: "https://upwork.com/jobs/~01234567890",
+  platform: "upwork",
+  description: "We are looking for a senior backend developer.",
+  skills: ["node.js", "typescript", "postgresql"],
+  budget: { type: "hourly", minimum: 50, maximum: 100 },
+};
+
+// Valid detect payload used by the real Upwork/LinkedIn extension flow
+const validDetectPayload = {
+  jobId: "linkedin-job-detect-001",
+  title: "Full Stack Engineer",
+  url: "https://linkedin.com/jobs/view/123456789",
+};
+
+// 1. Anonymous POST /api/jobs/import → 401
+test("Extension Auth 1. Anonymous POST /api/jobs/import returns 401", async () => {
+  const res = await makeRequest("/api/jobs/import", "POST", {}, validImportPayload);
+  assert.strictEqual(res.statusCode, 401);
+  assert.strictEqual(res.body.success, false);
+});
+
+// 2. Anonymous POST /api/jobs/detect → 401
+test("Extension Auth 2. Anonymous POST /api/jobs/detect returns 401", async () => {
+  const res = await makeRequest("/api/jobs/detect", "POST", {}, validDetectPayload);
+  assert.strictEqual(res.statusCode, 401);
+  assert.strictEqual(res.body.success, false);
+});
+
+// 3. Authenticated valid import succeeds
+test("Extension Auth 3. Authenticated valid POST /api/jobs/import succeeds", async () => {
+  const cookie = getSessionCookie("user-123", "user@example.com");
+  const capturedImports = [];
+  const originalSave = jobsRepo.save;
+  jobsRepo.save = async (jobImport) => {
+    capturedImports.push(jobImport);
+  };
+
+  try {
+    const res = await makeRequest(
+      "/api/jobs/import",
+      "POST",
+      { Cookie: cookie },
+      validImportPayload,
+    );
+
+    assert.strictEqual(res.statusCode, 201);
+    assert.strictEqual(res.body.success, true);
+    assert.ok(res.body.jobImportId, "jobImportId should be returned");
+    assert.strictEqual(res.body.status, "RECEIVED");
+
+    // Confirm the saved job has tenantId from auth — NOT from body
+    assert.strictEqual(capturedImports.length, 1);
+    assert.strictEqual(capturedImports[0].tenantId, "user-123");
+    assert.strictEqual(capturedImports[0].ownerId, "user-123");
+  } finally {
+    jobsRepo.save = originalSave;
+  }
+});
+
+// 4. Authenticated valid detect succeeds
+test("Extension Auth 4. Authenticated valid POST /api/jobs/detect succeeds", async () => {
+  const cookie = getSessionCookie("user-123", "user@example.com");
+
+  const res = await makeRequest("/api/jobs/detect", "POST", { Cookie: cookie }, validDetectPayload);
+
+  assert.strictEqual(res.statusCode, 200);
+  assert.strictEqual(res.body.success, true);
+  assert.strictEqual(res.body.status, "ACK");
+});
+
+// 5. User cannot write to another tenant — tenantId is forced from auth, not body
+test("Extension Auth 5. Import tenantId is always resolved from auth, not request body", async () => {
+  // Authenticate as user-123 but include userId/tenantId for another tenant in body
+  const cookie = getSessionCookie("user-123", "user@example.com");
+  const capturedImports = [];
+  const originalSave = jobsRepo.save;
+  jobsRepo.save = async (jobImport) => {
+    capturedImports.push(jobImport);
+  };
+
+  try {
+    const maliciousBody = {
+      ...validImportPayload,
+      userId: "attacker-user-999", // must be ignored
+      tenantId: "victim-tenant-999", // must be ignored
+      ownerId: "victim-tenant-999", // must be ignored
+    };
+
+    const res = await makeRequest("/api/jobs/import", "POST", { Cookie: cookie }, maliciousBody);
+
+    // Must still succeed (extra fields are harmless — they are ignored)
+    assert.strictEqual(res.statusCode, 201);
+    assert.strictEqual(res.body.success, true);
+
+    // Saved job must be owned by the authenticated user, not the attacker's values
+    assert.strictEqual(capturedImports.length, 1);
+    assert.strictEqual(capturedImports[0].tenantId, "user-123");
+    assert.strictEqual(capturedImports[0].ownerId, "user-123");
+    // The injected tenant must NOT appear anywhere in the aggregate
+    assert.notStrictEqual(capturedImports[0].tenantId, "victim-tenant-999");
+  } finally {
+    jobsRepo.save = originalSave;
+  }
+});
+
+// 6a. Missing/invalid import payload → 400 (missing jobId)
+test("Extension Auth 6a. POST /api/jobs/import with missing jobId returns 400", async () => {
+  const cookie = getSessionCookie("user-123", "user@example.com");
+
+  const { jobId: _omit, ...payloadWithoutJobId } = validImportPayload;
+  const res = await makeRequest(
+    "/api/jobs/import",
+    "POST",
+    { Cookie: cookie },
+    payloadWithoutJobId,
+  );
+
+  assert.strictEqual(res.statusCode, 400);
+  assert.strictEqual(res.body.success, false);
+  assert.ok(res.body.error);
+});
+
+// 6b. Missing/invalid detect payload → 400 (missing url)
+test("Extension Auth 6b. POST /api/jobs/detect with missing url returns 400", async () => {
+  const cookie = getSessionCookie("user-123", "user@example.com");
+
+  const { url: _omit, ...payloadWithoutUrl } = validDetectPayload;
+  const res = await makeRequest("/api/jobs/detect", "POST", { Cookie: cookie }, payloadWithoutUrl);
+
+  assert.strictEqual(res.statusCode, 400);
+  assert.strictEqual(res.body.success, false);
+  assert.ok(res.body.error);
+});
+
+// 6c. Invalid platform value → 400
+test("Extension Auth 6c. POST /api/jobs/import with invalid platform returns 400", async () => {
+  const cookie = getSessionCookie("user-123", "user@example.com");
+
+  const res = await makeRequest(
+    "/api/jobs/import",
+    "POST",
+    { Cookie: cookie },
+    { ...validImportPayload, platform: "twitter" },
+  );
+
+  assert.strictEqual(res.statusCode, 400);
+  assert.strictEqual(res.body.success, false);
+  assert.match(res.body.error, /platform/i);
+});
+
+// 7a. Existing Upwork extension flow — authenticated import — remains functional
+test("Extension Auth 7a. Existing Upwork EXTRACT_JOB import flow remains functional after auth addition", async () => {
+  const cookie = getSessionCookie("user-123", "user@example.com");
+  const capturedImports = [];
+  const originalSave = jobsRepo.save;
+  jobsRepo.save = async (jobImport) => {
+    capturedImports.push(jobImport);
+  };
+
+  try {
+    // Simulate the exact payload shape the Upwork adapter produces
+    const upworkResult = {
+      status: "SUCCESS",
+      jobId: "upwork-real-job-555",
+      title: "React Developer Needed",
+      url: "https://upwork.com/jobs/~555",
+      platform: "upwork",
+      description: "Build a React dashboard for our startup.",
+      skills: ["react", "javascript"],
+      budget: { type: "fixed", amount: 3000 },
+    };
+
+    const res = await makeRequest("/api/jobs/import", "POST", { Cookie: cookie }, upworkResult);
+
+    assert.strictEqual(res.statusCode, 201);
+    assert.strictEqual(res.body.success, true);
+    assert.ok(res.body.jobImportId);
+  } finally {
+    jobsRepo.save = originalSave;
+  }
+});
+
+// 7b. Existing LinkedIn extension flow — authenticated detect — remains functional
+test("Extension Auth 7b. Existing LinkedIn JOB_DETECTED flow remains functional after auth addition", async () => {
+  const cookie = getSessionCookie("user-123", "user@example.com");
+
+  // Simulate the exact payload shape the LinkedIn adapter produces
+  const linkedinDetect = {
+    jobId: "linkedin-job-888",
+    title: "Backend Engineer",
+    url: "https://linkedin.com/jobs/view/888",
+  };
+
+  const res = await makeRequest("/api/jobs/detect", "POST", { Cookie: cookie }, linkedinDetect);
+
+  assert.strictEqual(res.statusCode, 200);
+  assert.strictEqual(res.body.success, true);
+  assert.strictEqual(res.body.status, "ACK");
+});

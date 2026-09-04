@@ -130,7 +130,7 @@ export class PostgresJobMatchRepository
     );
 
     const searchCondition = or(
-      sql`lower(${jobMatches.status}) LIKE ${searchPattern}`,
+      sql`lower(cast(${jobMatches.status} as text)) LIKE ${searchPattern}`,
       sql`lower(${jobMatches.matchingVersion}) LIKE ${searchPattern}`,
       sql`lower(${jobMatches.normalizationVersion}) LIKE ${searchPattern}`,
       sql`cast(${jobMatches.jobId} as text) LIKE ${searchPattern}`,

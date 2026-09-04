@@ -38,6 +38,7 @@ export declare function createSession(userId: string, metadata: SessionMetadata)
 export declare function validateSession(accessToken: string): Promise<{
     sessionId: string;
     userId: string;
+    email: string;
 }>;
 /**
  * Rotates a refresh token, checking for replay theft attacks and applying concurrency grace periods.

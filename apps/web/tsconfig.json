@@ -1,0 +1,14 @@
+{
+  "extends": "@freelanceos/ts-config/base.json",
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "jsx": "react-jsx",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "types": ["node", "react", "react-dom"],
+    "allowJs": true
+  },
+  "include": ["src/**/*", "*.js", "*.test.js", "*.mjs"],
+  "exclude": ["node_modules", "dist"]
+}

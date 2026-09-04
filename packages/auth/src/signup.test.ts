@@ -228,3 +228,56 @@ describe("Signup Use Case Validation & Mock Flow Tests", () => {
     assert.ok(result.tokens.refreshToken);
   });
 });
+
+describe("Signup Use Case Integration & Race Condition Tests", () => {
+  test("should handle concurrent signups with identical email without leaking Postgres 500 error", async () => {
+    // Ensure anti-enumeration is disabled so we expect a specific DuplicateEmailError mapped from the DB
+    const origEnum = runtimeConfig.CONFIG_SIGNUP_ANTI_ENUMERATION_ENABLED;
+    // @ts-expect-error read-only
+    runtimeConfig.CONFIG_SIGNUP_ANTI_ENUMERATION_ENABLED = false;
+
+    const email = "race-condition-" + Date.now() + "@example.com";
+
+    // Attempt two simultaneous signups with the exact same email
+    const sessionMeta = { userAgent: "test", ipAddress: "127.0.0.1" };
+    
+    const p1 = signupUser({
+      email,
+      password: "StrongPassword123!",
+      sessionMetadata: sessionMeta
+    });
+
+    const p2 = signupUser({
+      email,
+      password: "StrongPassword123!",
+      sessionMetadata: sessionMeta
+    });
+
+    const results = await Promise.allSettled([p1, p2]);
+
+    // Assert exactly one succeeds and exactly one fails
+    const fulfilled = results.filter(r => r.status === "fulfilled");
+    const rejected = results.filter(r => r.status === "rejected");
+
+    if (fulfilled.length === 0) {
+      console.log("BOTH REJECTED:", rejected.map(r => (r as PromiseRejectedResult).reason));
+    }
+
+    assert.strictEqual(fulfilled.length, 1, "Exactly one signup should succeed");
+    assert.strictEqual(rejected.length, 1, "Exactly one signup should fail");
+
+    const error = (rejected[0] as PromiseRejectedResult).reason;
+    assert.ok(error instanceof DuplicateEmailError, `Expected DuplicateEmailError, but got: ${error instanceof Error ? error.message : String(error)}`);
+
+    // Assert exactly one DB record exists for this email
+    const { eq } = await import("drizzle-orm");
+    const usersInDb = await db.select().from(users).where(eq(users.email, email));
+    assert.strictEqual(usersInDb.length, 1, "Exactly one user record should exist in the database");
+
+    // Cleanup
+    await db.delete(users).where(eq(users.id, usersInDb[0]!.id));
+    
+    // @ts-expect-error read-only
+    runtimeConfig.CONFIG_SIGNUP_ANTI_ENUMERATION_ENABLED = origEnum;
+  });
+});

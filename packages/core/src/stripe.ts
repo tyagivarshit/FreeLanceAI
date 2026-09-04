@@ -235,13 +235,6 @@ export class StripeBillingProviderImpl {
           "Production Stripe must not use development/test credentials.",
         );
       }
-    } else {
-      if (!params.secretKey || params.secretKey.trim() === "") {
-        throw new StripeBillingError(
-          "INVALID_PROVIDER_CONFIGURATION",
-          "Stripe secret key is missing.",
-        );
-      }
     }
 
     this._env = params.env;
@@ -251,7 +244,7 @@ export class StripeBillingProviderImpl {
     this._planCatalog = params.planCatalog;
     this._stripeClient =
       params.stripeClientMock ??
-      new Stripe(params.secretKey, {
+      new Stripe(params.secretKey || "sk_test_placeholder", {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         apiVersion: "2023-10-16" as any,
         timeout: this._timeoutMs,

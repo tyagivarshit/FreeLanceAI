@@ -203,9 +203,12 @@ export async function signupUser(input: SignupInput): Promise<RegistrationResult
 
       return newUser;
     });
-  } catch (err) {
+  } catch (err: any) {
     if (err instanceof SignupError) {
       throw err;
+    }
+    if (err.code === "23505") {
+      throw new DuplicateEmailError();
     }
     throw new SignupTransactionError(err instanceof Error ? err.message : String(err));
   }

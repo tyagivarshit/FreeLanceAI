@@ -5,3 +5,6 @@ build
 .turbo
 package-lock.json
 migrations
+.chrome-user-data*
+coverage
+playwright-report

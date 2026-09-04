@@ -1,5 +1,5 @@
-import { db, sessions, userPasswordHashes } from "@freelanceos/db";
-import { eq, and, gt, isNull } from "drizzle-orm";
+import { db, sessions, userPasswordHashes, users } from "@freelanceos/db";
+import { eq, and, gt, isNull, sql } from "drizzle-orm";
 import { runtimeConfig } from "@freelanceos/config";
 import { logger } from "@freelanceos/logger";
 import { generateRefreshToken, hashRefreshToken, compareRefreshTokenHashes, signAccessToken, verifyAccessToken, InvalidTokenError, SessionNotFoundError, CredentialNotFoundError, ReplayAttackDetectedError, SessionExpiredError, SessionRevokedError, } from "./token.js";
@@ -61,29 +61,36 @@ export async function createSession(userId, metadata) {
         expiresAt,
     };
 }
+// PREPARED STATEMENT INITIALIZED AT STARTUP
+const buildValidateSessionQuery = () => db
+    .select({
+    credentialVersion: userPasswordHashes.credentialVersion,
+    session: sessions,
+    userEmail: users.email
+})
+    .from(sessions)
+    .innerJoin(userPasswordHashes, eq(userPasswordHashes.userId, sessions.userId))
+    .innerJoin(users, eq(users.id, sessions.userId))
+    .where(eq(sessions.id, sql.placeholder('sessionId')))
+    .limit(1);
+const preparedValidateSessionQuery = process.env.NODE_ENV === "test"
+    ? null
+    : buildValidateSessionQuery().prepare("validate_session_query");
 /**
  * Validates a Signed Access Token statelessly and maps it back to active database session invariants.
  */
 export async function validateSession(accessToken) {
     // 1. Statelessly decode and verify access token signatures and expiry
     const payload = verifyAccessToken(accessToken);
-    // 2. Verify credential version state in database to support instant global logouts
-    const credentials = await db
-        .select({ credentialVersion: userPasswordHashes.credentialVersion })
-        .from(userPasswordHashes)
-        .where(eq(userPasswordHashes.userId, payload.userId))
-        .limit(1);
-    const firstCredential = credentials[0];
-    if (!firstCredential || firstCredential.credentialVersion !== payload.credentialVersion) {
+    // 2. Perform a single JOIN query using a PREPARED STATEMENT
+    const joinedResult = process.env.NODE_ENV === "test"
+        ? await buildValidateSessionQuery().execute({ sessionId: payload.sessionId })
+        : await preparedValidateSessionQuery.execute({ sessionId: payload.sessionId });
+    const row = joinedResult[0];
+    if (!row || row.credentialVersion !== payload.credentialVersion) {
         throw new InvalidTokenError("User credentials have changed. Session invalidated.", "INVALID", payload.userId, payload.sessionId);
     }
-    // 3. Assert active session database state
-    const sessionList = await db
-        .select()
-        .from(sessions)
-        .where(eq(sessions.id, payload.sessionId))
-        .limit(1);
-    const session = sessionList[0];
+    const session = row.session;
     if (!session) {
         throw new SessionNotFoundError(payload.sessionId);
     }
@@ -96,6 +103,7 @@ export async function validateSession(accessToken) {
     return {
         sessionId: payload.sessionId,
         userId: payload.userId,
+        email: row.userEmail
     };
 }
 /**

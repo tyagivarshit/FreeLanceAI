@@ -18,6 +18,13 @@ import {
   SessionRevokedError,
 } from "./token.js";
 
+import {
+  InvalidVerificationTokenError,
+  VerificationTokenExpiredError,
+  VerificationTokenAlreadyConsumedError,
+  UserNotFoundError,
+} from "./verify-email.js";
+
 export interface AbstractHttpResponse {
   statusCode: number;
   body: {
@@ -117,6 +124,50 @@ export function mapAuthError(err: unknown): AbstractHttpResponse {
       body: {
         success: false,
         code: "MAX_SESSIONS_EXCEEDED",
+        message: err.message,
+      },
+    };
+  }
+
+  if (err instanceof InvalidVerificationTokenError) {
+    return {
+      statusCode: 400,
+      body: {
+        success: false,
+        code: "INVALID_TOKEN",
+        message: err.message,
+      },
+    };
+  }
+
+  if (err instanceof VerificationTokenExpiredError) {
+    return {
+      statusCode: 410,
+      body: {
+        success: false,
+        code: "TOKEN_EXPIRED",
+        message: err.message,
+      },
+    };
+  }
+
+  if (err instanceof VerificationTokenAlreadyConsumedError) {
+    return {
+      statusCode: 409,
+      body: {
+        success: false,
+        code: "TOKEN_ALREADY_USED",
+        message: err.message,
+      },
+    };
+  }
+
+  if (err instanceof UserNotFoundError) {
+    return {
+      statusCode: 404,
+      body: {
+        success: false,
+        code: "USER_NOT_FOUND",
         message: err.message,
       },
     };
