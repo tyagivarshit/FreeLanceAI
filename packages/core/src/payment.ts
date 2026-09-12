@@ -34,8 +34,14 @@ export class Money {
   private readonly _currency: string;
 
   constructor(amount: number, currency: string) {
+    if (!Number.isInteger(amount)) {
+      throw new Error("Money amount must be an integer (smallest currency unit, e.g. cents).");
+    }
+    if (amount < 0) {
+      throw new Error("Money amount cannot be negative. Use a separate Refund concept instead.");
+    }
     this._amount = amount;
-    this._currency = currency;
+    this._currency = currency.toUpperCase();
   }
 
   get amount(): number {
@@ -49,6 +55,18 @@ export class Money {
   public equals(other: Money): boolean {
     return this._amount === other.amount && this._currency === other.currency;
   }
+
+  public static sum(monies: Money[], expectedCurrency: string): Money {
+    let total = 0;
+    const currency = expectedCurrency.toUpperCase();
+    for (const m of monies) {
+      if (m.currency !== currency) {
+        throw new Error(`Cannot sum mixed currencies. Expected ${currency}, got ${m.currency}`);
+      }
+      total += m.amount;
+    }
+    return new Money(total, currency);
+  }
 }
 
 // Monetary Policy Interface
@@ -59,6 +77,7 @@ export interface MonetaryPolicy {
 // Payment Aggregate Root Properties
 export interface PaymentProperties {
   paymentId: string;
+  tenantId: string;
   clientId: string;
   ownerId: string;
   money: Money;
@@ -71,6 +90,7 @@ export interface PaymentProperties {
 // Payment Aggregate Root
 export class Payment {
   private readonly _paymentId: string;
+  private readonly _tenantId: string;
   private readonly _clientId: string;
   private readonly _ownerId: string;
   private readonly _money: Money;
@@ -87,6 +107,9 @@ export class Payment {
     if (!properties.paymentId || properties.paymentId.trim() === "") {
       throw new Error("Payment ID is required.");
     }
+    if (!properties.tenantId || properties.tenantId.trim() === "") {
+      throw new Error("Tenant ID reference is required.");
+    }
     if (!properties.clientId || properties.clientId.trim() === "") {
       throw new Error("Client ID reference is required.");
     }
@@ -101,6 +124,7 @@ export class Payment {
     }
 
     this._paymentId = properties.paymentId;
+    this._tenantId = properties.tenantId;
     this._clientId = properties.clientId;
     this._ownerId = properties.ownerId;
     this._money = properties.money;
@@ -118,6 +142,10 @@ export class Payment {
 
   get paymentId(): string {
     return this._paymentId;
+  }
+
+  get tenantId(): string {
+    return this._tenantId;
   }
 
   get clientId(): string {
@@ -163,6 +191,7 @@ export class Payment {
   // Factory Creation Method
   public static create(
     paymentId: string,
+    tenantId: string,
     clientId: string,
     ownerId: string,
     money: Money,
@@ -173,6 +202,7 @@ export class Payment {
     const payment = new Payment(
       {
         paymentId,
+        tenantId,
         clientId,
         ownerId,
         money,
@@ -186,6 +216,7 @@ export class Payment {
 
     payment.addDomainEvent(PAYMENT_CREATED, {
       paymentId: payment.paymentId,
+      tenantId: payment.tenantId,
       clientId: payment.clientId,
       ownerId: payment.ownerId,
       amount: payment.money.amount,
@@ -230,8 +261,7 @@ export class Payment {
     if (
       this._status !== "Pending" &&
       this._status !== "Authorized" &&
-      this._status !== "Captured" &&
-      this._status !== "Completed"
+      this._status !== "Captured"
     ) {
       throw new Error(`Cannot mark payment as failed in state: ${this._status}`);
     }
@@ -243,9 +273,9 @@ export class Payment {
   public cancel(ownerId: string) {
     this.verifyOwnership(ownerId);
     if (
+      this._status !== "Pending" &&
       this._status !== "Authorized" &&
-      this._status !== "Captured" &&
-      this._status !== "Completed"
+      this._status !== "Captured"
     ) {
       throw new Error(`Cannot cancel payment in state: ${this._status}`);
     }
@@ -272,6 +302,9 @@ export class Payment {
   private validateInvariants() {
     if (!this._paymentId || this._paymentId.trim() === "") {
       throw new Error("Payment ID is required.");
+    }
+    if (!this._tenantId || this._tenantId.trim() === "") {
+      throw new Error("Tenant ID reference is required.");
     }
     if (!this._clientId || this._clientId.trim() === "") {
       throw new Error("Client ID reference is required.");
@@ -311,13 +344,14 @@ export interface PaymentPersistenceContract {
 // Payment Aggregate Store
 export interface PaymentAggregateStore {
   save(payment: Payment): Promise<void>;
-  findById(paymentId: string, ownerId: string): Promise<Payment | null>;
-  findByReference(paymentReference: string, ownerId: string): Promise<Payment | null>;
+  findById(paymentId: string, tenantId: string): Promise<Payment | null>;
+  findByReference(paymentReference: string, tenantId: string): Promise<Payment | null>;
 }
 
 // Query-side Projection Contract
 export interface PaymentQueryProjection {
   id: string;
+  tenantId: string;
   clientId: string;
   ownerId: string;
   amount: number;

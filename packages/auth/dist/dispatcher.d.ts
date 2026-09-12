@@ -86,8 +86,18 @@ export interface EventDispatcher {
     publish(eventName: "SESSION_INVALID", payload: SessionInvalidPayload): Promise<void>;
     publish(eventName: "IDENTITY_INVALIDATED", payload: IdentityInvalidatedPayload): Promise<void>;
 }
+export interface SendVerificationEmailPayload {
+    userId: string;
+    email: string;
+    token: string;
+}
+export interface SendDuplicateSignupAlertPayload {
+    userId: string;
+    email: string;
+}
 export interface BackgroundTaskDispatcher {
     dispatch(taskName: "SEND_VERIFICATION_EMAIL", data: SendVerificationEmailPayload): Promise<void>;
+    dispatch(taskName: "SEND_DUPLICATE_SIGNUP_ALERT", data: SendDuplicateSignupAlertPayload): Promise<void>;
 }
 /**
  * Concrete implementation of the Event Dispatcher.
@@ -104,7 +114,7 @@ export declare class QueueBackgroundTaskDispatcher implements BackgroundTaskDisp
     private emailService?;
     constructor(emailService?: EmailService);
     setEmailService(service: EmailService): void;
-    dispatch(taskName: "SEND_VERIFICATION_EMAIL", data: SendVerificationEmailPayload): Promise<void>;
+    dispatch(taskName: "SEND_VERIFICATION_EMAIL" | "SEND_DUPLICATE_SIGNUP_ALERT", data: any): Promise<void>;
 }
 export declare const eventDispatcher: EventDispatcher;
 export declare const backgroundTaskDispatcher: BackgroundTaskDispatcher;

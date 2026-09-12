@@ -13,8 +13,7 @@ function calculateReconnectDelay(times) {
     const jitter = Math.random() * 200;
     return delay + jitter;
 }
-// Initialize the ioredis instance
-export const redis = new Redis(runtimeConfig.REDIS_URL, {
+const redisOptions = {
     maxRetriesPerRequest: null, // Required by BullMQ to handle connection drops manually
     enableOfflineQueue: true,
     connectTimeout: CONNECT_TIMEOUT_MS,
@@ -22,7 +21,12 @@ export const redis = new Redis(runtimeConfig.REDIS_URL, {
         console.warn(`[Redis] Connection lost. Attempting reconnect #${times}...`);
         return calculateReconnectDelay(times);
     },
-});
+};
+if (runtimeConfig.REDIS_PASSWORD) {
+    redisOptions.password = runtimeConfig.REDIS_PASSWORD;
+}
+// Initialize the ioredis instance
+export const redis = new Redis(runtimeConfig.REDIS_URL, redisOptions);
 // Configure event listeners. Direct console logging is an intentional temporary MVP implementation.
 // Future structured logging will migrate to the centralized Observability Foundation (U-0G-04).
 redis.on("connect", () => {

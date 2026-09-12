@@ -4,9 +4,10 @@ import crypto from "crypto";
 import { runtimeConfig } from "@freelanceos/config";
 import { logger } from "@freelanceos/logger";
 import { normalizeEmailAddress, validatePasswordStrength } from "@freelanceos/core";
-import { hashPassword } from "./hash.js";
+import { hashPassword, runEquivalentComputationalWork } from "./hash.js";
 import { createSession, SessionMetadata } from "./session.js";
 import { eventDispatcher, backgroundTaskDispatcher } from "./dispatcher.js";
+import { RedisCacheStore } from "@freelanceos/redis";
 
 export interface SignupInput {
   email: string;
@@ -85,23 +86,48 @@ export interface RegistrationResult {
  */
 export async function signupUser(input: SignupInput): Promise<RegistrationResult> {
   const { email, password, sessionMetadata } = input;
+  const ipAddress = sessionMetadata?.ipAddress || "unknown";
 
-  // 1. Normalize email
-  const normalized = normalizeEmailAddress(email, {
-    stripSubaddress: runtimeConfig.CONFIG_EMAIL_STRIP_SUBADDRESS,
-    stripDots: runtimeConfig.CONFIG_EMAIL_STRIP_DOTS,
-  });
+  const startTime = performance.now();
+  const MIN_SIGNUP_TIME_MS = 500;
+  
+  const enforceTiming = async () => {
+    const elapsed = performance.now() - startTime;
+    if (elapsed < MIN_SIGNUP_TIME_MS) {
+      await new Promise(r => setTimeout(r, MIN_SIGNUP_TIME_MS - elapsed));
+    }
+  };
 
-  // 2. Validate password strength
-  const passwordCheck = validatePasswordStrength(password, {
-    minLength: runtimeConfig.CONFIG_PASSWORD_MIN_LENGTH,
-    maxLength: runtimeConfig.CONFIG_PASSWORD_MAX_LENGTH,
-    complexityRequired: runtimeConfig.CONFIG_PASSWORD_COMPLEXITY_REQUIRED,
-  });
+  try {
+    // 0. Free Tier Sybil Attack Prevention (IP Rate Limiting)
+    const cache = new RedisCacheStore();
+    const rateLimitKey = `signup:ip:${ipAddress}`;
+    
+    // Limit to 2 signups per 24 hours per IP
+    const count = await cache.increment(rateLimitKey, 86400);
+    if (count > 2) {
+      logger.warn({
+        message: `[Rate Limit] Excessive signups blocked for IP: ${ipAddress}`,
+      });
+      throw new SignupError("Registration rate limit exceeded. Please try again later.", "RATE_LIMIT_EXCEEDED");
+    }
 
-  if (!passwordCheck.isValid) {
-    throw new ValidationError(passwordCheck.errors);
-  }
+    // 1. Normalize email
+    const normalized = normalizeEmailAddress(email, {
+      stripSubaddress: runtimeConfig.CONFIG_EMAIL_STRIP_SUBADDRESS,
+      stripDots: runtimeConfig.CONFIG_EMAIL_STRIP_DOTS,
+    });
+
+    // 2. Validate password strength
+    const passwordCheck = validatePasswordStrength(password, {
+      minLength: runtimeConfig.CONFIG_PASSWORD_MIN_LENGTH,
+      maxLength: runtimeConfig.CONFIG_PASSWORD_MAX_LENGTH,
+      complexityRequired: runtimeConfig.CONFIG_PASSWORD_COMPLEXITY_REQUIRED,
+    });
+
+    if (!passwordCheck.isValid) {
+      throw new ValidationError(passwordCheck.errors);
+    }
 
   // 3. Check for duplicates
   const existingUsers = await db
@@ -114,6 +140,7 @@ export async function signupUser(input: SignupInput): Promise<RegistrationResult
 
   if (existingUser) {
     if (runtimeConfig.CONFIG_SIGNUP_ANTI_ENUMERATION_ENABLED) {
+      await runEquivalentComputationalWork(password);
       logger.info({
         message: `Anti-enumeration triggered for email: ${normalized}. Simulating successful signup.`,
       });
@@ -123,6 +150,16 @@ export async function signupUser(input: SignupInput): Promise<RegistrationResult
         email: normalized,
         userId: existingUser.id,
       });
+
+      // Dual-path email limit to prevent Email Bombing
+      const duplicateKey = `email:duplicate:${normalized}`;
+      const duplicateCount = await cache.increment(duplicateKey, 120); // 1 email per 2 minutes
+      if (duplicateCount === 1) {
+        await backgroundTaskDispatcher.dispatch("SEND_DUPLICATE_SIGNUP_ALERT", {
+          email: normalized,
+          userId: existingUser.id,
+        });
+      }
 
       // Simulate a successful registration response structure, returning mock data without writing to DB
       return {
@@ -208,6 +245,46 @@ export async function signupUser(input: SignupInput): Promise<RegistrationResult
       throw err;
     }
     if (err.code === "23505") {
+      if (runtimeConfig.CONFIG_SIGNUP_ANTI_ENUMERATION_ENABLED) {
+        // Fetch the concurrent user that caused the unique constraint violation
+        const concurrentUsers = await db
+          .select()
+          .from(users)
+          .where(eq(users.normalizedEmail, normalized))
+          .limit(1);
+        
+        const concurrentUser = concurrentUsers[0];
+        if (concurrentUser) {
+          logger.info({
+            message: `Anti-enumeration triggered for email (concurrent): ${normalized}. Simulating successful signup.`,
+          });
+          
+          await eventDispatcher.publish("REGISTRATION_ATTEMPT_ON_EXISTING_EMAIL", {
+            email: normalized,
+            userId: concurrentUser.id,
+          });
+
+          // Dual-path email limit to prevent Email Bombing
+          const duplicateKey = `email:duplicate:${normalized}`;
+          const duplicateCount = await cache.increment(duplicateKey, 120); // 1 email per 2 minutes
+          if (duplicateCount === 1) {
+            await backgroundTaskDispatcher.dispatch("SEND_DUPLICATE_SIGNUP_ALERT", {
+              email: normalized,
+              userId: concurrentUser.id,
+            });
+          }
+
+          return {
+            user: {
+              id: concurrentUser.id,
+              email: concurrentUser.email,
+              status: concurrentUser.status,
+              createdAt: concurrentUser.createdAt,
+            },
+            verificationTriggered: true,
+          };
+        }
+      }
       throw new DuplicateEmailError();
     }
     throw new SignupTransactionError(err instanceof Error ? err.message : String(err));
@@ -262,4 +339,7 @@ export async function signupUser(input: SignupInput): Promise<RegistrationResult
   }
 
   return result;
+  } finally {
+    await enforceTiming();
+  }
 }

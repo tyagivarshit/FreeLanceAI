@@ -1,12 +1,14 @@
-import { db, users, userPasswordHashes } from "@freelanceos/db";
+import { db, users, userPasswordHashes, userMfaSettings } from "@freelanceos/db";
 import { eq } from "drizzle-orm";
+import crypto from "crypto";
 import { runtimeConfig } from "@freelanceos/config";
 import { normalizeEmailAddress } from "@freelanceos/core";
-import { verifyPassword } from "./hash.js";
+import { verifyPassword, runEquivalentComputationalWork } from "./hash.js";
 import { SessionMetadata } from "./session.js";
 import { eventDispatcher } from "./dispatcher.js";
 import { deviceRecognitionService } from "./device-recognition-service.js";
 import { sessionService } from "./session-service.js";
+import { RedisCacheStore } from "@freelanceos/redis";
 
 export interface LoginInput {
   email: string;
@@ -21,10 +23,12 @@ export interface LoginResult {
     status: string;
     createdAt: Date;
   };
-  tokens: {
+  tokens?: {
     signedAccessToken: string;
     refreshToken: string;
   };
+  mfaToken?: string;
+  requiresMfa?: boolean;
   verificationTriggered: boolean;
 }
 
@@ -123,6 +127,7 @@ export async function loginUser(input: LoginInput): Promise<LoginResult> {
     const user = foundUsers[0];
 
     if (!user) {
+      await runEquivalentComputationalWork(password);
       await eventDispatcher.publish("LOGIN_FAILED", {
         email: normalized,
         reason: "USER_NOT_FOUND",
@@ -131,6 +136,15 @@ export async function loginUser(input: LoginInput): Promise<LoginResult> {
       throw new AuthenticationFailureError();
     }
 
+    // 3. Check Account Lockout State
+    if (user.lockedUntil && user.lockedUntil > new Date()) {
+      throw new AccountLockedError();
+    }
+    
+    if (user.lockedUntil && user.lockedUntil <= new Date()) {
+      await db.update(users).set({ lockedUntil: null }).where(eq(users.id, user.id));
+      user.lockedUntil = null;
+    }
 
     // 4. Query credential hashes
     const credentialRecords = await db
@@ -142,6 +156,7 @@ export async function loginUser(input: LoginInput): Promise<LoginResult> {
     const credentials = credentialRecords[0];
 
     if (!credentials) {
+      await runEquivalentComputationalWork(password);
       await eventDispatcher.publish("LOGIN_FAILED", {
         email: normalized,
         reason: "CREDENTIALS_NOT_FOUND",
@@ -158,25 +173,25 @@ export async function loginUser(input: LoginInput): Promise<LoginResult> {
       credentials.hashVersion,
     );
 
+    const cache = new RedisCacheStore();
+    const attemptKey = `login:attempts:${normalized}`;
+
     if (!passwordMatch) {
-      const currentTracker = failedAttemptsMap.get(normalized) || { count: 0 };
-      currentTracker.count += 1;
+      const count = await cache.increment(attemptKey, runtimeConfig.CONFIG_LOCKOUT_DURATION_SEC);
 
       const maxAttempts = runtimeConfig.CONFIG_MAX_LOGIN_ATTEMPTS;
-      if (currentTracker.count >= maxAttempts) {
+      if (count >= maxAttempts) {
         const lockoutDurationMs = runtimeConfig.CONFIG_LOCKOUT_DURATION_SEC * 1000;
         const lockedUntil = new Date(Date.now() + lockoutDurationMs);
 
         // Mutate user state in DB to temporarily locked
         await db.update(users).set({ lockedUntil }).where(eq(users.id, user.id));
-        failedAttemptsMap.delete(normalized);
+        await cache.delete(attemptKey);
 
         await eventDispatcher.publish("ACCOUNT_LOCKED", {
           userId: user.id,
           email: user.email,
         });
-      } else {
-        failedAttemptsMap.set(normalized, currentTracker);
       }
 
       await eventDispatcher.publish("LOGIN_FAILED", {
@@ -189,17 +204,7 @@ export async function loginUser(input: LoginInput): Promise<LoginResult> {
     }
 
     // 6. Clear failed trackers upon successful login
-    failedAttemptsMap.delete(normalized);
-
-    // 6.5. Check Account Lockout State
-    if (user.lockedUntil && user.lockedUntil > new Date()) {
-      throw new AccountLockedError();
-    }
-    
-    if (user.lockedUntil && user.lockedUntil <= new Date()) {
-      await db.update(users).set({ lockedUntil: null }).where(eq(users.id, user.id));
-      user.lockedUntil = null;
-    }
+    await cache.delete(attemptKey);
 
     // 7. Account Status Policy evaluation
     if (user.status === "suspended") {
@@ -244,10 +249,39 @@ export async function loginUser(input: LoginInput): Promise<LoginResult> {
       ipAddress,
     });
 
-    // 9. Invoke Session Service to manage concurrency limits and save active session
+    // 9. Check MFA settings
+    const mfaSettings = await db
+      .select({ enabled: userMfaSettings.enabled })
+      .from(userMfaSettings)
+      .where(eq(userMfaSettings.userId, user.id))
+      .limit(1);
+
+    const isMfaEnabled = mfaSettings[0]?.enabled ?? false;
+
+    if (isMfaEnabled) {
+      // Generate a short-lived MFA challenge token in Redis
+      const mfaToken = crypto.randomUUID();
+      const mfaKey = `mfa:pending:${mfaToken}`;
+      await cache.set(mfaKey, user.id, 300); // 5 minutes to complete MFA
+
+      await enforceTiming();
+      return {
+        user: {
+          id: user.id,
+          email: user.email,
+          status: user.status,
+          createdAt: user.createdAt,
+        },
+        mfaToken,
+        requiresMfa: true,
+        verificationTriggered: false,
+      };
+    }
+
+    // 10. Invoke Session Service to manage concurrency limits and save active session
     const sessionResult = await sessionService.establishSession(user.id, deviceMetadata);
 
-    // 10. Audit successful login
+    // 11. Audit successful login
     await eventDispatcher.publish("LOGIN_SUCCEEDED", {
       userId: user.id,
       ipAddress,

@@ -1,0 +1,226 @@
+=================================================================
+[TRANSACTIONAL EMAIL DISPATCHED TO: user@test.com]
+Subject: Test Subject
+-----------------------------------------------------------------
+Plain text preview
+=================================================================
+▶ Email Service & Verification Template Tests
+  ✔ 1. createVerificationEmail generates valid URLs, subject, and bodies (14.2754ms)
+  ✔ 2. ConsoleFallbackEmailService logs and succeeds without external provider (3.7234ms)
+  ✔ 3. NodemailerEmailService invokes sendMail on transporter (1.8585ms)
+  ✔ 4. ResendEmailService formats payload and calls Resend API (1.6669ms)
+  ✔ 5. QueueBackgroundTaskDispatcher delegates verification tasks to configured EmailService (49.936ms)
+  ✔ 6. ResendEmailService throws error with status when API returns non-200 (5.457ms)
+  ✔ 7. QueueBackgroundTaskDispatcher handles delivery failures safely without crashing (5.1166ms)
+✔ Email Service & Verification Template Tests (87.6876ms)
+[Event Loop Lag] 1019.15ms
+[PG Pool Metrics] Total: 1, Idle: 0, Waiting: 0
+[Redis] Connection established successfully.
+[Event Loop Lag] 25.65ms
+[Redis] Client is ready to receive commands.
+[PG Pool Metrics] Total: 10, Idle: 1, Waiting: 0
+▶ Login Use Case Integration & Race Condition Tests
+  ✔ should enforce lockout threshold strictly even under concurrent brute-force (Bug 1D) (2028.6836ms)
+✔ Login Use Case Integration & Race Condition Tests (2030.6681ms)
+[PG Pool Metrics] Total: 10, Idle: 10, Waiting: 0
+[PG Pool Metrics] Total: 10, Idle: 10, Waiting: 0
+[PG Pool Metrics] Total: 10, Idle: 10, Waiting: 0
+[PG Pool Metrics] Total: 10, Idle: 10, Waiting: 0
+[Event Loop Lag] 22.11ms
+[PG Pool Metrics] Total: 10, Idle: 10, Waiting: 0
+[Event Loop Lag] 24.54ms
+[PG Pool Metrics] Total: 10, Idle: 10, Waiting: 0
+[Event Loop Lag] 26.97ms
+[Event Loop Lag] 25.01ms
+[PG Pool Metrics] Total: 10, Idle: 10, Waiting: 0
+[Event Loop Lag] 21.22ms
+[PG Pool Metrics] Total: 10, Idle: 10, Waiting: 0
+[Event Loop Lag] 26.46ms
+[PG Pool Metrics] Total: 10, Idle: 10, Waiting: 0
+[Event Loop Lag] 35.38ms
+[PG Pool Metrics] Total: 10, Idle: 10, Waiting: 0
+[Event Loop Lag] 42.81ms
+[Event Loop Lag] 21.94ms
+[PG Pool Metrics] Total: 10, Idle: 10, Waiting: 0
+[Event Loop Lag] 30.82ms
+[Event Loop Lag] 61.96ms
+[Event Loop Lag] 117.56ms
+[PG Pool Metrics] Total: 10, Idle: 10, Waiting: 0
+[Event Loop Lag] 25.34ms
+[Event Loop Lag] 27.81ms
+[Event Loop Lag] 70.50ms
+[PG Pool Metrics] Total: 10, Idle: 10, Waiting: 0
+[Event Loop Lag] 25.68ms
+[Event Loop Lag] 23.58ms
+[PG Pool Metrics] Total: 10, Idle: 10, Waiting: 0
+[Event Loop Lag] 33.26ms
+[PG Pool Metrics] Total: 10, Idle: 10, Waiting: 0
+[PG Pool Metrics] Total: 10, Idle: 10, Waiting: 0
+[Event Loop Lag] 48.38ms
+[PG Pool Metrics] Total: 10, Idle: 10, Waiting: 0
+[PG Pool Metrics] Total: 10, Idle: 10, Waiting: 0
+[Event Loop Lag] 21.10ms
+[PG Pool Metrics] Total: 10, Idle: 10, Waiting: 0
+[PG Pool Metrics] Total: 10, Idle: 10, Waiting: 0
+[PG Pool Metrics] Total: 10, Idle: 10, Waiting: 0
+[Event Loop Lag] 22.47ms
+[Event Loop Lag] 21.79ms
+[Event Loop Lag] 23.98ms
+[PG Pool Metrics] Total: 10, Idle: 10, Waiting: 0
+[Event Loop Lag] 28.57ms
+[PG Pool Metrics] Total: 10, Idle: 10, Waiting: 0
+[PG Pool Metrics] Total: 10, Idle: 10, Waiting: 0
+[Event Loop Lag] 27.94ms
+[PG Pool Metrics] Total: 10, Idle: 10, Waiting: 0
+[PG Pool Metrics] Total: 10, Idle: 10, Waiting: 0
+[PG Pool Metrics] Total: 10, Idle: 10, Waiting: 0
+[PG Pool Metrics] Total: 10, Idle: 10, Waiting: 0
+[PG Pool Metrics] Total: 10, Idle: 10, Waiting: 0
+[Event Loop Lag] 38.46ms
+[PG Pool Metrics] Total: 9, Idle: 9, Waiting: 0
+[Event Loop Lag] 29.87ms
+[Event Loop Lag] 40.25ms
+[Event Loop Lag] 20.93ms
+[Event Loop Lag] 22.81ms
+[Event Loop Lag] 24.19ms
+[Event Loop Lag] 44.10ms
+[Event Loop Lag] 22.15ms
+[Event Loop Lag] 28.84ms
+[Event Loop Lag] 29.27ms
+[Event Loop Lag] 22.61ms
+[Event Loop Lag] 23.03ms
+[Event Loop Lag] 22.20ms
+[Event Loop Lag] 33.69ms
+[Event Loop Lag] 20.22ms
+[Event Loop Lag] 23.14ms
+[Event Loop Lag] 27.10ms
+[Event Loop Lag] 25.12ms
+[Event Loop Lag] 23.32ms
+[Event Loop Lag] 31.88ms
+[Event Loop Lag] 21.19ms
+[Event Loop Lag] 24.87ms
+[Event Loop Lag] 25.66ms
+[Event Loop Lag] 39.93ms
+[Event Loop Lag] 22.97ms
+[Event Loop Lag] 44.74ms
+[Event Loop Lag] 51.27ms
+[Event Loop Lag] 28.40ms
+[Event Loop Lag] 29.20ms
+[Event Loop Lag] 62.19ms
+[Event Loop Lag] 58.76ms
+[Event Loop Lag] 49.63ms
+[Event Loop Lag] 38.62ms
+[Event Loop Lag] 32.34ms
+[Event Loop Lag] 34.57ms
+[Event Loop Lag] 33.62ms
+[Event Loop Lag] 36.88ms
+[Event Loop Lag] 39.59ms
+[Event Loop Lag] 98.59ms
+[Event Loop Lag] 38.78ms
+[Event Loop Lag] 43.65ms
+[Event Loop Lag] 24.05ms
+[Event Loop Lag] 28.15ms
+[Event Loop Lag] 40.91ms
+[Event Loop Lag] 25.91ms
+[Event Loop Lag] 39.10ms
+[Event Loop Lag] 21.64ms
+[Event Loop Lag] 82.35ms
+[Event Loop Lag] 54.55ms
+[Event Loop Lag] 23.68ms
+[Event Loop Lag] 30.41ms
+[Event Loop Lag] 23.48ms
+[Event Loop Lag] 21.04ms
+[Event Loop Lag] 32.32ms
+[Event Loop Lag] 34.70ms
+[Event Loop Lag] 34.05ms
+[Event Loop Lag] 20.18ms
+[Event Loop Lag] 21.11ms
+[Event Loop Lag] 29.81ms
+[Event Loop Lag] 35.69ms
+[Event Loop Lag] 23.47ms
+[Event Loop Lag] 28.62ms
+[Event Loop Lag] 20.44ms
+[Event Loop Lag] 24.42ms
+[Event Loop Lag] 21.68ms
+[Event Loop Lag] 28.09ms
+[Event Loop Lag] 33.84ms
+[Event Loop Lag] 35.98ms
+[Event Loop Lag] 26.09ms
+[Event Loop Lag] 23.96ms
+[Event Loop Lag] 26.55ms
+[Event Loop Lag] 22.87ms
+[Event Loop Lag] 22.34ms
+[Event Loop Lag] 22.85ms
+[Event Loop Lag] 21.35ms
+[Event Loop Lag] 34.92ms
+[Event Loop Lag] 23.68ms
+[Event Loop Lag] 24.98ms
+[Event Loop Lag] 28.25ms
+[Event Loop Lag] 26.13ms
+[Event Loop Lag] 22.87ms
+[Event Loop Lag] 25.20ms
+[Event Loop Lag] 27.70ms
+[Event Loop Lag] 61.50ms
+[Event Loop Lag] 23.56ms
+[Event Loop Lag] 48.51ms
+[Event Loop Lag] 28.91ms
+[Event Loop Lag] 33.62ms
+[Event Loop Lag] 26.05ms
+[Event Loop Lag] 27.52ms
+[Event Loop Lag] 31.13ms
+[Event Loop Lag] 21.71ms
+[Event Loop Lag] 20.52ms
+[Event Loop Lag] 26.66ms
+[Event Loop Lag] 29.85ms
+[Event Loop Lag] 23.32ms
+[Event Loop Lag] 21.17ms
+[Event Loop Lag] 128.71ms
+[Event Loop Lag] 46.93ms
+[Event Loop Lag] 54.87ms
+[Event Loop Lag] 60.44ms
+[Event Loop Lag] 39.29ms
+[Event Loop Lag] 30.63ms
+[Event Loop Lag] 24.89ms
+[Event Loop Lag] 42.27ms
+[Event Loop Lag] 46.51ms
+[Event Loop Lag] 26.36ms
+[Event Loop Lag] 27.78ms
+[Event Loop Lag] 22.31ms
+[Event Loop Lag] 27.06ms
+[Event Loop Lag] 31.20ms
+[Event Loop Lag] 23.47ms
+[Event Loop Lag] 22.92ms
+[Event Loop Lag] 23.86ms
+[Event Loop Lag] 23.85ms
+[Event Loop Lag] 23.37ms
+[Event Loop Lag] 54.44ms
+[Event Loop Lag] 34.96ms
+[Event Loop Lag] 24.16ms
+[Event Loop Lag] 25.27ms
+[Event Loop Lag] 20.41ms
+[Event Loop Lag] 48.30ms
+[Event Loop Lag] 31.61ms
+[Event Loop Lag] 25.29ms
+[Event Loop Lag] 44.59ms
+[Event Loop Lag] 21.02ms
+[Event Loop Lag] 32.63ms
+[Event Loop Lag] 21.32ms
+[Event Loop Lag] 26.61ms
+[Event Loop Lag] 33.40ms
+[Event Loop Lag] 23.85ms
+[Event Loop Lag] 23.42ms
+[Event Loop Lag] 21.80ms
+[Event Loop Lag] 28.78ms
+[Event Loop Lag] 37.66ms
+[Event Loop Lag] 71.94ms
+[Event Loop Lag] 20.80ms
+[Event Loop Lag] 23.72ms
+[Event Loop Lag] 171.07ms
+[Event Loop Lag] 27.12ms
+[Event Loop Lag] 446.07ms
+[Event Loop Lag] 22.61ms
+[Event Loop Lag] 22.47ms
+[Event Loop Lag] 22.73ms
+[Event Loop Lag] 41.71ms
+[Event Loop Lag] 45.48ms
+[Event Loop Lag] 30.42ms

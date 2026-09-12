@@ -285,6 +285,125 @@ export declare const userPasswordHashes: import("drizzle-orm/pg-core").PgTableWi
     };
     dialect: "pg";
 }>;
+export declare const userMfaSettings: import("drizzle-orm/pg-core").PgTableWithColumns<{
+    name: "user_mfa_settings";
+    schema: undefined;
+    columns: {
+        createdAt: import("drizzle-orm/pg-core").PgColumn<{
+            name: "created_at";
+            tableName: "user_mfa_settings";
+            dataType: "date";
+            columnType: "PgTimestamp";
+            data: Date;
+            driverParam: string;
+            notNull: true;
+            hasDefault: true;
+            isPrimaryKey: false;
+            isAutoincrement: false;
+            hasRuntimeDefault: false;
+            enumValues: undefined;
+            baseColumn: never;
+            generated: undefined;
+        }, {}, {}>;
+        updatedAt: import("drizzle-orm/pg-core").PgColumn<{
+            name: "updated_at";
+            tableName: "user_mfa_settings";
+            dataType: "date";
+            columnType: "PgTimestamp";
+            data: Date;
+            driverParam: string;
+            notNull: true;
+            hasDefault: true;
+            isPrimaryKey: false;
+            isAutoincrement: false;
+            hasRuntimeDefault: false;
+            enumValues: undefined;
+            baseColumn: never;
+            generated: undefined;
+        }, {}, {}>;
+        id: import("drizzle-orm/pg-core").PgColumn<{
+            name: "id";
+            tableName: "user_mfa_settings";
+            dataType: "string";
+            columnType: "PgUUID";
+            data: string;
+            driverParam: string;
+            notNull: true;
+            hasDefault: true;
+            isPrimaryKey: true;
+            isAutoincrement: false;
+            hasRuntimeDefault: false;
+            enumValues: undefined;
+            baseColumn: never;
+            generated: undefined;
+        }, {}, {}>;
+        userId: import("drizzle-orm/pg-core").PgColumn<{
+            name: "user_id";
+            tableName: "user_mfa_settings";
+            dataType: "string";
+            columnType: "PgUUID";
+            data: string;
+            driverParam: string;
+            notNull: true;
+            hasDefault: false;
+            isPrimaryKey: false;
+            isAutoincrement: false;
+            hasRuntimeDefault: false;
+            enumValues: undefined;
+            baseColumn: never;
+            generated: undefined;
+        }, {}, {}>;
+        enabled: import("drizzle-orm/pg-core").PgColumn<{
+            name: "enabled";
+            tableName: "user_mfa_settings";
+            dataType: "boolean";
+            columnType: "PgBoolean";
+            data: boolean;
+            driverParam: boolean;
+            notNull: true;
+            hasDefault: true;
+            isPrimaryKey: false;
+            isAutoincrement: false;
+            hasRuntimeDefault: false;
+            enumValues: undefined;
+            baseColumn: never;
+            generated: undefined;
+        }, {}, {}>;
+        totpSecret: import("drizzle-orm/pg-core").PgColumn<{
+            name: "totp_secret";
+            tableName: "user_mfa_settings";
+            dataType: "string";
+            columnType: "PgVarchar";
+            data: string;
+            driverParam: string;
+            notNull: false;
+            hasDefault: false;
+            isPrimaryKey: false;
+            isAutoincrement: false;
+            hasRuntimeDefault: false;
+            enumValues: [string, ...string[]];
+            baseColumn: never;
+            generated: undefined;
+        }, {}, {}>;
+        backupCodes: import("drizzle-orm/pg-core").PgColumn<{
+            name: "backup_codes";
+            tableName: "user_mfa_settings";
+            dataType: "string";
+            columnType: "PgText";
+            data: string;
+            driverParam: string;
+            notNull: false;
+            hasDefault: false;
+            isPrimaryKey: false;
+            isAutoincrement: false;
+            hasRuntimeDefault: false;
+            enumValues: [string, ...string[]];
+            baseColumn: never;
+            generated: undefined;
+        }, {}, {}>;
+    };
+    dialect: "pg";
+}>;
 export declare const sessions: import("drizzle-orm/pg-core").PgTableWithColumns<{
     name: "sessions";
     schema: undefined;
@@ -756,11 +875,15 @@ export declare const passwordResets: import("drizzle-orm/pg-core").PgTableWithCo
 }>;
 export declare const usersRelations: import("drizzle-orm").Relations<"users", {
     passwordHash: import("drizzle-orm").One<"user_password_hashes", true>;
+    mfaSettings: import("drizzle-orm").One<"user_mfa_settings", true>;
     sessions: import("drizzle-orm").Many<"sessions">;
     emailVerifications: import("drizzle-orm").Many<"email_verifications">;
     passwordResets: import("drizzle-orm").Many<"password_resets">;
 }>;
 export declare const userPasswordHashesRelations: import("drizzle-orm").Relations<"user_password_hashes", {
+    user: import("drizzle-orm").One<"users", true>;
+}>;
+export declare const userMfaSettingsRelations: import("drizzle-orm").Relations<"user_mfa_settings", {
     user: import("drizzle-orm").One<"users", true>;
 }>;
 export declare const sessionsRelations: import("drizzle-orm").Relations<"sessions", {

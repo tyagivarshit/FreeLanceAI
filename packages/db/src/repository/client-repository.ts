@@ -49,13 +49,13 @@ export interface ClientListResult {
 export class PostgresClientRepository
   implements AggregateStore, DomainPersistenceContract, ClientSearchRepository, SearchProvider
 {
-  public async create(client: Client): Promise<void> {
+  public async create(client: Client, tx?: any): Promise<void> {
     await client.validateUniqueness(this);
-    await this.save(client);
+    await this.save(client, tx);
   }
 
-  public async save(client: Client): Promise<void> {
-    const tenantId = client.ownerId;
+  public async save(client: Client, tx?: any): Promise<void> {
+    const tenantId = client.tenantId; // Use actual tenantId
     const metadata = client.systemMetadata;
 
     const values = {
@@ -73,12 +73,15 @@ export class PostgresClientRepository
       updatedAt: new Date(),
     };
 
-    await db
+    const t = tx || db;
+
+    await t
       .insert(clients)
       .values(values)
       .onConflictDoUpdate({
-        target: [clients.id, clients.ownerId],
+        target: [clients.id, clients.tenantId],
         set: {
+          ownerId: values.ownerId,
           status: values.status,
           profile: values.profile,
           billingDetails: values.billingDetails,
@@ -91,29 +94,29 @@ export class PostgresClientRepository
       });
   }
 
-  public async update(client: Client, ownerId: string): Promise<void> {
-    if (client.ownerId !== ownerId) {
-      throw new Error("Ownership validation failed.");
+  public async update(client: Client, tenantId: string, tx?: any): Promise<void> {
+    if (client.tenantId !== tenantId) {
+      throw new Error("Tenant validation failed.");
     }
 
-    const existing = await this.findById(client.id, ownerId);
+    const existing = await this.findById(client.id, tenantId);
     if (!existing) {
       throw new Error("Client not found.");
     }
 
     await client.validateUniqueness(this);
-    await this.save(client);
+    await this.save(client, tx);
   }
 
-  public async getById(id: string, ownerId: string): Promise<Client | null> {
-    return this.findById(id, ownerId);
+  public async getById(id: string, tenantId: string): Promise<Client | null> {
+    return this.findById(id, tenantId);
   }
 
-  public async findById(id: string, ownerId: string): Promise<Client | null> {
+  public async findById(id: string, tenantId: string): Promise<Client | null> {
     const rows = await db
       .select()
       .from(clients)
-      .where(and(eq(clients.id, id), eq(clients.ownerId, ownerId)))
+      .where(and(eq(clients.id, id), eq(clients.tenantId, tenantId)))
       .limit(1);
 
     if (rows.length === 0) {
@@ -124,16 +127,16 @@ export class PostgresClientRepository
 
   /**
    * Tenant-scoped primary contact email lookup.
-   * The Phase 8 Client domain defines email uniqueness per owner, not platform external IDs.
+   * The Phase 8 Client domain defines email uniqueness per tenant, not platform external IDs.
    */
-  public async findByPrimaryContactEmail(ownerId: string, email: string): Promise<Client | null> {
+  public async findByPrimaryContactEmail(tenantId: string, email: string): Promise<Client | null> {
     const normalizedEmail = email.trim().toLowerCase();
     const rows = await db
       .select()
       .from(clients)
       .where(
         and(
-          eq(clients.ownerId, ownerId),
+          eq(clients.tenantId, tenantId),
           sql`lower(trim(${clients.primaryContact}->>'email')) = ${normalizedEmail}`,
         ),
       )
@@ -146,11 +149,11 @@ export class PostgresClientRepository
   }
 
   public async getByExternalIdentity(
-    ownerId: string,
+    tenantId: string,
     identity: ClientExternalIdentity,
   ): Promise<Client | null> {
     if (identity.type === "primaryContactEmail") {
-      return this.findByPrimaryContactEmail(ownerId, identity.value);
+      return this.findByPrimaryContactEmail(tenantId, identity.value);
     }
 
     const normalizedTaxId = identity.value.trim();
@@ -159,7 +162,7 @@ export class PostgresClientRepository
       .from(clients)
       .where(
         and(
-          eq(clients.ownerId, ownerId),
+          eq(clients.tenantId, tenantId),
           sql`trim(${clients.billingDetails}->>'taxRegistrationId') = ${normalizedTaxId}`,
         ),
       )
@@ -172,13 +175,13 @@ export class PostgresClientRepository
   }
 
   public async checkUniqueEmail(
-    ownerId: string,
+    tenantId: string,
     email: string,
     excludeClientId?: string,
   ): Promise<boolean> {
     const normalizedEmail = email.trim().toLowerCase();
     const conditions = [
-      eq(clients.ownerId, ownerId),
+      eq(clients.tenantId, tenantId),
       sql`lower(trim(${clients.primaryContact}->>'email')) = ${normalizedEmail}`,
     ];
 
@@ -196,13 +199,13 @@ export class PostgresClientRepository
   }
 
   public async checkUniqueTaxId(
-    ownerId: string,
+    tenantId: string,
     taxId: string,
     excludeClientId?: string,
   ): Promise<boolean> {
     const normalizedTaxId = taxId.trim();
     const conditions = [
-      eq(clients.ownerId, ownerId),
+      eq(clients.tenantId, tenantId),
       sql`trim(${clients.billingDetails}->>'taxRegistrationId') = ${normalizedTaxId}`,
     ];
 
@@ -219,12 +222,12 @@ export class PostgresClientRepository
     return rows.length === 0;
   }
 
-  public async list(ownerId: string, options: ClientListOptions = {}): Promise<ClientListResult> {
+  public async list(tenantId: string, options: ClientListOptions = {}): Promise<ClientListResult> {
     const page = Math.max(1, options.page ?? 1);
     const pageSize = Math.min(MAX_PAGE_SIZE, Math.max(1, options.pageSize ?? DEFAULT_PAGE_SIZE));
     const offset = (page - 1) * pageSize;
 
-    const conditions = [eq(clients.ownerId, ownerId)];
+    const conditions = [eq(clients.tenantId, tenantId)];
 
     if (options.status) {
       conditions.push(eq(clients.status, options.status));
@@ -351,6 +354,7 @@ export class PostgresClientRepository
 
     return new Client({
       id: row.id,
+      tenantId: row.tenantId,
       ownerId: row.ownerId,
       status: row.status,
       profile,

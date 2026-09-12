@@ -52,13 +52,13 @@ export const clients = pgTable(
       ),
       ownerCreatedAtIdx: index("clients_owner_created_at_idx").on(table.ownerId, table.createdAt),
       statusIdx: index("clients_status_idx").on(table.status),
-      ownerEmailUniqueIdx: uniqueIndex("clients_owner_primary_email_unique_idx")
-        .on(table.ownerId, sql`lower(trim(${table.primaryContact}->>'email'))`)
+      tenantEmailUniqueIdx: uniqueIndex("clients_tenant_primary_email_unique_idx")
+        .on(table.tenantId, sql`lower(trim(${table.primaryContact}->>'email'))`)
         .where(
           sql`${table.primaryContact} IS NOT NULL AND trim(${table.primaryContact}->>'email') <> ''`,
         ),
-      ownerTaxIdUniqueIdx: uniqueIndex("clients_owner_tax_id_unique_idx")
-        .on(table.ownerId, sql`${table.billingDetails}->>'taxRegistrationId'`)
+      tenantTaxIdUniqueIdx: uniqueIndex("clients_tenant_tax_id_unique_idx")
+        .on(table.tenantId, sql`${table.billingDetails}->>'taxRegistrationId'`)
         .where(
           sql`${table.billingDetails} IS NOT NULL AND trim(${table.billingDetails}->>'taxRegistrationId') <> ''`,
         ),

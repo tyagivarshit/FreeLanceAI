@@ -43,6 +43,27 @@
       "when": 1788459730670,
       "tag": "0005_add_locked_until",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1788609930354,
+      "tag": "0006_bugfixes",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1788771780560,
+      "tag": "0007_furry_tenebrous",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1788855807473,
+      "tag": "0008_plain_microbe",
+      "breakpoints": true
     }
   ]
 }

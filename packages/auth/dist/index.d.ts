@@ -26,4 +26,10 @@ export { verifyEmailToken, VerificationError, InvalidVerificationTokenError, Ver
 export type { VerifyEmailResult } from "./verify-email.js";
 export { createEmailService, getEmailService, setEmailService, resetEmailService, createVerificationEmail, NodemailerEmailService, ResendEmailService, ConsoleFallbackEmailService, } from "./email-service.js";
 export type { EmailService, EmailPayload, EmailSendResult } from "./email-service.js";
+export { generateMfaSetup, verifyAndEnableMfa, disableMfa, } from "./mfa-settings.js";
+export type { GenerateMfaResponse } from "./mfa-settings.js";
+export { verifyMfaLogin, MfaTokenExpiredError, } from "./mfa-login.js";
+export type { VerifyMfaInput } from "./mfa-login.js";
+export { generateTotpSecret, generateOtpAuthUri, verifyTotpCode, } from "./totp.js";
+export * from "./token-cleanup-worker.js";
 //# sourceMappingURL=index.d.ts.map

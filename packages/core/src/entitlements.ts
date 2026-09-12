@@ -40,6 +40,7 @@ export interface UsageRepository {
     limit: number,
     amount: number,
   ): Promise<{ success: boolean; current: number }>;
+  refund(key: string, amount: number): Promise<void>;
   getUsage(key: string): Promise<number>;
   reset(): Promise<void>;
 }
@@ -51,6 +52,7 @@ export class InMemoryUsageRepository implements UsageRepository {
     key: string,
     limit: number,
     amount: number,
+    _ttlSeconds?: number
   ): Promise<{ success: boolean; current: number }> {
     const current = this._usage.get(key) ?? 0;
     if (current + amount <= limit) {
@@ -61,7 +63,12 @@ export class InMemoryUsageRepository implements UsageRepository {
     return { success: false, current };
   }
 
-  public async getUsage(key: string): Promise<number> {
+  public async refund(key: string, amount: number): Promise<void> {
+    const current = this._usage.get(key) || 0;
+    this._usage.set(key, Math.max(0, current - amount));
+  }
+
+  async getUsage(key: string): Promise<number> {
     return this._usage.get(key) ?? 0;
   }
 

@@ -17,4 +17,17 @@ export class RedisCacheStore implements CacheStore {
   public async delete(key: string): Promise<void> {
     await redis.del(key);
   }
+
+  public async increment(key: string, ttlSeconds?: number): Promise<number> {
+    const multi = redis.multi();
+    multi.incr(key);
+    if (ttlSeconds !== undefined && ttlSeconds > 0) {
+      multi.expire(key, ttlSeconds);
+    }
+    const results = await multi.exec();
+    if (!results) {
+      throw new Error("Redis multi exec failed");
+    }
+    return results[0]![1] as number;
+  }
 }

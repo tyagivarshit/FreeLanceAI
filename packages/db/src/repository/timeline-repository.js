@@ -1,0 +1,255 @@
+import { eq, and, or, asc, desc, sql } from "drizzle-orm";
+import { db } from "../client.js";
+import { clientTimelines, timelineEntries } from "../schema/timeline.js";
+import { clients } from "../schema/clients.js";
+import { ClientTimeline, TimelineEntry, TimelineSearchEngine, DEFAULT_SEARCH_PAGE, DEFAULT_SEARCH_PAGE_SIZE, MAX_SEARCH_PAGE_SIZE, } from "@freelanceos/core";
+export class PostgresTimelineRepository {
+    async save(timeline, tx) {
+        const execute = async (t) => {
+            // 1. Save parent client timeline record
+            await t
+                .insert(clientTimelines)
+                .values({
+                id: timeline.timelineId,
+                clientId: timeline.clientId,
+                tenantId: timeline.tenantId,
+                ownerId: timeline.ownerId,
+                status: timeline.status,
+                createdAt: timeline.createdAt,
+                updatedAt: timeline.updatedAt,
+            })
+                .onConflictDoUpdate({
+                target: [clientTimelines.id],
+                set: {
+                    status: timeline.status,
+                    updatedAt: timeline.updatedAt,
+                },
+            });
+            // 2. Save chronological child timeline entry records
+            if (timeline.entries.length > 0) {
+                const entriesValues = timeline.entries.map((entry) => ({
+                    id: entry.entryId,
+                    timelineId: timeline.timelineId,
+                    eventRef: entry.eventRef || null,
+                    category: entry.category,
+                    timestamp: entry.timestamp,
+                    metadata: entry.metadata,
+                    actorRef: entry.actorRef,
+                    visibility: entry.visibility,
+                    createdAt: new Date(),
+                    updatedAt: new Date(),
+                }));
+                await t.insert(timelineEntries).values(entriesValues).onConflictDoNothing();
+            }
+        };
+        if (tx) {
+            await execute(tx);
+        }
+        else {
+            await db.transaction(execute);
+        }
+    }
+    async findById(timelineId, tenantId) {
+        const parent = await db
+            .select()
+            .from(clientTimelines)
+            .where(and(eq(clientTimelines.id, timelineId), eq(clientTimelines.tenantId, tenantId)))
+            .limit(1);
+        if (parent.length === 0) {
+            return null;
+        }
+        return this.loadTimelineWithEntries(parent[0]);
+    }
+    async findByClientId(clientId, tenantId) {
+        const parent = await db
+            .select()
+            .from(clientTimelines)
+            .where(and(eq(clientTimelines.clientId, clientId), eq(clientTimelines.tenantId, tenantId)))
+            .limit(1);
+        if (parent.length === 0) {
+            return null;
+        }
+        return this.loadTimelineWithEntries(parent[0]);
+    }
+    async findTimelineEntriesByTenant(tenantId, options) {
+        const offset = (options.page - 1) * options.pageSize;
+        const countResult = await db
+            .select({ count: sql `count(*)` })
+            .from(timelineEntries)
+            .innerJoin(clientTimelines, eq(timelineEntries.timelineId, clientTimelines.id))
+            .where(eq(clientTimelines.tenantId, tenantId));
+        const total = Number(countResult[0]?.count || 0);
+        const rows = await db
+            .select({
+            id: timelineEntries.id,
+            sequenceNumber: timelineEntries.sequenceNumber,
+            timelineId: timelineEntries.timelineId,
+            eventRef: timelineEntries.eventRef,
+            category: timelineEntries.category,
+            timestamp: timelineEntries.timestamp,
+            metadata: timelineEntries.metadata,
+            actorRef: timelineEntries.actorRef,
+            visibility: timelineEntries.visibility,
+        })
+            .from(timelineEntries)
+            .innerJoin(clientTimelines, eq(timelineEntries.timelineId, clientTimelines.id))
+            .where(eq(clientTimelines.tenantId, tenantId))
+            .orderBy(desc(timelineEntries.sequenceNumber))
+            .limit(options.pageSize)
+            .offset(offset);
+        const items = rows.map((row) => new TimelineEntry({
+            entryId: row.id,
+            sequenceNumber: row.sequenceNumber,
+            eventRef: row.eventRef || undefined,
+            category: row.category,
+            timestamp: row.timestamp,
+            metadata: row.metadata,
+            actorRef: row.actorRef,
+            visibility: row.visibility,
+        }));
+        return { items, total };
+    }
+    async findTimelineEntriesByClientId(clientId, tenantId, options) {
+        const parent = await db
+            .select()
+            .from(clientTimelines)
+            .where(and(eq(clientTimelines.clientId, clientId), eq(clientTimelines.tenantId, tenantId)))
+            .limit(1);
+        if (parent.length === 0) {
+            return { timelineId: null, status: null, items: [], total: 0 };
+        }
+        const offset = (options.page - 1) * options.pageSize;
+        const countResult = await db
+            .select({ count: sql `count(*)` })
+            .from(timelineEntries)
+            .where(eq(timelineEntries.timelineId, parent[0].id));
+        const total = Number(countResult[0]?.count || 0);
+        const rows = await db
+            .select({
+            id: timelineEntries.id,
+            sequenceNumber: timelineEntries.sequenceNumber,
+            timelineId: timelineEntries.timelineId,
+            eventRef: timelineEntries.eventRef,
+            category: timelineEntries.category,
+            timestamp: timelineEntries.timestamp,
+            metadata: timelineEntries.metadata,
+            actorRef: timelineEntries.actorRef,
+            visibility: timelineEntries.visibility,
+        })
+            .from(timelineEntries)
+            .where(eq(timelineEntries.timelineId, parent[0].id))
+            .orderBy(desc(timelineEntries.sequenceNumber))
+            .limit(options.pageSize)
+            .offset(offset);
+        const items = rows.map((row) => new TimelineEntry({
+            entryId: row.id,
+            eventRef: row.eventRef || undefined,
+            category: row.category,
+            timestamp: row.timestamp,
+            metadata: row.metadata,
+            actorRef: row.actorRef,
+            visibility: row.visibility,
+        }));
+        return { timelineId: parent[0].id, status: parent[0].status, items, total };
+    }
+    async searchTimeline(queryText, scope, page = DEFAULT_SEARCH_PAGE, pageSize = DEFAULT_SEARCH_PAGE_SIZE) {
+        const boundedPage = Math.max(1, page);
+        const boundedPageSize = Math.min(MAX_SEARCH_PAGE_SIZE, Math.max(1, pageSize));
+        const offset = (boundedPage - 1) * boundedPageSize;
+        const normalizedQuery = queryText.trim().toLowerCase();
+        const searchPattern = `%${normalizedQuery}%`;
+        const scopeCondition = and(eq(clientTimelines.ownerId, scope.ownerId), eq(clients.tenantId, scope.tenantId));
+        const searchCondition = or(sql `lower(cast(${timelineEntries.category} as text)) LIKE ${searchPattern}`, sql `lower(${timelineEntries.eventRef}) LIKE ${searchPattern}`, sql `lower(${timelineEntries.actorRef}) LIKE ${searchPattern}`, sql `lower(cast(${timelineEntries.visibility} as text)) LIKE ${searchPattern}`, sql `cast(${timelineEntries.id} as text) LIKE ${searchPattern}`, sql `cast(${timelineEntries.timelineId} as text) LIKE ${searchPattern}`, sql `cast(${clientTimelines.clientId} as text) LIKE ${searchPattern}`, sql `lower(cast(${timelineEntries.metadata} as text)) LIKE ${searchPattern}`);
+        const whereClause = and(scopeCondition, searchCondition);
+        const countResult = await db
+            .select({ count: sql `count(*)` })
+            .from(timelineEntries)
+            .innerJoin(clientTimelines, eq(timelineEntries.timelineId, clientTimelines.id))
+            .innerJoin(clients, eq(clientTimelines.clientId, clients.id))
+            .where(whereClause);
+        const total = Number(countResult[0]?.count || 0);
+        const rows = await db
+            .select({
+            id: timelineEntries.id,
+            timelineId: timelineEntries.timelineId,
+            clientId: clientTimelines.clientId,
+            category: timelineEntries.category,
+            timestamp: timelineEntries.timestamp,
+            eventRef: timelineEntries.eventRef,
+            actorRef: timelineEntries.actorRef,
+            visibility: timelineEntries.visibility,
+            metadata: timelineEntries.metadata,
+            createdAt: timelineEntries.createdAt,
+        })
+            .from(timelineEntries)
+            .innerJoin(clientTimelines, eq(timelineEntries.timelineId, clientTimelines.id))
+            .innerJoin(clients, eq(clientTimelines.clientId, clients.id))
+            .where(whereClause)
+            .orderBy(desc(timelineEntries.timestamp), desc(timelineEntries.id))
+            .limit(boundedPageSize)
+            .offset(offset);
+        const items = rows.map((row) => {
+            const meta = row.metadata || {};
+            const rawNote = meta.note || meta.message || meta.description || meta.title || meta.summary;
+            let metadataSummary;
+            if (typeof rawNote === "string") {
+                metadataSummary = rawNote;
+            }
+            else if (Object.keys(meta).length > 0) {
+                metadataSummary = Object.entries(meta)
+                    .filter(([_, v]) => typeof v === "string" || typeof v === "number")
+                    .map(([k, v]) => `${k}: ${v}`)
+                    .join(", ");
+            }
+            return {
+                id: row.id,
+                timelineId: row.timelineId,
+                clientId: row.clientId,
+                category: row.category,
+                timestamp: row.timestamp,
+                eventRef: row.eventRef || undefined,
+                actorRef: row.actorRef,
+                visibility: row.visibility,
+                metadataSummary: metadataSummary || undefined,
+                createdAt: row.createdAt,
+            };
+        });
+        return {
+            items,
+            total,
+            page: boundedPage,
+            pageSize: boundedPageSize,
+        };
+    }
+    async search(query, scope) {
+        const engine = new TimelineSearchEngine(this);
+        return engine.search(query, scope);
+    }
+    async loadTimelineWithEntries(parent) {
+        const entriesRows = await db
+            .select()
+            .from(timelineEntries)
+            .where(eq(timelineEntries.timelineId, parent.id))
+            .orderBy(asc(timelineEntries.sequenceNumber));
+        const entries = entriesRows.map((row) => new TimelineEntry({
+            entryId: row.id,
+            sequenceNumber: row.sequenceNumber,
+            eventRef: row.eventRef || undefined,
+            category: row.category,
+            timestamp: row.timestamp,
+            metadata: row.metadata,
+            actorRef: row.actorRef,
+            visibility: row.visibility,
+        }));
+        return new ClientTimeline({
+            timelineId: parent.id,
+            clientId: parent.clientId,
+            tenantId: parent.tenantId,
+            ownerId: parent.ownerId,
+            status: parent.status,
+            entries,
+            createdAt: parent.createdAt,
+            updatedAt: parent.updatedAt,
+        });
+    }
+}

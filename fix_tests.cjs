@@ -1,0 +1,1 @@
+const fs = require('fs'); const f = 'packages/db/src/repository/client-repository.test.ts'; let content = fs.readFileSync(f, 'utf8'); content = content.replace(/id: ([^,]+),\s*ownerId: ([^,]+),/g, 'id: , tenantId: , ownerId: ,'); fs.writeFileSync(f, content); console.log('Fixed');

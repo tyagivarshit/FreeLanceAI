@@ -114,8 +114,26 @@ export interface EventDispatcher {
   publish(eventName: "IDENTITY_INVALIDATED", payload: IdentityInvalidatedPayload): Promise<void>;
 }
 
+export interface SendVerificationEmailPayload {
+  userId: string;
+  email: string;
+  token: string;
+}
+
+export interface SendDuplicateSignupAlertPayload {
+  userId: string;
+  email: string;
+}
+
 export interface BackgroundTaskDispatcher {
-  dispatch(taskName: "SEND_VERIFICATION_EMAIL", data: SendVerificationEmailPayload): Promise<void>;
+  dispatch(
+    taskName: "SEND_VERIFICATION_EMAIL",
+    data: SendVerificationEmailPayload,
+  ): Promise<void>;
+  dispatch(
+    taskName: "SEND_DUPLICATE_SIGNUP_ALERT",
+    data: SendDuplicateSignupAlertPayload,
+  ): Promise<void>;
 }
 
 /**
@@ -147,8 +165,8 @@ export class QueueBackgroundTaskDispatcher implements BackgroundTaskDispatcher {
   }
 
   async dispatch(
-    taskName: "SEND_VERIFICATION_EMAIL",
-    data: SendVerificationEmailPayload,
+    taskName: "SEND_VERIFICATION_EMAIL" | "SEND_DUPLICATE_SIGNUP_ALERT",
+    data: any,
   ): Promise<void> {
     logger.info({
       message: `[Background Task Dispatcher] Dispatching task: ${taskName}`,
@@ -172,6 +190,22 @@ export class QueueBackgroundTaskDispatcher implements BackgroundTaskDispatcher {
             subject: emailContent.subject,
             text: emailContent.text,
             html: emailContent.html,
+          });
+
+          logger.info({
+            message: `[Background Task Execution] Executed task: ${taskName}`,
+            userId: data.userId,
+            email: data.email,
+          });
+        } else if (taskName === "SEND_DUPLICATE_SIGNUP_ALERT") {
+          const service = this.emailService ?? getEmailService();
+          const appUrl = runtimeConfig.APP_URL || "http://localhost:4000";
+          
+          await service.sendEmail({
+            to: data.email,
+            subject: "Login Attempt - Account Already Exists",
+            text: `You recently tried to sign up, but you already have an account! Please log in at ${appUrl}/login`,
+            html: `<p>You recently tried to sign up, but you already have an account! <a href="${appUrl}/login">Click here to log in.</a></p>`,
           });
 
           logger.info({

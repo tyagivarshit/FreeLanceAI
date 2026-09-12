@@ -99,8 +99,8 @@ CREATE INDEX IF NOT EXISTS "clients_owner_idx" ON "clients" USING btree ("owner_
 CREATE INDEX IF NOT EXISTS "clients_tenant_created_at_idx" ON "clients" USING btree ("tenant_id","created_at");--> statement-breakpoint
 CREATE INDEX IF NOT EXISTS "clients_owner_created_at_idx" ON "clients" USING btree ("owner_id","created_at");--> statement-breakpoint
 CREATE INDEX IF NOT EXISTS "clients_status_idx" ON "clients" USING btree ("status");--> statement-breakpoint
-CREATE UNIQUE INDEX IF NOT EXISTS "clients_owner_primary_email_unique_idx" ON "clients" USING btree ("owner_id",lower(trim("primary_contact"->>'email'))) WHERE "clients"."primary_contact" IS NOT NULL AND trim("clients"."primary_contact"->>'email') <> '';--> statement-breakpoint
-CREATE UNIQUE INDEX IF NOT EXISTS "clients_owner_tax_id_unique_idx" ON "clients" USING btree ("owner_id","billing_details"->>'taxRegistrationId') WHERE "clients"."billing_details" IS NOT NULL AND trim("clients"."billing_details"->>'taxRegistrationId') <> '';--> statement-breakpoint
+CREATE UNIQUE INDEX IF NOT EXISTS "clients_owner_primary_email_unique_idx" ON "clients" USING btree ("owner_id",lower(trim(("primary_contact"->>'email')))) WHERE "clients"."primary_contact" IS NOT NULL AND trim(("clients"."primary_contact"->>'email')) <> '';--> statement-breakpoint
+CREATE UNIQUE INDEX IF NOT EXISTS "clients_owner_tax_id_unique_idx" ON "clients" USING btree ("owner_id",("billing_details"->>'taxRegistrationId')) WHERE "clients"."billing_details" IS NOT NULL AND trim(("clients"."billing_details"->>'taxRegistrationId')) <> '';--> statement-breakpoint
 DO $$ BEGIN
  ALTER TABLE "job_imports" ADD CONSTRAINT "job_imports_client_id_tenant_id_clients_id_tenant_id_fk" FOREIGN KEY ("client_id","tenant_id") REFERENCES "public"."clients"("id","tenant_id") ON DELETE restrict ON UPDATE no action;
 EXCEPTION

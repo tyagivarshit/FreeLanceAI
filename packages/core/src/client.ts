@@ -43,6 +43,7 @@ export interface SystemMetadata {
 
 export interface ClientProperties {
   id: ClientId;
+  tenantId: string;
   ownerId: string;
   status: ClientStatus;
   profile: ClientProfile;
@@ -54,6 +55,7 @@ export interface ClientProperties {
 // Query Projections
 export interface ClientQueryProjection {
   id: string;
+  tenantId: string;
   ownerId: string;
   name: string;
   email: string;
@@ -79,18 +81,19 @@ export interface EventPublisher {
 
 // Domain Persistence Contract & Aggregate Store
 export interface DomainPersistenceContract {
-  checkUniqueTaxId(ownerId: string, taxId: string, excludeClientId?: ClientId): Promise<boolean>;
-  checkUniqueEmail(ownerId: string, email: string, excludeClientId?: ClientId): Promise<boolean>;
+  checkUniqueTaxId(tenantId: string, taxId: string, excludeClientId?: ClientId): Promise<boolean>;
+  checkUniqueEmail(tenantId: string, email: string, excludeClientId?: ClientId): Promise<boolean>;
 }
 
 export interface AggregateStore {
   save(client: Client): Promise<void>;
-  findById(id: ClientId, ownerId: string): Promise<Client | null>;
+  findById(id: ClientId, tenantId: string): Promise<Client | null>;
 }
 
 // Client Aggregate Root
 export class Client {
   private _id: ClientId;
+  private _tenantId: string;
   private _ownerId: string;
   private _status: ClientStatus;
   private _profile: ClientProfile;
@@ -106,11 +109,15 @@ export class Client {
     if (!properties.id || properties.id.trim() === "") {
       throw new Error("Client ID is required.");
     }
+    if (!properties.tenantId || properties.tenantId.trim() === "") {
+      throw new Error("Tenant ID is required.");
+    }
     if (!properties.ownerId || properties.ownerId.trim() === "") {
       throw new Error("Owner ID is required.");
     }
 
     this._id = properties.id;
+    this._tenantId = properties.tenantId;
     this._ownerId = properties.ownerId;
     this._status = properties.status;
     this._profile = properties.profile;
@@ -124,6 +131,10 @@ export class Client {
   // Getters
   get id(): ClientId {
     return this._id;
+  }
+
+  get tenantId(): string {
+    return this._tenantId;
   }
 
   get ownerId(): string {
@@ -165,6 +176,7 @@ export class Client {
   // Factory Creation Method
   public static create(
     id: ClientId,
+    tenantId: string,
     ownerId: string,
     profile: ClientProfile,
     billingDetails?: Partial<BillingDetails> | undefined,
@@ -173,6 +185,7 @@ export class Client {
     const now = new Date();
     const client = new Client({
       id,
+      tenantId,
       ownerId,
       status: "Lead",
       profile,
@@ -186,15 +199,15 @@ export class Client {
 
     client.addDomainEvent(CLIENT_CREATED, {
       clientId: id,
+      tenantId,
       ownerId,
     });
 
     return client;
   }
 
-  // Transition status method
-  public transitionTo(newStatus: ClientStatus, ownerId: string) {
-    if (ownerId !== this._ownerId) {
+  public transitionTo(newStatus: ClientStatus, actorId: string) {
+    if ((newStatus === "Archived" || newStatus === "Closed") && actorId !== this._ownerId) {
       throw new Error("Ownership validation failed.");
     }
 
@@ -250,26 +263,23 @@ export class Client {
     if (newStatus === "Archived") {
       this.addDomainEvent(CLIENT_ARCHIVED, {
         clientId: this._id,
+        tenantId: this._tenantId,
         ownerId: this._ownerId,
       });
     } else if (newStatus === "Active" && (oldStatus === "Archived" || oldStatus === "Suspended")) {
       this.addDomainEvent(CLIENT_REACTIVATED, {
         clientId: this._id,
+        tenantId: this._tenantId,
         ownerId: this._ownerId,
       });
     }
   }
 
-  // Update profile attributes method
   public updateProfile(
-    ownerId: string,
     profile: ClientProfile,
     billingDetails?: Partial<BillingDetails> | undefined,
     primaryContact?: Partial<PrimaryContact> | undefined,
   ) {
-    if (ownerId !== this._ownerId) {
-      throw new Error("Ownership validation failed.");
-    }
     if (this._status === "Closed" || this._status === "Archived") {
       throw new Error(`Cannot update profile in ${this._status} state.`);
     }
@@ -277,6 +287,7 @@ export class Client {
     const oldProfile = this._profile;
     const oldBilling = this._billingDetails;
     const oldContact = this._primaryContact;
+    const oldUpdatedAt = this._systemMetadata.updatedAt;
 
     this._profile = profile;
     this._billingDetails = billingDetails;
@@ -290,11 +301,13 @@ export class Client {
       this._profile = oldProfile;
       this._billingDetails = oldBilling;
       this._primaryContact = oldContact;
+      this._systemMetadata.updatedAt = oldUpdatedAt;
       throw err;
     }
 
     this.addDomainEvent(CLIENT_UPDATED, {
       clientId: this._id,
+      tenantId: this._tenantId,
       ownerId: this._ownerId,
     });
   }
@@ -303,7 +316,7 @@ export class Client {
   public async validateUniqueness(persistence: DomainPersistenceContract) {
     if (this._primaryContact?.email) {
       const isUniqueEmail = await persistence.checkUniqueEmail(
-        this._ownerId,
+        this._tenantId,
         this._primaryContact.email,
         this._id,
       );
@@ -313,7 +326,7 @@ export class Client {
     }
     if (this._billingDetails?.taxRegistrationId) {
       const isUniqueTaxId = await persistence.checkUniqueTaxId(
-        this._ownerId,
+        this._tenantId,
         this._billingDetails.taxRegistrationId,
         this._id,
       );

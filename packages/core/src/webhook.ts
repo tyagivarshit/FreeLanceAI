@@ -638,11 +638,11 @@ export class StripeWebhookProcessor {
     }
 
     const paymentReference = invoiceId;
-    let payment = await this._paymentStore.findByReference(paymentReference, mapping.ownerId);
+    let payment = await this._paymentStore.findByReference(paymentReference, mapping.tenantId);
     if (!payment) {
       const money = new Money(amountMinor, currency.toUpperCase());
       const clientId = `client_stripe_${mapping.tenantId}`;
-      payment = Payment.create(invoiceId, clientId, mapping.ownerId, money, paymentReference);
+      payment = Payment.create(invoiceId, mapping.tenantId, clientId, mapping.ownerId, money, paymentReference);
       await this._paymentStore.save(payment);
     }
 
@@ -707,11 +707,11 @@ export class StripeWebhookProcessor {
     }
 
     const paymentReference = invoiceId;
-    let payment = await this._paymentStore.findByReference(paymentReference, mapping.ownerId);
+    let payment = await this._paymentStore.findByReference(paymentReference, mapping.tenantId);
     if (!payment) {
       const money = new Money(amountMinor, currency.toUpperCase());
       const clientId = `client_stripe_${mapping.tenantId}`;
-      payment = Payment.create(invoiceId, clientId, mapping.ownerId, money, paymentReference);
+      payment = Payment.create(invoiceId, mapping.tenantId, clientId, mapping.ownerId, money, paymentReference);
       await this._paymentStore.save(payment);
     }
 

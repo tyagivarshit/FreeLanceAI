@@ -7,6 +7,7 @@ import {
   index,
   jsonb,
   foreignKey,
+  bigserial,
 } from "drizzle-orm/pg-core";
 import { users } from "./auth.js";
 import { clients } from "./clients.js";
@@ -36,20 +37,23 @@ export const clientTimelines = pgTable(
   {
     id: uuid("id").primaryKey(),
     clientId: uuid("client_id").notNull(),
-    ownerId: uuid("owner_id")
-      .references(() => users.id, { onDelete: "cascade" })
+    tenantId: uuid("tenant_id")
+      .references(() => users.id, { onDelete: "restrict" })
       .notNull(),
+    ownerId: uuid("owner_id")
+      .references(() => users.id, { onDelete: "set null" }),
     status: timelineStatusEnum("status").notNull(),
     ...auditTimestamps,
   },
   (table) => {
     return {
-      ownerClientRelationFk: foreignKey({
-        columns: [table.clientId, table.ownerId],
-        foreignColumns: [clients.id, clients.ownerId],
-      }).onDelete("restrict"),
+      tenantClientRelationFk: foreignKey({
+        columns: [table.clientId, table.tenantId],
+        foreignColumns: [clients.id, clients.tenantId],
+      }).onDelete("cascade"),
+      tenantIdx: index("client_timelines_tenant_idx").on(table.tenantId),
       ownerIdx: index("client_timelines_owner_idx").on(table.ownerId),
-      clientOwnerIdx: index("client_timelines_client_owner_idx").on(table.clientId, table.ownerId),
+      clientTenantIdx: index("client_timelines_client_tenant_idx").on(table.clientId, table.tenantId),
     };
   },
 );
@@ -62,6 +66,7 @@ export const timelineEntries = pgTable(
     timelineId: uuid("timeline_id")
       .references(() => clientTimelines.id, { onDelete: "cascade" })
       .notNull(),
+    sequenceNumber: bigserial("sequence_number", { mode: "number" }).notNull(),
     eventRef: varchar("event_ref", { length: 255 }),
     category: timelineEventCategoryEnum("category").notNull(),
     timestamp: timestamp("timestamp", { withTimezone: true }).notNull(),

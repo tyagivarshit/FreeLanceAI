@@ -4,6 +4,7 @@ import {
   timestamp,
   integer,
   text,
+  boolean,
   pgEnum,
   uuid,
   uniqueIndex,
@@ -64,6 +65,22 @@ export const userPasswordHashes = pgTable(
       userIdIdx: index("user_password_hashes_user_id_idx").on(table.userId),
     };
   },
+);
+
+// 2b. User MFA Settings Table
+export const userMfaSettings = pgTable(
+  "user_mfa_settings",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    userId: uuid("user_id")
+      .references(() => users.id, { onDelete: "cascade" })
+      .notNull()
+      .unique(),
+    enabled: boolean("enabled").default(false).notNull(),
+    totpSecret: varchar("totp_secret", { length: 255 }),
+    backupCodes: text("backup_codes"), // Encrypted or hashed backup codes
+    ...auditTimestamps,
+  }
 );
 
 // 3. Sessions Table (Embedded Refresh Token Rotation strategy)
@@ -154,6 +171,10 @@ export const usersRelations = relations(users, ({ one, many }) => ({
     fields: [users.id],
     references: [userPasswordHashes.userId],
   }),
+  mfaSettings: one(userMfaSettings, {
+    fields: [users.id],
+    references: [userMfaSettings.userId],
+  }),
   sessions: many(sessions),
   emailVerifications: many(emailVerifications),
   passwordResets: many(passwordResets),
@@ -162,6 +183,13 @@ export const usersRelations = relations(users, ({ one, many }) => ({
 export const userPasswordHashesRelations = relations(userPasswordHashes, ({ one }) => ({
   user: one(users, {
     fields: [userPasswordHashes.userId],
+    references: [users.id],
+  }),
+}));
+
+export const userMfaSettingsRelations = relations(userMfaSettings, ({ one }) => ({
+  user: one(users, {
+    fields: [userMfaSettings.userId],
     references: [users.id],
   }),
 }));

@@ -27,10 +27,29 @@ describe("Payment Domain Aggregate & Money Value Object Tests", () => {
     assert.strictEqual(usd100.equals(usd50), false);
   });
 
+  test("Money Value Object Constraints (Integer, Non-negative, Summation)", () => {
+    // Cannot be floating point
+    assert.throws(() => new Money(19.99, "USD"), /integer/);
+    
+    // Cannot be negative
+    assert.throws(() => new Money(-500, "USD"), /negative/);
+
+    // Summation logic works for matching currencies
+    const sumUsd = Money.sum([new Money(100, "USD"), new Money(50, "usd")], "USD");
+    assert.strictEqual(sumUsd.amount, 150);
+    assert.strictEqual(sumUsd.currency, "USD");
+
+    // Summation fails for mixed currencies
+    assert.throws(() => {
+      Money.sum([new Money(100, "USD"), new Money(100, "EUR")], "USD");
+    }, /Cannot sum mixed currencies/);
+  });
+
   test("Payment creation success: default Pending status and PAYMENT_CREATED event emitted", () => {
-    const payment = Payment.create("payment-1", "client-1", "owner-1", usd100, "ref-intent-1");
+    const payment = Payment.create("payment-1", "tenant-1", "client-1", "owner-1", usd100, "ref-intent-1");
 
     assert.strictEqual(payment.paymentId, "payment-1");
+    assert.strictEqual(payment.tenantId, "tenant-1");
     assert.strictEqual(payment.clientId, "client-1");
     assert.strictEqual(payment.ownerId, "owner-1");
     assert.strictEqual(payment.status, "Pending");
@@ -44,10 +63,11 @@ describe("Payment Domain Aggregate & Money Value Object Tests", () => {
     assert.strictEqual(payment.domainEvents[0]!.metadata.currency, "USD");
   });
 
-  test("Creation validates missing fields (ID, Client, Owner, Reference, Money)", () => {
+  test("Creation validates missing fields (ID, Tenant, Client, Owner, Reference, Money)", () => {
     assert.throws(() => {
       new Payment({
         paymentId: "",
+        tenantId: "tenant-1",
         clientId: "client-1",
         ownerId: "owner-1",
         money: usd100,
@@ -61,6 +81,21 @@ describe("Payment Domain Aggregate & Money Value Object Tests", () => {
     assert.throws(() => {
       new Payment({
         paymentId: "payment-1",
+        tenantId: "",
+        clientId: "client-1",
+        ownerId: "owner-1",
+        money: usd100,
+        status: "Pending",
+        paymentReference: "ref-1",
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
+    }, /Tenant ID reference is required/);
+
+    assert.throws(() => {
+      new Payment({
+        paymentId: "payment-1",
+        tenantId: "tenant-1",
         clientId: "  ",
         ownerId: "owner-1",
         money: usd100,
@@ -74,6 +109,7 @@ describe("Payment Domain Aggregate & Money Value Object Tests", () => {
     assert.throws(() => {
       new Payment({
         paymentId: "payment-1",
+        tenantId: "tenant-1",
         clientId: "client-1",
         ownerId: "",
         money: usd100,
@@ -97,6 +133,7 @@ describe("Payment Domain Aggregate & Money Value Object Tests", () => {
     // Valid case
     const payment = Payment.create(
       "payment-1",
+      "tenant-1",
       "client-1",
       "owner-1",
       usd100,
@@ -108,12 +145,12 @@ describe("Payment Domain Aggregate & Money Value Object Tests", () => {
     // Invalid case throws error
     const cheapMoney = new Money(5, "USD");
     assert.throws(() => {
-      Payment.create("payment-2", "client-1", "owner-1", cheapMoney, "ref-1", customPolicy);
+      Payment.create("payment-2", "tenant-1", "client-1", "owner-1", cheapMoney, "ref-1", customPolicy);
     }, /Transaction amount violates payment floor policy/);
   });
 
   test("Tenant Isolation checks (wrong ownerId causes validation failure)", () => {
-    const payment = Payment.create("payment-1", "client-1", "owner-1", usd100, "ref-1");
+    const payment = Payment.create("payment-1", "tenant-1", "client-1", "owner-1", usd100, "ref-1");
 
     assert.throws(() => {
       payment.authorize("owner-wrong");
@@ -129,7 +166,7 @@ describe("Payment Domain Aggregate & Money Value Object Tests", () => {
   });
 
   test("Lifecycle transitions: Pending -> Authorized -> Captured -> Completed", () => {
-    const payment = Payment.create("payment-1", "client-1", "owner-1", usd100, "ref-1");
+    const payment = Payment.create("payment-1", "tenant-1", "client-1", "owner-1", usd100, "ref-1");
     assert.strictEqual(payment.status, "Pending");
 
     payment.clearDomainEvents();
@@ -149,51 +186,59 @@ describe("Payment Domain Aggregate & Money Value Object Tests", () => {
   });
 
   test("Logical Capture Transition: Pending -> Captured", () => {
-    const payment = Payment.create("payment-1", "client-1", "owner-1", usd100, "ref-1");
+    const payment = Payment.create("payment-1", "tenant-1", "client-1", "owner-1", usd100, "ref-1");
     payment.capture("owner-1");
     assert.strictEqual(payment.status, "Captured");
   });
 
-  test("Cancellation transitions: Authorized/Captured/Completed -> Cancelled", () => {
+  test("Cancellation transitions: Authorized/Captured -> Cancelled", () => {
     // 1. Authorized -> Cancelled
-    const p1 = Payment.create("p1", "client-1", "owner-1", usd100, "ref-1");
+    const p1 = Payment.create("p1", "tenant-1", "client-1", "owner-1", usd100, "ref-1");
     p1.authorize("owner-1");
     p1.cancel("owner-1");
     assert.strictEqual(p1.status, "Cancelled");
     assert.strictEqual(p1.domainEvents[2]!.event, PAYMENT_CANCELLED);
 
     // 2. Captured -> Cancelled
-    const p2 = Payment.create("p2", "client-1", "owner-1", usd100, "ref-2");
+    const p2 = Payment.create("p2", "tenant-1", "client-1", "owner-1", usd100, "ref-2");
     p2.capture("owner-1");
     p2.cancel("owner-1");
     assert.strictEqual(p2.status, "Cancelled");
 
-    // 3. Completed -> Cancelled
-    const p3 = Payment.create("p3", "client-1", "owner-1", usd100, "ref-3");
+    // 3. Completed -> Cancelled (SHOULD THROW)
+    const p3 = Payment.create("p3", "tenant-1", "client-1", "owner-1", usd100, "ref-3");
     p3.capture("owner-1");
     p3.complete("owner-1");
-    p3.cancel("owner-1");
-    assert.strictEqual(p3.status, "Cancelled");
+    assert.throws(() => {
+      p3.cancel("owner-1");
+    }, /Cannot cancel payment in state: Completed/);
   });
 
-  test("Failure transitions: Pending/Authorized/Captured/Completed -> Failed", () => {
-    const p = Payment.create("p", "client-1", "owner-1", usd100, "ref-1");
+  test("Failure transitions: Pending/Authorized/Captured -> Failed", () => {
+    const p = Payment.create("p", "tenant-1", "client-1", "owner-1", usd100, "ref-1");
     p.fail("owner-1");
     assert.strictEqual(p.status, "Failed");
+    
+    const p2 = Payment.create("p2", "tenant-1", "client-1", "owner-1", usd100, "ref-2");
+    p2.capture("owner-1");
+    p2.complete("owner-1");
+    assert.throws(() => {
+      p2.fail("owner-1");
+    }, /Cannot mark payment as failed in state: Completed/);
   });
 
   test("Expiry transitions: Pending/Authorized -> Expired", () => {
-    const p = Payment.create("p", "client-1", "owner-1", usd100, "ref-1");
+    const p = Payment.create("p", "tenant-1", "client-1", "owner-1", usd100, "ref-1");
     p.expire("owner-1");
     assert.strictEqual(p.status, "Expired");
   });
 
   test("Invalid lifecycle status transitions throw error", () => {
-    const payment = Payment.create("payment-1", "client-1", "owner-1", usd100, "ref-1");
+    const payment = Payment.create("payment-1", "tenant-1", "client-1", "owner-1", usd100, "ref-1");
     payment.capture("owner-1");
 
     // Cannot transition directly to Completed without being Captured first (wait, Captured -> Completed is valid, but Pending -> Completed is not)
-    const p2 = Payment.create("p2", "client-1", "owner-1", usd100, "ref-2");
+    const p2 = Payment.create("p2", "tenant-1", "client-1", "owner-1", usd100, "ref-2");
     assert.throws(() => {
       p2.complete("owner-1");
     }, /Cannot complete payment in state: Pending/);
@@ -205,7 +250,7 @@ describe("Payment Domain Aggregate & Money Value Object Tests", () => {
   });
 
   test("Duplicate payment intent protection check", async () => {
-    const payment = Payment.create("payment-1", "client-1", "owner-1", usd100, "intent-duplicate");
+    const payment = Payment.create("payment-1", "tenant-1", "client-1", "owner-1", usd100, "intent-duplicate");
 
     const mockPersistence: PaymentPersistenceContract = {
       async checkUniqueIntent(_ownerId, paymentReference) {
@@ -219,7 +264,7 @@ describe("Payment Domain Aggregate & Money Value Object Tests", () => {
   });
 
   test("Money Value Object and identity properties are immutable", () => {
-    const payment = Payment.create("payment-1", "client-1", "owner-1", usd100, "ref-1");
+    const payment = Payment.create("payment-1", "tenant-1", "client-1", "owner-1", usd100, "ref-1");
 
     // Attempting to modify read-only properties throws error or has no effect in JS runtime
     assert.strictEqual(payment.paymentId, "payment-1");
@@ -228,7 +273,7 @@ describe("Payment Domain Aggregate & Money Value Object Tests", () => {
   });
 
   test("Mock aggregate store compliance validation", async () => {
-    const payment = Payment.create("payment-1", "client-1", "owner-1", usd100, "ref-1");
+    const payment = Payment.create("payment-1", "tenant-1", "client-1", "owner-1", usd100, "ref-1");
     let saveCalled = false;
 
     const mockStore: PaymentAggregateStore = {
@@ -236,14 +281,14 @@ describe("Payment Domain Aggregate & Money Value Object Tests", () => {
         assert.strictEqual(p.paymentId, "payment-1");
         saveCalled = true;
       },
-      async findById(id, ownerId) {
+      async findById(id, tenantId) {
         assert.strictEqual(id, "payment-1");
-        assert.strictEqual(ownerId, "owner-1");
+        assert.strictEqual(tenantId, "tenant-1");
         return payment;
       },
-      async findByReference(ref, ownerId) {
+      async findByReference(ref, tenantId) {
         assert.strictEqual(ref, "ref-1");
-        assert.strictEqual(ownerId, "owner-1");
+        assert.strictEqual(tenantId, "tenant-1");
         return payment;
       },
     };
@@ -251,7 +296,7 @@ describe("Payment Domain Aggregate & Money Value Object Tests", () => {
     await mockStore.save(payment);
     assert.strictEqual(saveCalled, true);
 
-    const fetched = await mockStore.findById("payment-1", "owner-1");
+    const fetched = await mockStore.findById("payment-1", "tenant-1");
     assert.strictEqual(fetched, payment);
   });
 });

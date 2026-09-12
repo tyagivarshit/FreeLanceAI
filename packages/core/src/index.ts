@@ -351,46 +351,9 @@ export type {
   EmbeddingProperties,
 } from "./embedding.js";
 
-export {
-  PromptCompositionReference,
-  PromptDefinitionReference,
-  ContextSpecificationReference,
-  MemoryReference,
-  EmbeddingReference as PromptEmbeddingReference,
-  CompositionStrategyReference,
-  PromptComposition,
-  CompositionMetadata,
-  CompositionStrategy,
-  CompositionFingerprint,
-  CompositionSnapshot,
-  PromptBuilder,
-  PROMPT_COMPOSITION_REGISTERED,
-  PROMPT_COMPOSED,
-  PROMPT_COMPOSITION_VALIDATED,
-  PROMPT_COMPOSITION_PUBLISHED,
-  PROMPT_COMPOSITION_ARCHIVED,
-} from "./prompt-builder.js";
 
-export type {
-  PromptBuilderLifecycleState,
-  PromptCompositionProperties,
-  CompositionMetadataProperties,
-  CompositionStrategyProperties,
-  CompositionFingerprintProperties,
-  CompositionSnapshotProperties,
-  PromptBuilderDomainEventName,
-  PromptCompositionRegisteredEvent,
-  PromptComposedEvent,
-  PromptCompositionValidatedEvent,
-  PromptCompositionPublishedEvent,
-  PromptCompositionArchivedEvent,
-  PromptBuilderDomainEvent,
-  PromptBuilderEventPublisher,
-  PromptBuilderQueryProjection,
-  PromptBuilderPersistenceContract,
-  PromptBuilderAggregateStore,
-  PromptBuilderProperties,
-} from "./prompt-builder.js";
+
+
 
 export {
   PolicyReference,
@@ -1297,3 +1260,63 @@ export type {
 export { UnifiedSearchEngine } from "./unified-search.js";
 
 export type { UnifiedSearchEngineOptions } from "./unified-search.js";
+
+
+export * from "./services/ai-gateway-service.js";
+export * from "./services/ai-gateway-service.js";
+
+export * from "./services/ai-queue-service.js";
+
+export * from "./services/bid-ledger-routing.service.js";
+
+export * from "./services/client-memory-engine.js";
+
+export * from "./services/confidence-scoring-engine.js";
+
+export * from "./services/embedding-engine.js";
+
+export * from "./services/generation-engine.service.js";
+
+export * from "./services/grammar-engine.service.js";
+
+export * from "./services/hybrid-search-engine.js";
+
+export * from "./services/import-stream-engine.js";
+
+export * from "./services/insight-engine.js";
+
+export * from "./services/job-embedding-engine.service.js";
+
+export * from "./services/job-import-stream-engine.js";
+
+export * from "./services/job-leaderboard-ranking.service.js";
+
+export * from "./services/job-match-cache.service.js";
+
+export * from "./services/job-match-explanation.service.js";
+
+export * from "./services/job-matching-engine.service.js";
+
+export * from "./services/job-normalization-engine.service.js";
+
+export * from "./services/job-orchestrator.service.js";
+
+export * from "./services/outbox-worker.js";
+
+export * from "./services/pricing-intelligence-engine.js";
+
+export * from "./services/prompt-template-engine.js";
+
+export * from "./services/re-ranking-engine.js";
+
+export * from "./services/rewrite-engine.service.js";
+
+export * from "./services/scope-extraction-engine.js";
+
+export * from "./services/scope-rules-engine.js";
+
+export * from "./services/tone-engine.service.js";
+
+export * from "./services/vector-search-engine.js";
+
+export * from "./subscribers/embedding-subscriber.js";

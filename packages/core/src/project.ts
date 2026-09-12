@@ -90,6 +90,7 @@ export class ProjectVisibility {
 // Project Properties
 export interface ProjectProperties {
   projectId: string;
+  tenantId: string;
   clientId: string;
   ownerId: string;
   projectReference: string;
@@ -103,6 +104,7 @@ export interface ProjectProperties {
 // Project Aggregate Root
 export class Project {
   private readonly _projectId: string;
+  private readonly _tenantId: string;
   private readonly _clientId: string;
   private readonly _ownerId: string;
   private readonly _projectReference: string;
@@ -119,6 +121,9 @@ export class Project {
   constructor(properties: ProjectProperties) {
     if (!properties.projectId || properties.projectId.trim() === "") {
       throw new Error("Project ID is required.");
+    }
+    if (!properties.tenantId || properties.tenantId.trim() === "") {
+      throw new Error("Tenant ID is required.");
     }
     if (!properties.clientId || properties.clientId.trim() === "") {
       throw new Error("Client ID reference is required.");
@@ -137,6 +142,7 @@ export class Project {
     }
 
     this._projectId = properties.projectId;
+    this._tenantId = properties.tenantId;
     this._clientId = properties.clientId;
     this._ownerId = properties.ownerId;
     this._projectReference = properties.projectReference;
@@ -151,6 +157,10 @@ export class Project {
 
   get projectId(): string {
     return this._projectId;
+  }
+
+  get tenantId(): string {
+    return this._tenantId;
   }
 
   get clientId(): string {
@@ -200,6 +210,7 @@ export class Project {
   // Factory Creation Method
   public static create(
     projectId: string,
+    tenantId: string,
     clientId: string,
     ownerId: string,
     projectReference: string,
@@ -209,6 +220,7 @@ export class Project {
     const now = new Date();
     const project = new Project({
       projectId,
+      tenantId,
       clientId,
       ownerId,
       projectReference,
@@ -221,6 +233,7 @@ export class Project {
 
     project.addDomainEvent(PROJECT_CREATED, {
       projectId: project.projectId,
+      tenantId: project.tenantId,
       clientId: project.clientId,
       ownerId: project.ownerId,
       projectReference: project.projectReference,
@@ -284,7 +297,7 @@ export class Project {
 
   public cancel(ownerId: string) {
     this.verifyOwnership(ownerId);
-    if (this._status !== "Active" && this._status !== "Paused") {
+    if (this._status === "Completed" || this._status === "Archived" || this._status === "Cancelled") {
       throw new Error(`Cannot cancel project in status: ${this._status}`);
     }
     this._status = "Cancelled";
@@ -304,7 +317,7 @@ export class Project {
 
   public updateDetails(ownerId: string, metadata: ProjectMetadata, visibility: ProjectVisibility) {
     this.verifyOwnership(ownerId);
-    if (this._status !== "Draft" && this._status !== "Planned") {
+    if (this._status === "Completed" || this._status === "Archived" || this._status === "Cancelled") {
       throw new Error(`Cannot modify project details in status: ${this._status}`);
     }
     this._metadata = metadata;
@@ -313,15 +326,21 @@ export class Project {
     this.addDomainEvent(PROJECT_UPDATED, { projectId: this._projectId });
   }
 
-  private verifyOwnership(ownerId: string) {
+  private verifyOwnership(ownerId: string, tenantId?: string) {
     if (ownerId !== this._ownerId) {
       throw new Error("Ownership validation failed.");
+    }
+    if (tenantId && tenantId !== this._tenantId) {
+      throw new Error("Tenant boundary violation.");
     }
   }
 
   private validateInvariants() {
     if (!this._projectId || this._projectId.trim() === "") {
       throw new Error("Project ID is required.");
+    }
+    if (!this._tenantId || this._tenantId.trim() === "") {
+      throw new Error("Tenant ID is required.");
     }
     if (!this._clientId || this._clientId.trim() === "") {
       throw new Error("Client ID reference is required.");
@@ -338,7 +357,7 @@ export class Project {
 // Domain Persistence Contract
 export interface ProjectPersistenceContract {
   checkUniqueReference(
-    ownerId: string,
+    tenantId: string,
     projectReference: string,
     projectId?: string,
   ): Promise<boolean>;
@@ -347,13 +366,14 @@ export interface ProjectPersistenceContract {
 // Project Aggregate Store
 export interface ProjectAggregateStore {
   save(project: Project): Promise<void>;
-  findById(projectId: string, ownerId: string): Promise<Project | null>;
-  findByReference(projectReference: string, ownerId: string): Promise<Project | null>;
+  findById(projectId: string, tenantId: string): Promise<Project | null>;
+  findByReference(projectReference: string, tenantId: string): Promise<Project | null>;
 }
 
 // Query-side Projection Contract
 export interface ProjectQueryProjection {
   id: string;
+  tenantId: string;
   clientId: string;
   ownerId: string;
   projectReference: string;

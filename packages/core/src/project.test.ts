@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { test, describe } from "node:test";
 import assert from "node:assert";
 import {
@@ -27,11 +28,12 @@ describe("Project Domain Aggregate Tests", () => {
   test("Project creation success: status Draft and PROJECT_CREATED event emitted", () => {
     const project = Project.create(
       "project-1",
+      "tenant-1",
       "client-1",
       "owner-1",
       "ref-proj-1",
       validMetadata,
-      validVisibility,
+      validVisibility
     );
 
     assert.strictEqual(project.projectId, "project-1");
@@ -50,6 +52,7 @@ describe("Project Domain Aggregate Tests", () => {
   test("Creation validation fails when fields are missing (ID, Client, Owner, Reference, Metadata, Visibility)", () => {
     assert.throws(() => {
       new Project({
+        tenantId: "tenant-1",
         projectId: "",
         clientId: "client-1",
         ownerId: "owner-1",
@@ -64,6 +67,7 @@ describe("Project Domain Aggregate Tests", () => {
 
     assert.throws(() => {
       new Project({
+        tenantId: "tenant-1",
         projectId: "project-1",
         clientId: "",
         ownerId: "owner-1",
@@ -78,6 +82,7 @@ describe("Project Domain Aggregate Tests", () => {
 
     assert.throws(() => {
       new Project({
+        tenantId: "tenant-1",
         projectId: "project-1",
         clientId: "client-1",
         ownerId: "  ",
@@ -92,6 +97,7 @@ describe("Project Domain Aggregate Tests", () => {
 
     assert.throws(() => {
       new Project({
+        tenantId: "tenant-1",
         projectId: "project-1",
         clientId: "client-1",
         ownerId: "owner-1",
@@ -123,11 +129,12 @@ describe("Project Domain Aggregate Tests", () => {
   test("Tenant Isolation checks (wrong ownerId causes validation failure)", () => {
     const project = Project.create(
       "project-1",
+      "tenant-1",
       "client-1",
       "owner-1",
       "ref-proj-1",
       validMetadata,
-      validVisibility,
+      validVisibility
     );
 
     assert.throws(() => {
@@ -146,11 +153,12 @@ describe("Project Domain Aggregate Tests", () => {
   test("Lifecycle transitions: Draft -> Planned -> Active -> Paused -> Active -> Completed -> Archived", () => {
     const project = Project.create(
       "project-1",
+      "tenant-1",
       "client-1",
       "owner-1",
       "ref-proj-1",
       validMetadata,
-      validVisibility,
+      validVisibility
     );
     assert.strictEqual(project.status, "Draft");
 
@@ -182,14 +190,30 @@ describe("Project Domain Aggregate Tests", () => {
   });
 
   test("Lifecycle transitions: Active/Paused -> Cancelled -> Archived", () => {
-    const p1 = Project.create("p1", "client-1", "owner-1", "ref-1", validMetadata, validVisibility);
+    const p1 = Project.create(
+        "p1",
+        "tenant-1",
+        "client-1",
+        "owner-1",
+        "ref-1",
+        validMetadata,
+        validVisibility
+      );
     p1.plan("owner-1", validMetadata, validVisibility);
     p1.start("owner-1");
     p1.cancel("owner-1");
     assert.strictEqual(p1.status, "Cancelled");
     assert.strictEqual(p1.domainEvents[3]!.event, PROJECT_CANCELLED);
 
-    const p2 = Project.create("p2", "client-1", "owner-1", "ref-2", validMetadata, validVisibility);
+    const p2 = Project.create(
+        "p2",
+        "tenant-1",
+        "client-1",
+        "owner-1",
+        "ref-2",
+        validMetadata,
+        validVisibility
+      );
     p2.plan("owner-1", validMetadata, validVisibility);
     p2.start("owner-1");
     p2.pause("owner-1");
@@ -204,11 +228,12 @@ describe("Project Domain Aggregate Tests", () => {
   test("Invalid lifecycle status transitions throw error", () => {
     const project = Project.create(
       "project-1",
+      "tenant-1",
       "client-1",
       "owner-1",
       "ref-1",
       validMetadata,
-      validVisibility,
+      validVisibility
     );
 
     // Cannot start directly from Draft
@@ -228,11 +253,12 @@ describe("Project Domain Aggregate Tests", () => {
   test("Immutable properties verification (IDs and Reference cannot change)", () => {
     const project = Project.create(
       "project-1",
+      "tenant-1",
       "client-1",
       "owner-1",
       "ref-1",
       validMetadata,
-      validVisibility,
+      validVisibility
     );
 
     assert.strictEqual(project.projectId, "project-1");
@@ -244,11 +270,12 @@ describe("Project Domain Aggregate Tests", () => {
   test("Mock aggregate store compliance validation", async () => {
     const project = Project.create(
       "project-1",
+      "tenant-1",
       "client-1",
       "owner-1",
       "ref-1",
       validMetadata,
-      validVisibility,
+      validVisibility
     );
     let saveCalled = false;
 

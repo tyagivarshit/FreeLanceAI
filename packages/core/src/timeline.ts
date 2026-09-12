@@ -25,6 +25,7 @@ export interface TimelineEventPublisher {
 // Immutable Timeline Entry Value Object
 export interface TimelineEntryProperties {
   entryId: string;
+  sequenceNumber?: number;
   eventRef?: string | undefined;
   category: TimelineEventCategory;
   timestamp: Date;
@@ -35,6 +36,7 @@ export interface TimelineEntryProperties {
 
 export class TimelineEntry {
   private readonly _entryId: string;
+  private readonly _sequenceNumber?: number;
   private readonly _eventRef: string | undefined;
   private readonly _category: TimelineEventCategory;
   private readonly _timestamp: Date;
@@ -50,6 +52,9 @@ export class TimelineEntry {
       throw new Error("Actor reference is required.");
     }
     this._entryId = properties.entryId;
+    if (properties.sequenceNumber !== undefined) {
+      this._sequenceNumber = properties.sequenceNumber;
+    }
     this._eventRef = properties.eventRef;
     this._category = properties.category;
     this._timestamp = properties.timestamp;
@@ -61,6 +66,10 @@ export class TimelineEntry {
 
   get entryId(): string {
     return this._entryId;
+  }
+
+  get sequenceNumber(): number | undefined {
+    return this._sequenceNumber;
   }
 
   get eventRef(): string | undefined {
@@ -92,7 +101,8 @@ export class TimelineEntry {
 export interface ClientTimelineProperties {
   timelineId: string;
   clientId: string;
-  ownerId: string;
+  tenantId: string;
+  ownerId: string | null;
   status: TimelineStatus;
   entries: TimelineEntry[];
   createdAt: Date;
@@ -102,7 +112,8 @@ export interface ClientTimelineProperties {
 export class ClientTimeline {
   private readonly _timelineId: string;
   private readonly _clientId: string;
-  private readonly _ownerId: string;
+  private readonly _tenantId: string;
+  private readonly _ownerId: string | null;
   private _status: TimelineStatus;
   private readonly _entries: TimelineEntry[];
   private readonly _createdAt: Date;
@@ -119,11 +130,12 @@ export class ClientTimeline {
     if (!properties.clientId || properties.clientId.trim() === "") {
       throw new Error("Client ID reference is required.");
     }
-    if (!properties.ownerId || properties.ownerId.trim() === "") {
-      throw new Error("Owner ID reference is required.");
+    if (!properties.tenantId || properties.tenantId.trim() === "") {
+      throw new Error("Tenant ID reference is required.");
     }
     this._timelineId = properties.timelineId;
     this._clientId = properties.clientId;
+    this._tenantId = properties.tenantId;
     this._ownerId = properties.ownerId;
     this._status = properties.status;
     this._entries = [...properties.entries];
@@ -141,7 +153,11 @@ export class ClientTimeline {
     return this._clientId;
   }
 
-  get ownerId(): string {
+  get tenantId(): string {
+    return this._tenantId;
+  }
+
+  get ownerId(): string | null {
     return this._ownerId;
   }
 
@@ -174,11 +190,12 @@ export class ClientTimeline {
   }
 
   // Factory Creation Method
-  public static create(timelineId: string, clientId: string, ownerId: string): ClientTimeline {
+  public static create(timelineId: string, clientId: string, tenantId: string, ownerId: string): ClientTimeline {
     const now = new Date();
     return new ClientTimeline({
       timelineId,
       clientId,
+      tenantId,
       ownerId,
       status: "Initialized",
       entries: [],
@@ -189,7 +206,7 @@ export class ClientTimeline {
 
   // Append new entry
   public appendEntry(
-    ownerId: string,
+    tenantId: string,
     actorId: string,
     properties: {
       entryId: string;
@@ -200,7 +217,7 @@ export class ClientTimeline {
       visibility: VisibilityClassification;
     },
   ) {
-    this.verifyOwnership(ownerId);
+    this.verifyOwnership(tenantId);
 
     if (this._status === "ReadOnly") {
       throw new Error("Cannot append to a read-only timeline.");
@@ -209,6 +226,11 @@ export class ClientTimeline {
     // Invariant: No future timestamps
     if (properties.timestamp.getTime() > Date.now()) {
       throw new Error("Event timestamp cannot be in the future.");
+    }
+
+    // Idempotency: Ignore duplicate entry IDs to safely handle retries
+    if (this._entries.some((entry) => entry.entryId === properties.entryId)) {
+      return; // Silently ignore duplicate appending
     }
 
     // Invariant: Monotonic chronology
@@ -245,8 +267,8 @@ export class ClientTimeline {
   }
 
   // Archive entire timeline (transitions to ReadOnly)
-  public archive(ownerId: string, actorId: string) {
-    this.verifyOwnership(ownerId);
+  public archive(tenantId: string, actorId: string) {
+    this.verifyOwnership(tenantId);
 
     if (this._status === "ReadOnly") {
       return;
@@ -263,8 +285,8 @@ export class ClientTimeline {
   }
 
   // Reactivate timeline (ReadOnly -> Active)
-  public reactivate(ownerId: string, _actorId: string) {
-    this.verifyOwnership(ownerId);
+  public reactivate(tenantId: string, _actorId: string) {
+    this.verifyOwnership(tenantId);
 
     if (this._status !== "ReadOnly") {
       return;
@@ -274,8 +296,8 @@ export class ClientTimeline {
     this._updatedAt = new Date();
   }
 
-  private verifyOwnership(ownerId: string) {
-    if (ownerId !== this._ownerId) {
+  private verifyOwnership(tenantId: string) {
+    if (tenantId !== this._tenantId) {
       throw new Error("Ownership validation failed.");
     }
   }
@@ -284,8 +306,8 @@ export class ClientTimeline {
     if (!this._clientId || this._clientId.trim() === "") {
       throw new Error("Client ID reference is required.");
     }
-    if (!this._ownerId || this._ownerId.trim() === "") {
-      throw new Error("Owner ID reference is required.");
+    if (!this._tenantId || this._tenantId.trim() === "") {
+      throw new Error("Tenant ID reference is required.");
     }
 
     // Stable Chronological Ordering
@@ -303,7 +325,7 @@ export class ClientTimeline {
 
 // Domain Persistence Contract for the Aggregate Store
 export interface TimelineAggregateStore {
-  save(timeline: ClientTimeline): Promise<void>;
-  findById(timelineId: string, ownerId: string): Promise<ClientTimeline | null>;
-  findByClientId(clientId: string, ownerId: string): Promise<ClientTimeline | null>;
+  save(timeline: ClientTimeline, tx?: any): Promise<void>;
+  findById(timelineId: string, tenantId: string): Promise<ClientTimeline | null>;
+  findByClientId(clientId: string, tenantId: string): Promise<ClientTimeline | null>;
 }

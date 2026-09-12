@@ -11,6 +11,50 @@ document.addEventListener("DOMContentLoaded", () => {
   const errorList = document.getElementById("error-list");
   const successPanel = document.getElementById("success-panel");
 
+  const mfaForm = document.getElementById("mfa-form");
+  const mfaCodeInput = document.getElementById("mfa-code");
+  const mfaSubmitBtn = document.getElementById("mfa-submit-button");
+  const mfaBtnText = document.getElementById("mfa-button-text");
+  const mfaBtnSpinner = document.getElementById("mfa-button-spinner");
+  let pendingMfaToken = null;
+
+  mfaForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    hideError();
+    
+    const code = mfaCodeInput.value.trim();
+    if (!code || code.length !== 6) {
+      showErrors("Validation failed", ["Please enter a valid 6-digit code."]);
+      return;
+    }
+
+    mfaSubmitBtn.disabled = true;
+    mfaBtnText.textContent = "Verifying...";
+    mfaBtnSpinner.classList.remove("hidden");
+
+    try {
+      const response = await fetch("/api/auth/mfa/verify-login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ mfaToken: pendingMfaToken, code }),
+      });
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        mfaForm.classList.add("hidden");
+        showSuccess(data.user);
+      } else {
+        showErrors("MFA Verification Failed", [data.message || "Invalid authentication code."]);
+      }
+    } catch {
+      showErrors("Network Error", ["Could not connect to the authentication server."]);
+    } finally {
+      mfaSubmitBtn.disabled = false;
+      mfaBtnText.textContent = "Verify Code";
+      mfaBtnSpinner.classList.add("hidden");
+    }
+  });
+
   // Check URL parameters for email verification notifications
   const urlParams = new URLSearchParams(window.location.search);
   if (urlParams.get("verified") === "true") {
@@ -67,7 +111,14 @@ document.addEventListener("DOMContentLoaded", () => {
       const data = await response.json();
 
       if (response.ok && data.success) {
-        showSuccess(data.user);
+        if (data.requiresMfa) {
+          pendingMfaToken = data.mfaToken;
+          form.classList.add("hidden");
+          mfaForm.classList.remove("hidden");
+          document.getElementById("mfa-code").focus();
+        } else {
+          showSuccess(data.user);
+        }
       } else {
         const message = data.message || "An unexpected error occurred.";
         switch (data.code) {

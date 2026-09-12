@@ -1,0 +1,165 @@
+TAP version 13
+# =================================================================
+# [TRANSACTIONAL EMAIL DISPATCHED TO: user@test.com]
+# Subject: Test Subject
+# -----------------------------------------------------------------
+# Plain text preview
+# =================================================================
+# Subtest: Email Service & Verification Template Tests
+    # Subtest: 1. createVerificationEmail generates valid URLs, subject, and bodies
+    ok 1 - 1. createVerificationEmail generates valid URLs, subject, and bodies
+      ---
+      duration_ms: 2.3818
+      type: 'test'
+      ...
+    # Subtest: 2. ConsoleFallbackEmailService logs and succeeds without external provider
+    ok 2 - 2. ConsoleFallbackEmailService logs and succeeds without external provider
+      ---
+      duration_ms: 2.057
+      type: 'test'
+      ...
+    # Subtest: 3. NodemailerEmailService invokes sendMail on transporter
+    ok 3 - 3. NodemailerEmailService invokes sendMail on transporter
+      ---
+      duration_ms: 0.9155
+      type: 'test'
+      ...
+    # Subtest: 4. ResendEmailService formats payload and calls Resend API
+    ok 4 - 4. ResendEmailService formats payload and calls Resend API
+      ---
+      duration_ms: 1.5608
+      type: 'test'
+      ...
+    # Subtest: 5. QueueBackgroundTaskDispatcher delegates verification tasks to configured EmailService
+    ok 5 - 5. QueueBackgroundTaskDispatcher delegates verification tasks to configured EmailService
+      ---
+      duration_ms: 24.0652
+      type: 'test'
+      ...
+    # Subtest: 6. ResendEmailService throws error with status when API returns non-200
+    ok 6 - 6. ResendEmailService throws error with status when API returns non-200
+      ---
+      duration_ms: 1.8783
+      type: 'test'
+      ...
+    # Subtest: 7. QueueBackgroundTaskDispatcher handles delivery failures safely without crashing
+    ok 7 - 7. QueueBackgroundTaskDispatcher handles delivery failures safely without crashing
+      ---
+      duration_ms: 41.062
+      type: 'test'
+      ...
+    1..7
+ok 1 - Email Service & Verification Template Tests
+  ---
+  duration_ms: 78.3316
+  type: 'suite'
+  ...
+# [Event Loop Lag] 759.47ms
+# [Redis] Connection established successfully.
+# [PG Pool Metrics] Total: 1, Idle: 0, Waiting: 0
+# [Event Loop Lag] 23.73ms
+# [Redis] Client is ready to receive commands.
+# [Event Loop Lag] 50.58ms
+# [PG Pool Metrics] Total: 1, Idle: 0, Waiting: 0
+# [Event Loop Lag] 22.95ms
+# Subtest: Login Use Case Integration & Race Condition Tests
+    # Subtest: should enforce lockout threshold strictly even under concurrent brute-force (Bug 1D)
+    ok 1 - should enforce lockout threshold strictly even under concurrent brute-force (Bug 1D)
+      ---
+      duration_ms: 2129.6067
+      type: 'test'
+      ...
+    1..1
+ok 2 - Login Use Case Integration & Race Condition Tests
+  ---
+  duration_ms: 2133.2294
+  type: 'suite'
+  ...
+# [PG Pool Metrics] Total: 10, Idle: 10, Waiting: 0
+# [PG Pool Metrics] Total: 10, Idle: 10, Waiting: 0
+# [PG Pool Metrics] Total: 10, Idle: 10, Waiting: 0
+# [Event Loop Lag] 30.16ms
+# [PG Pool Metrics] Total: 10, Idle: 10, Waiting: 0
+# [Event Loop Lag] 65.13ms
+# [PG Pool Metrics] Total: 10, Idle: 10, Waiting: 0
+# [PG Pool Metrics] Total: 10, Idle: 10, Waiting: 0
+# [Event Loop Lag] 23.32ms
+# [Event Loop Lag] 43.38ms
+# [Event Loop Lag] 31.70ms
+# [PG Pool Metrics] Total: 10, Idle: 10, Waiting: 0
+# [Event Loop Lag] 130.21ms
+# [Event Loop Lag] 60.30ms
+# [Event Loop Lag] 34.51ms
+# [Event Loop Lag] 23.49ms
+# [PG Pool Metrics] Total: 10, Idle: 10, Waiting: 0
+# [Event Loop Lag] 33.67ms
+# [PG Pool Metrics] Total: 10, Idle: 10, Waiting: 0
+# [PG Pool Metrics] Total: 10, Idle: 10, Waiting: 0
+# [Event Loop Lag] 32.50ms
+# [Event Loop Lag] 45.43ms
+# [PG Pool Metrics] Total: 10, Idle: 10, Waiting: 0
+# [Event Loop Lag] 53.34ms
+# [Event Loop Lag] 29.11ms
+# [Event Loop Lag] 31.22ms
+# [PG Pool Metrics] Total: 10, Idle: 10, Waiting: 0
+# [PG Pool Metrics] Total: 10, Idle: 10, Waiting: 0
+# [Event Loop Lag] 35.70ms
+# [Event Loop Lag] 68.22ms
+# [Event Loop Lag] 20.25ms
+# [PG Pool Metrics] Total: 10, Idle: 10, Waiting: 0
+# [Event Loop Lag] 83.69ms
+# [Event Loop Lag] 31.08ms
+# [PG Pool Metrics] Total: 10, Idle: 10, Waiting: 0
+# [Event Loop Lag] 103.60ms
+# [PG Pool Metrics] Total: 10, Idle: 10, Waiting: 0
+# [Event Loop Lag] 68.05ms
+# [Event Loop Lag] 27.83ms
+# [Event Loop Lag] 21.49ms
+# [Event Loop Lag] 40.21ms
+# [PG Pool Metrics] Total: 10, Idle: 10, Waiting: 0
+# [Event Loop Lag] 40.36ms
+# [Event Loop Lag] 58.66ms
+# [Event Loop Lag] 24.97ms
+# [PG Pool Metrics] Total: 10, Idle: 10, Waiting: 0
+# [Event Loop Lag] 21.53ms
+# [PG Pool Metrics] Total: 10, Idle: 10, Waiting: 0
+# [PG Pool Metrics] Total: 10, Idle: 10, Waiting: 0
+# [PG Pool Metrics] Total: 10, Idle: 10, Waiting: 0
+# [PG Pool Metrics] Total: 10, Idle: 10, Waiting: 0
+# [Event Loop Lag] 54.32ms
+# [Event Loop Lag] 27.35ms
+# [PG Pool Metrics] Total: 10, Idle: 10, Waiting: 0
+# [Event Loop Lag] 21.50ms
+# [Event Loop Lag] 60.05ms
+# [Event Loop Lag] 36.83ms
+# [PG Pool Metrics] Total: 10, Idle: 10, Waiting: 0
+# [Event Loop Lag] 35.45ms
+# [Event Loop Lag] 21.29ms
+# [Event Loop Lag] 32.00ms
+# [PG Pool Metrics] Total: 10, Idle: 10, Waiting: 0
+# [PG Pool Metrics] Total: 10, Idle: 10, Waiting: 0
+# [Event Loop Lag] 20.58ms
+# [PG Pool Metrics] Total: 10, Idle: 10, Waiting: 0
+# [PG Pool Metrics] Total: 10, Idle: 10, Waiting: 0
+# [PG Pool Metrics] Total: 10, Idle: 10, Waiting: 0
+# [PG Pool Metrics] Total: 9, Idle: 9, Waiting: 0
+# [Event Loop Lag] 36.05ms
+# [Event Loop Lag] 36.50ms
+# [Event Loop Lag] 26.91ms
+# [Event Loop Lag] 21.34ms
+# [Event Loop Lag] 34.93ms
+# [Event Loop Lag] 25.31ms
+# [Event Loop Lag] 21.45ms
+# [Event Loop Lag] 29.43ms
+# [Event Loop Lag] 25.10ms
+# [Event Loop Lag] 21.75ms
+# [Event Loop Lag] 26.08ms
+# [Event Loop Lag] 35.97ms
+# [Event Loop Lag] 24.41ms
+# [Event Loop Lag] 21.90ms
+# [Event Loop Lag] 23.81ms
+# [Event Loop Lag] 21.72ms
+# [Event Loop Lag] 25.99ms
+# [Event Loop Lag] 57.63ms
+# [Event Loop Lag] 39.14ms
+# [Event Loop Lag] 21.11ms

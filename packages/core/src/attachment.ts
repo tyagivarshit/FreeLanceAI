@@ -25,6 +25,7 @@ export interface AttachmentMetadataProperties {
   logicalMediaType: string;
   characteristics: string;
   description: string;
+  fileSizeBytes?: number;
 }
 
 export class AttachmentMetadata {
@@ -32,6 +33,7 @@ export class AttachmentMetadata {
   private readonly _logicalMediaType: string;
   private readonly _characteristics: string;
   private readonly _description: string;
+  private readonly _fileSizeBytes: number;
 
   constructor(properties: AttachmentMetadataProperties) {
     if (!properties.displayName || properties.displayName.trim() === "") {
@@ -40,10 +42,19 @@ export class AttachmentMetadata {
     if (!properties.logicalMediaType || properties.logicalMediaType.trim() === "") {
       throw new Error("Logical media type is required.");
     }
+    const mediaTypeLower = properties.logicalMediaType.toLowerCase();
+    if (mediaTypeLower === "text/html" || mediaTypeLower === "application/javascript" || mediaTypeLower.includes("script")) {
+      throw new Error("Malicious media type blocked.");
+    }
     this._displayName = properties.displayName;
     this._logicalMediaType = properties.logicalMediaType;
     this._characteristics = properties.characteristics || "";
     this._description = properties.description || "";
+    this._fileSizeBytes = properties.fileSizeBytes || 0;
+    
+    if (this._fileSizeBytes > 50 * 1024 * 1024) { // 50MB max
+      throw new Error("File size exceeds 50MB limit.");
+    }
   }
 
   get displayName(): string {
@@ -56,6 +67,10 @@ export class AttachmentMetadata {
 
   get characteristics(): string {
     return this._characteristics;
+  }
+
+  get fileSizeBytes(): number {
+    return this._fileSizeBytes;
   }
 
   get description(): string {
@@ -91,7 +106,9 @@ export class AttachmentVisibility {
 // Attachment Properties
 export interface AttachmentProperties {
   attachmentId: string;
+  tenantId: string;
   parentId: string;
+  parentType: string;
   ownerId: string;
   attachmentReference: string;
   metadata: AttachmentMetadata;
@@ -104,7 +121,9 @@ export interface AttachmentProperties {
 // Attachment Aggregate Root
 export class Attachment {
   private readonly _attachmentId: string;
+  private readonly _tenantId: string;
   private readonly _parentId: string;
+  private readonly _parentType: string;
   private readonly _ownerId: string;
   private readonly _attachmentReference: string;
   private _metadata: AttachmentMetadata;
@@ -121,8 +140,14 @@ export class Attachment {
     if (!properties.attachmentId || properties.attachmentId.trim() === "") {
       throw new Error("Attachment ID is required.");
     }
+    if (!properties.tenantId || properties.tenantId.trim() === "") {
+      throw new Error("Tenant ID is required.");
+    }
     if (!properties.parentId || properties.parentId.trim() === "") {
       throw new Error("Parent ID reference is required.");
+    }
+    if (!properties.parentType || properties.parentType.trim() === "") {
+      throw new Error("Parent Type is required.");
     }
     if (!properties.ownerId || properties.ownerId.trim() === "") {
       throw new Error("Owner ID reference is required.");
@@ -138,7 +163,9 @@ export class Attachment {
     }
 
     this._attachmentId = properties.attachmentId;
+    this._tenantId = properties.tenantId;
     this._parentId = properties.parentId;
+    this._parentType = properties.parentType;
     this._ownerId = properties.ownerId;
     this._attachmentReference = properties.attachmentReference;
     this._metadata = properties.metadata;
@@ -154,8 +181,16 @@ export class Attachment {
     return this._attachmentId;
   }
 
+  get tenantId(): string {
+    return this._tenantId;
+  }
+
   get parentId(): string {
     return this._parentId;
+  }
+
+  get parentType(): string {
+    return this._parentType;
   }
 
   get ownerId(): string {
@@ -199,18 +234,22 @@ export class Attachment {
   }
 
   // Factory Creation Method
-  public static create(
+  public static async create(
     attachmentId: string,
+    tenantId: string,
     parentId: string,
+    parentType: string,
     ownerId: string,
     attachmentReference: string,
     metadata: AttachmentMetadata,
     visibility: AttachmentVisibility,
-  ): Attachment {
+  ): Promise<Attachment> {
     const now = new Date();
     const attachment = new Attachment({
       attachmentId,
+      tenantId,
       parentId,
+      parentType,
       ownerId,
       attachmentReference,
       metadata,
@@ -222,7 +261,9 @@ export class Attachment {
 
     attachment.addDomainEvent(ATTACHMENT_CREATED, {
       attachmentId: attachment.attachmentId,
+      tenantId: attachment.tenantId,
       parentId: attachment.parentId,
+      parentType: attachment.parentType,
       ownerId: attachment.ownerId,
       attachmentReference: attachment.attachmentReference,
     });
@@ -273,8 +314,8 @@ export class Attachment {
 
   public updateMetadata(ownerId: string, metadata: AttachmentMetadata) {
     this.verifyOwnership(ownerId);
-    if (this._status === "Deleted") {
-      throw new Error("Cannot update metadata on deleted attachment.");
+    if (this._status === "Deleted" || this._status === "Archived") {
+      throw new Error("Cannot update metadata on deleted or archived attachment.");
     }
     this._metadata = metadata;
     this._updatedAt = new Date();
@@ -283,17 +324,20 @@ export class Attachment {
 
   public updateVisibility(ownerId: string, visibility: AttachmentVisibility) {
     this.verifyOwnership(ownerId);
-    if (this._status === "Deleted") {
-      throw new Error("Cannot update visibility on deleted attachment.");
+    if (this._status === "Deleted" || this._status === "Archived") {
+      throw new Error("Cannot update visibility on deleted or archived attachment.");
     }
     this._visibility = visibility;
     this._updatedAt = new Date();
     this.addDomainEvent(ATTACHMENT_UPDATED, { attachmentId: this._attachmentId });
   }
 
-  private verifyOwnership(ownerId: string) {
+  private verifyOwnership(ownerId: string, tenantId?: string) {
     if (ownerId !== this._ownerId) {
       throw new Error("Ownership validation failed.");
+    }
+    if (tenantId && tenantId !== this._tenantId) {
+      throw new Error("Tenant boundary violation.");
     }
   }
 
@@ -301,8 +345,14 @@ export class Attachment {
     if (!this._attachmentId || this._attachmentId.trim() === "") {
       throw new Error("Attachment ID is required.");
     }
+    if (!this._tenantId || this._tenantId.trim() === "") {
+      throw new Error("Tenant ID is required.");
+    }
     if (!this._parentId || this._parentId.trim() === "") {
       throw new Error("Parent ID reference is required.");
+    }
+    if (!this._parentType || this._parentType.trim() === "") {
+      throw new Error("Parent Type is required.");
     }
     if (!this._ownerId || this._ownerId.trim() === "") {
       throw new Error("Owner ID reference is required.");
@@ -316,7 +366,7 @@ export class Attachment {
 // Domain Persistence Contract
 export interface AttachmentPersistenceContract {
   checkUniqueReference(
-    ownerId: string,
+    tenantId: string,
     attachmentReference: string,
     attachmentId?: string,
   ): Promise<boolean>;
@@ -325,14 +375,16 @@ export interface AttachmentPersistenceContract {
 // Attachment Aggregate Store
 export interface AttachmentAggregateStore {
   save(attachment: Attachment): Promise<void>;
-  findById(attachmentId: string, ownerId: string): Promise<Attachment | null>;
-  findByReference(attachmentReference: string, ownerId: string): Promise<Attachment | null>;
+  findById(attachmentId: string, tenantId: string): Promise<Attachment | null>;
+  findByReference(attachmentReference: string, tenantId: string): Promise<Attachment | null>;
 }
 
 // Query-side Projection Contract
 export interface AttachmentQueryProjection {
   id: string;
+  tenantId: string;
   parentId: string;
+  parentType: string;
   ownerId: string;
   attachmentReference: string;
   displayName: string;

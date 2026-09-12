@@ -4,6 +4,7 @@ export declare const environmentSchema: z.ZodEffects<z.ZodEffects<z.ZodEffects<z
     API_PORT: z.ZodDefault<z.ZodNumber>;
     DATABASE_URL: z.ZodString;
     REDIS_URL: z.ZodString;
+    REDIS_PASSWORD: z.ZodOptional<z.ZodString>;
     JWT_SECRET: z.ZodString;
     ACCESS_TOKEN_LIFETIME_SEC: z.ZodDefault<z.ZodNumber>;
     REFRESH_TOKEN_LIFETIME_SEC: z.ZodDefault<z.ZodNumber>;
@@ -44,6 +45,11 @@ export declare const environmentSchema: z.ZodEffects<z.ZodEffects<z.ZodEffects<z
     RESEND_API_KEY: z.ZodOptional<z.ZodString>;
     AI_GATEWAY_URL: z.ZodString;
     MAX_CONCURRENT_SESSIONS: z.ZodDefault<z.ZodNumber>;
+    R2_ACCOUNT_ID: z.ZodString;
+    R2_ACCESS_KEY_ID: z.ZodString;
+    R2_SECRET_ACCESS_KEY: z.ZodString;
+    R2_BUCKET_NAME: z.ZodString;
+    R2_ENDPOINT: z.ZodOptional<z.ZodString>;
 }, "strip", z.ZodTypeAny, {
     NODE_ENV: "development" | "production" | "test";
     API_PORT: number;
@@ -79,6 +85,11 @@ export declare const environmentSchema: z.ZodEffects<z.ZodEffects<z.ZodEffects<z
     SMTP_PORT: number;
     AI_GATEWAY_URL: string;
     MAX_CONCURRENT_SESSIONS: number;
+    R2_ACCOUNT_ID: string;
+    R2_ACCESS_KEY_ID: string;
+    R2_SECRET_ACCESS_KEY: string;
+    R2_BUCKET_NAME: string;
+    REDIS_PASSWORD?: string | undefined;
     SESSION_COOKIE_DOMAIN?: string | undefined;
     STRIPE_SECRET_KEY?: string | undefined;
     STRIPE_PUBLISHABLE_KEY?: string | undefined;
@@ -89,13 +100,19 @@ export declare const environmentSchema: z.ZodEffects<z.ZodEffects<z.ZodEffects<z
     SMTP_USER?: string | undefined;
     SMTP_PASS?: string | undefined;
     RESEND_API_KEY?: string | undefined;
+    R2_ENDPOINT?: string | undefined;
 }, {
     DATABASE_URL: string;
     REDIS_URL: string;
     JWT_SECRET: string;
     AI_GATEWAY_URL: string;
+    R2_ACCOUNT_ID: string;
+    R2_ACCESS_KEY_ID: string;
+    R2_SECRET_ACCESS_KEY: string;
+    R2_BUCKET_NAME: string;
     NODE_ENV?: "development" | "production" | "test" | undefined;
     API_PORT?: number | undefined;
+    REDIS_PASSWORD?: string | undefined;
     ACCESS_TOKEN_LIFETIME_SEC?: number | undefined;
     REFRESH_TOKEN_LIFETIME_SEC?: number | undefined;
     ROTATION_GRACE_PERIOD_SEC?: number | undefined;
@@ -134,6 +151,7 @@ export declare const environmentSchema: z.ZodEffects<z.ZodEffects<z.ZodEffects<z
     SMTP_PASS?: string | undefined;
     RESEND_API_KEY?: string | undefined;
     MAX_CONCURRENT_SESSIONS?: number | undefined;
+    R2_ENDPOINT?: string | undefined;
 }>, {
     NODE_ENV: "development" | "production" | "test";
     API_PORT: number;
@@ -169,6 +187,11 @@ export declare const environmentSchema: z.ZodEffects<z.ZodEffects<z.ZodEffects<z
     SMTP_PORT: number;
     AI_GATEWAY_URL: string;
     MAX_CONCURRENT_SESSIONS: number;
+    R2_ACCOUNT_ID: string;
+    R2_ACCESS_KEY_ID: string;
+    R2_SECRET_ACCESS_KEY: string;
+    R2_BUCKET_NAME: string;
+    REDIS_PASSWORD?: string | undefined;
     SESSION_COOKIE_DOMAIN?: string | undefined;
     STRIPE_SECRET_KEY?: string | undefined;
     STRIPE_PUBLISHABLE_KEY?: string | undefined;
@@ -179,13 +202,19 @@ export declare const environmentSchema: z.ZodEffects<z.ZodEffects<z.ZodEffects<z
     SMTP_USER?: string | undefined;
     SMTP_PASS?: string | undefined;
     RESEND_API_KEY?: string | undefined;
+    R2_ENDPOINT?: string | undefined;
 }, {
     DATABASE_URL: string;
     REDIS_URL: string;
     JWT_SECRET: string;
     AI_GATEWAY_URL: string;
+    R2_ACCOUNT_ID: string;
+    R2_ACCESS_KEY_ID: string;
+    R2_SECRET_ACCESS_KEY: string;
+    R2_BUCKET_NAME: string;
     NODE_ENV?: "development" | "production" | "test" | undefined;
     API_PORT?: number | undefined;
+    REDIS_PASSWORD?: string | undefined;
     ACCESS_TOKEN_LIFETIME_SEC?: number | undefined;
     REFRESH_TOKEN_LIFETIME_SEC?: number | undefined;
     ROTATION_GRACE_PERIOD_SEC?: number | undefined;
@@ -224,6 +253,7 @@ export declare const environmentSchema: z.ZodEffects<z.ZodEffects<z.ZodEffects<z
     SMTP_PASS?: string | undefined;
     RESEND_API_KEY?: string | undefined;
     MAX_CONCURRENT_SESSIONS?: number | undefined;
+    R2_ENDPOINT?: string | undefined;
 }>, {
     NODE_ENV: "development" | "production" | "test";
     API_PORT: number;
@@ -259,6 +289,11 @@ export declare const environmentSchema: z.ZodEffects<z.ZodEffects<z.ZodEffects<z
     SMTP_PORT: number;
     AI_GATEWAY_URL: string;
     MAX_CONCURRENT_SESSIONS: number;
+    R2_ACCOUNT_ID: string;
+    R2_ACCESS_KEY_ID: string;
+    R2_SECRET_ACCESS_KEY: string;
+    R2_BUCKET_NAME: string;
+    REDIS_PASSWORD?: string | undefined;
     SESSION_COOKIE_DOMAIN?: string | undefined;
     STRIPE_SECRET_KEY?: string | undefined;
     STRIPE_PUBLISHABLE_KEY?: string | undefined;
@@ -269,13 +304,19 @@ export declare const environmentSchema: z.ZodEffects<z.ZodEffects<z.ZodEffects<z
     SMTP_USER?: string | undefined;
     SMTP_PASS?: string | undefined;
     RESEND_API_KEY?: string | undefined;
+    R2_ENDPOINT?: string | undefined;
 }, {
     DATABASE_URL: string;
     REDIS_URL: string;
     JWT_SECRET: string;
     AI_GATEWAY_URL: string;
+    R2_ACCOUNT_ID: string;
+    R2_ACCESS_KEY_ID: string;
+    R2_SECRET_ACCESS_KEY: string;
+    R2_BUCKET_NAME: string;
     NODE_ENV?: "development" | "production" | "test" | undefined;
     API_PORT?: number | undefined;
+    REDIS_PASSWORD?: string | undefined;
     ACCESS_TOKEN_LIFETIME_SEC?: number | undefined;
     REFRESH_TOKEN_LIFETIME_SEC?: number | undefined;
     ROTATION_GRACE_PERIOD_SEC?: number | undefined;
@@ -314,6 +355,7 @@ export declare const environmentSchema: z.ZodEffects<z.ZodEffects<z.ZodEffects<z
     SMTP_PASS?: string | undefined;
     RESEND_API_KEY?: string | undefined;
     MAX_CONCURRENT_SESSIONS?: number | undefined;
+    R2_ENDPOINT?: string | undefined;
 }>, {
     NODE_ENV: "development" | "production" | "test";
     API_PORT: number;
@@ -349,6 +391,11 @@ export declare const environmentSchema: z.ZodEffects<z.ZodEffects<z.ZodEffects<z
     SMTP_PORT: number;
     AI_GATEWAY_URL: string;
     MAX_CONCURRENT_SESSIONS: number;
+    R2_ACCOUNT_ID: string;
+    R2_ACCESS_KEY_ID: string;
+    R2_SECRET_ACCESS_KEY: string;
+    R2_BUCKET_NAME: string;
+    REDIS_PASSWORD?: string | undefined;
     SESSION_COOKIE_DOMAIN?: string | undefined;
     STRIPE_SECRET_KEY?: string | undefined;
     STRIPE_PUBLISHABLE_KEY?: string | undefined;
@@ -359,13 +406,19 @@ export declare const environmentSchema: z.ZodEffects<z.ZodEffects<z.ZodEffects<z
     SMTP_USER?: string | undefined;
     SMTP_PASS?: string | undefined;
     RESEND_API_KEY?: string | undefined;
+    R2_ENDPOINT?: string | undefined;
 }, {
     DATABASE_URL: string;
     REDIS_URL: string;
     JWT_SECRET: string;
     AI_GATEWAY_URL: string;
+    R2_ACCOUNT_ID: string;
+    R2_ACCESS_KEY_ID: string;
+    R2_SECRET_ACCESS_KEY: string;
+    R2_BUCKET_NAME: string;
     NODE_ENV?: "development" | "production" | "test" | undefined;
     API_PORT?: number | undefined;
+    REDIS_PASSWORD?: string | undefined;
     ACCESS_TOKEN_LIFETIME_SEC?: number | undefined;
     REFRESH_TOKEN_LIFETIME_SEC?: number | undefined;
     ROTATION_GRACE_PERIOD_SEC?: number | undefined;
@@ -404,6 +457,7 @@ export declare const environmentSchema: z.ZodEffects<z.ZodEffects<z.ZodEffects<z
     SMTP_PASS?: string | undefined;
     RESEND_API_KEY?: string | undefined;
     MAX_CONCURRENT_SESSIONS?: number | undefined;
+    R2_ENDPOINT?: string | undefined;
 }>;
 export type Environment = z.infer<typeof environmentSchema>;
 //# sourceMappingURL=schema.d.ts.map

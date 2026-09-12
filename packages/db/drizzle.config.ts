@@ -2,7 +2,7 @@ import { defineConfig } from "drizzle-kit";
 import { runtimeConfig } from "@freelanceos/config";
 
 export default defineConfig({
-  schema: "./src/schema/**/*.ts",
+  schema: "./dist/schema/**/*.js",
   out: "./migrations",
   dialect: "postgresql",
   dbCredentials: {

@@ -22,14 +22,15 @@ import {
 export class PostgresTimelineRepository
   implements TimelineAggregateStore, TimelineSearchRepository, SearchProvider
 {
-  public async save(timeline: ClientTimeline): Promise<void> {
-    await db.transaction(async (tx) => {
+  public async save(timeline: ClientTimeline, tx?: any): Promise<void> {
+    const execute = async (t: any) => {
       // 1. Save parent client timeline record
-      await tx
+      await t
         .insert(clientTimelines)
         .values({
           id: timeline.timelineId,
           clientId: timeline.clientId,
+          tenantId: timeline.tenantId,
           ownerId: timeline.ownerId,
           status: timeline.status,
           createdAt: timeline.createdAt,
@@ -58,16 +59,22 @@ export class PostgresTimelineRepository
           updatedAt: new Date(),
         }));
 
-        await tx.insert(timelineEntries).values(entriesValues).onConflictDoNothing();
+        await t.insert(timelineEntries).values(entriesValues).onConflictDoNothing();
       }
-    });
+    };
+
+    if (tx) {
+      await execute(tx);
+    } else {
+      await db.transaction(execute);
+    }
   }
 
-  public async findById(timelineId: string, ownerId: string): Promise<ClientTimeline | null> {
+  public async findById(timelineId: string, tenantId: string): Promise<ClientTimeline | null> {
     const parent = await db
       .select()
       .from(clientTimelines)
-      .where(and(eq(clientTimelines.id, timelineId), eq(clientTimelines.ownerId, ownerId)))
+      .where(and(eq(clientTimelines.id, timelineId), eq(clientTimelines.tenantId, tenantId)))
       .limit(1);
 
     if (parent.length === 0) {
@@ -76,11 +83,11 @@ export class PostgresTimelineRepository
     return this.loadTimelineWithEntries(parent[0]!);
   }
 
-  public async findByClientId(clientId: string, ownerId: string): Promise<ClientTimeline | null> {
+  public async findByClientId(clientId: string, tenantId: string): Promise<ClientTimeline | null> {
     const parent = await db
       .select()
       .from(clientTimelines)
-      .where(and(eq(clientTimelines.clientId, clientId), eq(clientTimelines.ownerId, ownerId)))
+      .where(and(eq(clientTimelines.clientId, clientId), eq(clientTimelines.tenantId, tenantId)))
       .limit(1);
 
     if (parent.length === 0) {
@@ -89,8 +96,8 @@ export class PostgresTimelineRepository
     return this.loadTimelineWithEntries(parent[0]!);
   }
 
-  public async findTimelineEntriesByOwner(
-    ownerId: string,
+  public async findTimelineEntriesByTenant(
+    tenantId: string,
     options: {
       page: number;
       pageSize: number;
@@ -102,13 +109,14 @@ export class PostgresTimelineRepository
       .select({ count: sql<number>`count(*)` })
       .from(timelineEntries)
       .innerJoin(clientTimelines, eq(timelineEntries.timelineId, clientTimelines.id))
-      .where(eq(clientTimelines.ownerId, ownerId));
+      .where(eq(clientTimelines.tenantId, tenantId));
 
     const total = Number(countResult[0]?.count || 0);
 
     const rows = await db
       .select({
         id: timelineEntries.id,
+        sequenceNumber: timelineEntries.sequenceNumber,
         timelineId: timelineEntries.timelineId,
         eventRef: timelineEntries.eventRef,
         category: timelineEntries.category,
@@ -119,8 +127,8 @@ export class PostgresTimelineRepository
       })
       .from(timelineEntries)
       .innerJoin(clientTimelines, eq(timelineEntries.timelineId, clientTimelines.id))
-      .where(eq(clientTimelines.ownerId, ownerId))
-      .orderBy(desc(timelineEntries.timestamp), desc(timelineEntries.id))
+      .where(eq(clientTimelines.tenantId, tenantId))
+      .orderBy(desc(timelineEntries.sequenceNumber))
       .limit(options.pageSize)
       .offset(offset);
 
@@ -128,6 +136,7 @@ export class PostgresTimelineRepository
       (row) =>
         new TimelineEntry({
           entryId: row.id,
+          sequenceNumber: row.sequenceNumber,
           eventRef: row.eventRef || undefined,
           category: row.category,
           timestamp: row.timestamp,
@@ -142,7 +151,7 @@ export class PostgresTimelineRepository
 
   public async findTimelineEntriesByClientId(
     clientId: string,
-    ownerId: string,
+    tenantId: string,
     options: {
       page: number;
       pageSize: number;
@@ -156,7 +165,7 @@ export class PostgresTimelineRepository
     const parent = await db
       .select()
       .from(clientTimelines)
-      .where(and(eq(clientTimelines.clientId, clientId), eq(clientTimelines.ownerId, ownerId)))
+      .where(and(eq(clientTimelines.clientId, clientId), eq(clientTimelines.tenantId, tenantId)))
       .limit(1);
 
     if (parent.length === 0) {
@@ -175,6 +184,7 @@ export class PostgresTimelineRepository
     const rows = await db
       .select({
         id: timelineEntries.id,
+        sequenceNumber: timelineEntries.sequenceNumber,
         timelineId: timelineEntries.timelineId,
         eventRef: timelineEntries.eventRef,
         category: timelineEntries.category,
@@ -185,7 +195,7 @@ export class PostgresTimelineRepository
       })
       .from(timelineEntries)
       .where(eq(timelineEntries.timelineId, parent[0]!.id))
-      .orderBy(desc(timelineEntries.timestamp), desc(timelineEntries.id))
+      .orderBy(desc(timelineEntries.sequenceNumber))
       .limit(options.pageSize)
       .offset(offset);
 
@@ -313,12 +323,13 @@ export class PostgresTimelineRepository
       .select()
       .from(timelineEntries)
       .where(eq(timelineEntries.timelineId, parent.id))
-      .orderBy(asc(timelineEntries.timestamp));
+      .orderBy(asc(timelineEntries.sequenceNumber));
 
     const entries = entriesRows.map(
       (row) =>
         new TimelineEntry({
           entryId: row.id,
+          sequenceNumber: row.sequenceNumber,
           eventRef: row.eventRef || undefined,
           category: row.category,
           timestamp: row.timestamp,
@@ -331,6 +342,7 @@ export class PostgresTimelineRepository
     return new ClientTimeline({
       timelineId: parent.id,
       clientId: parent.clientId,
+      tenantId: parent.tenantId,
       ownerId: parent.ownerId,
       status: parent.status,
       entries,

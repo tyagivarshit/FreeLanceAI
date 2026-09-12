@@ -33,6 +33,11 @@ export declare function loadRuntimeConfig(): Readonly<{
     SMTP_PORT: number;
     AI_GATEWAY_URL: string;
     MAX_CONCURRENT_SESSIONS: number;
+    R2_ACCOUNT_ID: string;
+    R2_ACCESS_KEY_ID: string;
+    R2_SECRET_ACCESS_KEY: string;
+    R2_BUCKET_NAME: string;
+    REDIS_PASSWORD?: string | undefined;
     SESSION_COOKIE_DOMAIN?: string | undefined;
     STRIPE_SECRET_KEY?: string | undefined;
     STRIPE_PUBLISHABLE_KEY?: string | undefined;
@@ -43,6 +48,7 @@ export declare function loadRuntimeConfig(): Readonly<{
     SMTP_USER?: string | undefined;
     SMTP_PASS?: string | undefined;
     RESEND_API_KEY?: string | undefined;
+    R2_ENDPOINT?: string | undefined;
 }>;
 export declare const runtimeConfig: Readonly<{
     NODE_ENV: "development" | "production" | "test";
@@ -79,6 +85,11 @@ export declare const runtimeConfig: Readonly<{
     SMTP_PORT: number;
     AI_GATEWAY_URL: string;
     MAX_CONCURRENT_SESSIONS: number;
+    R2_ACCOUNT_ID: string;
+    R2_ACCESS_KEY_ID: string;
+    R2_SECRET_ACCESS_KEY: string;
+    R2_BUCKET_NAME: string;
+    REDIS_PASSWORD?: string | undefined;
     SESSION_COOKIE_DOMAIN?: string | undefined;
     STRIPE_SECRET_KEY?: string | undefined;
     STRIPE_PUBLISHABLE_KEY?: string | undefined;
@@ -89,5 +100,6 @@ export declare const runtimeConfig: Readonly<{
     SMTP_USER?: string | undefined;
     SMTP_PASS?: string | undefined;
     RESEND_API_KEY?: string | undefined;
+    R2_ENDPOINT?: string | undefined;
 }>;
 //# sourceMappingURL=config.d.ts.map

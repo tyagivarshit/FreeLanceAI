@@ -1,0 +1,1 @@
+const fs=require('fs'); ['apps/frontend/src/pages/ClientDetail.jsx', 'apps/frontend/src/pages/Clients.jsx'].forEach(f => { let c = fs.readFileSync(f, 'utf8'); c = c.split('\\`').join('`').split('\\$').join('$'); fs.writeFileSync(f, c); });

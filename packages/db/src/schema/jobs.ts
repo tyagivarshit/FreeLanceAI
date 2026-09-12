@@ -57,7 +57,7 @@ export const jobImports = pgTable(
       tenantClientRelationFk: foreignKey({
         columns: [table.clientId, table.tenantId],
         foreignColumns: [clients.id, clients.tenantId],
-      }).onDelete("restrict"),
+      }).onDelete("cascade"),
       // Bounded indexes for fast dashboard lookups and filters
       tenantIdx: index("job_imports_tenant_idx").on(table.tenantId),
       tenantClientIdx: index("job_imports_tenant_client_idx").on(table.tenantId, table.clientId),

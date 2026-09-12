@@ -49,4 +49,8 @@ export { authenticateRequest } from "./middleware.js";
 export { identityStore, DbIdentityStore } from "./identity-store.js";
 export { verifyEmailToken, VerificationError, InvalidVerificationTokenError, VerificationTokenExpiredError, VerificationTokenAlreadyConsumedError, UserNotFoundError, } from "./verify-email.js";
 export { createEmailService, getEmailService, setEmailService, resetEmailService, createVerificationEmail, NodemailerEmailService, ResendEmailService, ConsoleFallbackEmailService, } from "./email-service.js";
+export { generateMfaSetup, verifyAndEnableMfa, disableMfa, } from "./mfa-settings.js";
+export { verifyMfaLogin, MfaTokenExpiredError, } from "./mfa-login.js";
+export { generateTotpSecret, generateOtpAuthUri, verifyTotpCode, } from "./totp.js";
+export * from "./token-cleanup-worker.js";
 //# sourceMappingURL=index.js.map

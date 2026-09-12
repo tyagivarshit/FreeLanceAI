@@ -2,13 +2,16 @@ import { db, sessions, userPasswordHashes, users } from "@freelanceos/db";
 import { eq, and, gt, isNull, sql } from "drizzle-orm";
 import { runtimeConfig } from "@freelanceos/config";
 import { logger } from "@freelanceos/logger";
-import { generateRefreshToken, hashRefreshToken, compareRefreshTokenHashes, signAccessToken, verifyAccessToken, InvalidTokenError, SessionNotFoundError, CredentialNotFoundError, ReplayAttackDetectedError, SessionExpiredError, SessionRevokedError, } from "./token.js";
+import { generateRefreshToken, hashRefreshToken, compareRefreshTokenHashes, } from "./token.js";
+import { RedisCacheStore } from "@freelanceos/redis";
+import { signAccessToken, verifyAccessToken, InvalidTokenError, SessionNotFoundError, CredentialNotFoundError, ReplayAttackDetectedError, SessionExpiredError, SessionRevokedError, } from "./token.js";
 /**
  * Creates a stateful session and issues access/refresh tokens.
  */
-export async function createSession(userId, metadata) {
+export async function createSession(userId, metadata, tx) {
+    const dbClient = tx || db;
     // 1. Resolve credential version for token binding
-    const credentials = await db
+    const credentials = await dbClient
         .select({ credentialVersion: userPasswordHashes.credentialVersion })
         .from(userPasswordHashes)
         .where(eq(userPasswordHashes.userId, userId))
@@ -25,7 +28,7 @@ export async function createSession(userId, metadata) {
     const lifespanMs = runtimeConfig.REFRESH_TOKEN_LIFETIME_SEC * 1000;
     const expiresAt = new Date(Date.now() + lifespanMs);
     // 4. Save session to database
-    const insertedRecords = await db
+    const insertedRecords = await dbClient
         .insert(sessions)
         .values({
         userId,
@@ -82,6 +85,24 @@ const preparedValidateSessionQuery = process.env.NODE_ENV === "test"
 export async function validateSession(accessToken) {
     // 1. Statelessly decode and verify access token signatures and expiry
     const payload = verifyAccessToken(accessToken);
+    const cache = new RedisCacheStore();
+    const cacheKey = `session:valid:${payload.sessionId}`;
+    try {
+        const cached = await cache.get(cacheKey);
+        if (cached) {
+            const parsed = JSON.parse(cached);
+            if (parsed.credentialVersion === payload.credentialVersion) {
+                return {
+                    sessionId: parsed.sessionId,
+                    userId: parsed.userId,
+                    email: parsed.email
+                };
+            }
+        }
+    }
+    catch (e) {
+        // Ignore cache errors and fallback to DB
+    }
     // 2. Perform a single JOIN query using a PREPARED STATEMENT
     const joinedResult = process.env.NODE_ENV === "test"
         ? await buildValidateSessionQuery().execute({ sessionId: payload.sessionId })
@@ -100,11 +121,21 @@ export async function validateSession(accessToken) {
     if (session.expiresAt.getTime() < Date.now()) {
         throw new SessionExpiredError(payload.sessionId);
     }
-    return {
+    const result = {
         sessionId: payload.sessionId,
         userId: payload.userId,
         email: row.userEmail
     };
+    try {
+        await cache.set(cacheKey, JSON.stringify({
+            ...result,
+            credentialVersion: row.credentialVersion
+        }), 300); // 5 minutes cache
+    }
+    catch (e) {
+        // Ignore cache errors
+    }
+    return result;
 }
 /**
  * Rotates a refresh token, checking for replay theft attacks and applying concurrency grace periods.
@@ -152,6 +183,38 @@ export async function rotateSession(rawRefreshToken, metadata) {
                     sessionId,
                     timeSinceLastUpdateMs,
                 });
+                const cache = new RedisCacheStore();
+                let cachedToken = null;
+                try {
+                    cachedToken = await Promise.race([
+                        cache.get(`session:grace:${submittedHash}`),
+                        new Promise((_, reject) => setTimeout(() => reject(new Error("Redis GET timeout")), 200))
+                    ]);
+                }
+                catch (err) {
+                    logger.warn({
+                        message: "Redis grace cache GET failed or timed out. Degrading gracefully.",
+                        error: err instanceof Error ? err : new Error(String(err))
+                    });
+                }
+                if (cachedToken) {
+                    const credentials = await tx
+                        .select({ credentialVersion: userPasswordHashes.credentialVersion })
+                        .from(userPasswordHashes)
+                        .where(eq(userPasswordHashes.userId, session.userId))
+                        .limit(1);
+                    const firstCredential = credentials[0];
+                    const credentialVersion = firstCredential ? firstCredential.credentialVersion : 0;
+                    const newSignedAccessToken = signAccessToken({
+                        sessionId: session.id,
+                        userId: session.userId,
+                        credentialVersion,
+                    });
+                    return {
+                        newRawRefreshToken: `${sessionId}.${cachedToken}`,
+                        newSignedAccessToken,
+                    };
+                }
                 // Fallback: Generate a new valid token pair for the client without revoking session
                 const newRawToken = generateRefreshToken();
                 const newHash = hashRefreshToken(newRawToken);
@@ -232,6 +295,19 @@ export async function rotateSession(rawRefreshToken, metadata) {
             userId: session.userId,
             credentialVersion,
         });
+        const cache = new RedisCacheStore();
+        try {
+            await Promise.race([
+                cache.set(`session:grace:${submittedHash}`, newRawToken, runtimeConfig.ROTATION_GRACE_PERIOD_SEC),
+                new Promise((_, reject) => setTimeout(() => reject(new Error("Redis SET timeout")), 200))
+            ]);
+        }
+        catch (err) {
+            logger.warn({
+                message: "Redis grace cache SET failed or timed out. Degrading gracefully.",
+                error: err instanceof Error ? err : new Error(String(err))
+            });
+        }
         return {
             newRawRefreshToken: `${session.id}.${newRawToken}`,
             newSignedAccessToken,
@@ -243,12 +319,25 @@ export async function rotateSession(rawRefreshToken, metadata) {
  */
 export async function revokeSession(sessionId) {
     await db.update(sessions).set({ revokedAt: new Date() }).where(eq(sessions.id, sessionId));
+    try {
+        const cache = new RedisCacheStore();
+        await cache.delete(`session:valid:${sessionId}`);
+    }
+    catch (e) { }
 }
 /**
  * Revokes all sessions belonging to a user.
  */
 export async function revokeAllSessions(userId) {
+    const activeSessions = await db.select({ id: sessions.id }).from(sessions).where(and(eq(sessions.userId, userId), isNull(sessions.revokedAt)));
     await db.update(sessions).set({ revokedAt: new Date() }).where(eq(sessions.userId, userId));
+    try {
+        const cache = new RedisCacheStore();
+        for (const s of activeSessions) {
+            await cache.delete(`session:valid:${s.id}`);
+        }
+    }
+    catch (e) { }
 }
 /**
  * Locates an active, unexpired, and unrevoked session by its identifier.

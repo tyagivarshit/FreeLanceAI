@@ -64,6 +64,7 @@ describe("PostgresClientRepository Unit Tests", () => {
     const client = Client.create(
       "9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d",
       "8b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d",
+      "8b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d",
       {
         name: "Acme Corp",
         website: "https://acme.com",
@@ -245,7 +246,7 @@ describe("PostgresClientRepository PostgreSQL Integration Tests", () => {
     const created = new Date("2026-08-14T10:00:00.000Z");
     const client = new Client({
       id: clientA,
-      ownerId: tenantA,
+      ownerId: tenantA, tenantId: tenantA,
       status: "Lead",
       profile: { name: "Acme Corp", website: "https://acme.com" },
       primaryContact: { firstName: "Jane", lastName: "Doe", email: "jane@acme.com" },
@@ -260,7 +261,7 @@ describe("PostgresClientRepository PostgreSQL Integration Tests", () => {
     assert.strictEqual(read.primaryContact?.email, "jane@acme.com");
     assert.strictEqual(read.systemMetadata.createdAt.toISOString(), created.toISOString());
 
-    read.updateProfile(tenantA, { name: "Acme Studio", website: "https://acme.com" }, undefined, {
+    read.updateProfile({ name: "Acme Studio", website: "https://acme.com" }, undefined, {
       firstName: "Jane",
       lastName: "Doe",
       email: "jane@acme.com",
@@ -283,14 +284,14 @@ describe("PostgresClientRepository PostgreSQL Integration Tests", () => {
     }
 
     const repo = new PostgresClientRepository();
-    const base = Client.create(clientA, tenantA, { name: "Acme Corp" }, undefined, {
+    const base = Client.create(clientA, tenantA, tenantA, { name: "Acme Corp" }, undefined, {
       firstName: "Jane",
       lastName: "Doe",
       email: "dupe@acme.com",
     });
     await repo.create(base);
 
-    const duplicate = Client.create(clientB, tenantA, { name: "Acme Duplicate" }, undefined, {
+    const duplicate = Client.create(clientB, tenantA, tenantA, { name: "Acme Duplicate" }, undefined, {
       firstName: "Janet",
       lastName: "Roe",
       email: "DUPE@ACME.COM",
@@ -312,7 +313,7 @@ describe("PostgresClientRepository PostgreSQL Integration Tests", () => {
     const clientsToCreate = [
       new Client({
         id: clientA,
-        ownerId: tenantA,
+        ownerId: tenantA, tenantId: tenantA,
         status: "Lead",
         profile: { name: "Alpha Client" },
         systemMetadata: {
@@ -322,7 +323,7 @@ describe("PostgresClientRepository PostgreSQL Integration Tests", () => {
       }),
       new Client({
         id: clientB,
-        ownerId: tenantA,
+        ownerId: tenantA, tenantId: tenantA,
         status: "Lead",
         profile: { name: "Beta Client" },
         systemMetadata: {
@@ -332,7 +333,7 @@ describe("PostgresClientRepository PostgreSQL Integration Tests", () => {
       }),
       new Client({
         id: "99999999-9999-4999-8999-999999999999",
-        ownerId: tenantA,
+        ownerId: tenantA, tenantId: tenantA,
         status: "Lead",
         profile: { name: "Gamma Client" },
         systemMetadata: {
@@ -365,16 +366,12 @@ describe("PostgresClientRepository PostgreSQL Integration Tests", () => {
     }
 
     const concurrentA = Client.create(
-      "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
-      tenantA,
-      { name: "Concurrent One" },
+      "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa", tenantA, tenantA, { name: "Concurrent One" },
       undefined,
       { firstName: "Same", lastName: "Email", email: "race@acme.com" },
     );
     const concurrentB = Client.create(
-      "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
-      tenantA,
-      { name: "Concurrent Two" },
+      "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb", tenantA, tenantA, { name: "Concurrent Two" },
       undefined,
       { firstName: "Same", lastName: "Email", email: "RACE@ACME.COM" },
     );
@@ -396,7 +393,7 @@ describe("PostgresClientRepository PostgreSQL Integration Tests", () => {
 
     const repo = new PostgresClientRepository();
     await repo.create(
-      Client.create(clientA, tenantA, { name: "Relationship Client" }, undefined, {
+      Client.create(clientA, tenantA, tenantA, { name: "Relationship Client" }, undefined, {
         firstName: "Rhea",
         lastName: "Link",
         email: "relationship@acme.com",
@@ -455,7 +452,7 @@ describe("PostgresClientRepository PostgreSQL Integration Tests", () => {
       /foreign key|violates/,
     );
 
-    const timeline = ClientTimeline.create(timelineId, clientA, tenantA);
+    const timeline = ClientTimeline.create(timelineId, clientA, tenantA, tenantA);
     timeline.appendEntry(tenantA, tenantA, {
       entryId: timelineEntryId,
       category: "Lifecycle Event",
@@ -480,7 +477,7 @@ describe("PostgresClientRepository PostgreSQL Integration Tests", () => {
 
     assert.throws(
       () =>
-        Client.create(clientA, tenantA, { name: "A" }, undefined, {
+        Client.create(clientA, tenantA, tenantA, { name: "A" }, undefined, {
           firstName: "Bad",
           lastName: "Email",
           email: "not-an-email",
@@ -512,6 +509,7 @@ describe("PostgresClientRepository PostgreSQL Integration Tests", () => {
     const client1 = Client.create(
       "12345678-1234-4234-8234-123456789001",
       tenantA,
+      tenantA,
       { name: "Searchable Alpha Inc", website: "https://alpha.com" },
       undefined,
       { firstName: "Alice", lastName: "Smith", email: "alice@alpha.com" },
@@ -519,12 +517,14 @@ describe("PostgresClientRepository PostgreSQL Integration Tests", () => {
     const client2 = Client.create(
       "12345678-1234-4234-8234-123456789002",
       tenantA,
+      tenantA,
       { name: "Alpha Technologies LLC", website: "https://alphatech.com" },
       undefined,
       { firstName: "Aaron", lastName: "Adams", email: "aaron@alphatech.com" },
     );
     const foreignClient = Client.create(
       "12345678-1234-4234-8234-123456789003",
+      tenantB,
       tenantB,
       { name: "Foreign Alpha Corp", website: "https://foreign-alpha.com" },
       undefined,

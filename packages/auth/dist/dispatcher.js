@@ -53,6 +53,21 @@ export class QueueBackgroundTaskDispatcher {
                         email: data.email,
                     });
                 }
+                else if (taskName === "SEND_DUPLICATE_SIGNUP_ALERT") {
+                    const service = this.emailService ?? getEmailService();
+                    const appUrl = runtimeConfig.APP_URL || "http://localhost:4000";
+                    await service.sendEmail({
+                        to: data.email,
+                        subject: "Login Attempt - Account Already Exists",
+                        text: `You recently tried to sign up, but you already have an account! Please log in at ${appUrl}/login`,
+                        html: `<p>You recently tried to sign up, but you already have an account! <a href="${appUrl}/login">Click here to log in.</a></p>`,
+                    });
+                    logger.info({
+                        message: `[Background Task Execution] Executed task: ${taskName}`,
+                        userId: data.userId,
+                        email: data.email,
+                    });
+                }
             }
             catch (err) {
                 logger.error({

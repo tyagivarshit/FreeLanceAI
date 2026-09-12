@@ -103,6 +103,7 @@ describe("PostgresTimelineRepository Unit Tests", () => {
       "9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d",
       "8b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6e",
       "8b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6f",
+      "8b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6f"
     );
 
     timeline.appendEntry("8b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6f", "actor_123", {

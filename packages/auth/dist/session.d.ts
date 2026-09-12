@@ -31,7 +31,7 @@ export interface SessionResult {
 /**
  * Creates a stateful session and issues access/refresh tokens.
  */
-export declare function createSession(userId: string, metadata: SessionMetadata): Promise<SessionResult>;
+export declare function createSession(userId: string, metadata: SessionMetadata, tx?: any): Promise<SessionResult>;
 /**
  * Validates a Signed Access Token statelessly and maps it back to active database session invariants.
  */

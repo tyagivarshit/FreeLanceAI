@@ -1,0 +1,95 @@
+TAP version 13
+# [Event Loop Lag] 328.39ms
+# [Redis] Connection established successfully.
+# [Redis] Client is ready to receive commands.
+# [PG Pool Metrics] Total: 2, Idle: 2, Waiting: 0
+# [PG Pool Metrics] Total: 2, Idle: 2, Waiting: 0
+# Subtest: Session Use Case Integration Tests
+    # Subtest: should handle refresh token rotation race condition idempotently
+    ok 1 - should handle refresh token rotation race condition idempotently
+      ---
+      duration_ms: 1935.2169
+      type: 'test'
+      ...
+    1..1
+ok 1 - Session Use Case Integration Tests
+  ---
+  duration_ms: 1936.3904
+  type: 'suite'
+  ...
+# [PG Pool Metrics] Total: 2, Idle: 2, Waiting: 0
+# [PG Pool Metrics] Total: 2, Idle: 2, Waiting: 0
+# [PG Pool Metrics] Total: 2, Idle: 2, Waiting: 0
+# [PG Pool Metrics] Total: 2, Idle: 2, Waiting: 0
+# [PG Pool Metrics] Total: 2, Idle: 2, Waiting: 0
+# [Event Loop Lag] 24.21ms
+# [PG Pool Metrics] Total: 2, Idle: 2, Waiting: 0
+# [PG Pool Metrics] Total: 2, Idle: 2, Waiting: 0
+# [Event Loop Lag] 21.90ms
+# [PG Pool Metrics] Total: 2, Idle: 2, Waiting: 0
+# [Event Loop Lag] 20.37ms
+# [PG Pool Metrics] Total: 2, Idle: 2, Waiting: 0
+# [PG Pool Metrics] Total: 2, Idle: 2, Waiting: 0
+# [PG Pool Metrics] Total: 2, Idle: 2, Waiting: 0
+# [PG Pool Metrics] Total: 2, Idle: 2, Waiting: 0
+# [PG Pool Metrics] Total: 2, Idle: 2, Waiting: 0
+# [Event Loop Lag] 26.01ms
+# [PG Pool Metrics] Total: 2, Idle: 2, Waiting: 0
+# [Event Loop Lag] 26.14ms
+# [PG Pool Metrics] Total: 2, Idle: 2, Waiting: 0
+# [Event Loop Lag] 62.95ms
+# [PG Pool Metrics] Total: 2, Idle: 2, Waiting: 0
+# [PG Pool Metrics] Total: 2, Idle: 2, Waiting: 0
+# [Event Loop Lag] 24.41ms
+# [PG Pool Metrics] Total: 2, Idle: 2, Waiting: 0
+# [PG Pool Metrics] Total: 2, Idle: 2, Waiting: 0
+# [PG Pool Metrics] Total: 2, Idle: 2, Waiting: 0
+# [PG Pool Metrics] Total: 2, Idle: 2, Waiting: 0
+# [Event Loop Lag] 47.88ms
+# [PG Pool Metrics] Total: 2, Idle: 2, Waiting: 0
+# [Event Loop Lag] 24.12ms
+# [PG Pool Metrics] Total: 2, Idle: 2, Waiting: 0
+# [Event Loop Lag] 26.86ms
+# [PG Pool Metrics] Total: 2, Idle: 2, Waiting: 0
+# [PG Pool Metrics] Total: 2, Idle: 2, Waiting: 0
+# [Event Loop Lag] 31.14ms
+# [PG Pool Metrics] Total: 2, Idle: 2, Waiting: 0
+# [PG Pool Metrics] Total: 2, Idle: 2, Waiting: 0
+# [PG Pool Metrics] Total: 2, Idle: 2, Waiting: 0
+# [PG Pool Metrics] Total: 1, Idle: 1, Waiting: 0
+# [PG Pool Metrics] Total: 1, Idle: 1, Waiting: 0
+# [Event Loop Lag] 28.36ms
+# [Event Loop Lag] 24.84ms
+# [Event Loop Lag] 36.28ms
+# [Event Loop Lag] 73.37ms
+# [Event Loop Lag] 20.55ms
+# [Event Loop Lag] 136.92ms
+# [Event Loop Lag] 21.94ms
+# [Event Loop Lag] 52.35ms
+# [Event Loop Lag] 323.14ms
+# [Event Loop Lag] 52.82ms
+# [Event Loop Lag] 41.11ms
+# [Event Loop Lag] 34.68ms
+# [Event Loop Lag] 73.72ms
+# [Event Loop Lag] 34.02ms
+# [Event Loop Lag] 33.24ms
+# [Event Loop Lag] 24.72ms
+# [Event Loop Lag] 40.69ms
+# [Event Loop Lag] 60.65ms
+# [Event Loop Lag] 29.56ms
+# [Event Loop Lag] 74.20ms
+# [Event Loop Lag] 42.43ms
+# [Event Loop Lag] 26.20ms
+# [Event Loop Lag] 38.49ms
+# [Event Loop Lag] 46.79ms
+# [Event Loop Lag] 39.83ms
+# [Event Loop Lag] 114.79ms
+# [Event Loop Lag] 36.52ms
+# [Event Loop Lag] 52.12ms
+# [Event Loop Lag] 24.62ms
+# [Event Loop Lag] 28.14ms
+# [Event Loop Lag] 32.39ms
+# [Event Loop Lag] 20.36ms
+# [Event Loop Lag] 25.29ms
+# [Event Loop Lag] 20.31ms
+# [Event Loop Lag] 20.07ms

@@ -16,6 +16,7 @@ export const environmentSchema = z
     API_PORT: z.coerce.number().default(4000),
     DATABASE_URL: z.string().url("DATABASE_URL must be a valid connection string"),
     REDIS_URL: z.string().url("REDIS_URL must be a valid connection string"),
+    REDIS_PASSWORD: z.string().optional(),
 
     // Signed Access Token Strategy config
     // No default: missing or short JWT_SECRET causes startup crash in all environments.
@@ -91,6 +92,13 @@ export const environmentSchema = z
     AI_GATEWAY_URL: z.string().url("AI_GATEWAY_URL must be a valid URL"),
     // Maximum active sessions a user can have across devices
     MAX_CONCURRENT_SESSIONS: z.coerce.number().min(1).default(5),
+
+    // R2 / S3 Storage Configuration
+    R2_ACCOUNT_ID: z.string().min(1, "R2_ACCOUNT_ID is required"),
+    R2_ACCESS_KEY_ID: z.string().min(1, "R2_ACCESS_KEY_ID is required"),
+    R2_SECRET_ACCESS_KEY: z.string().min(1, "R2_SECRET_ACCESS_KEY is required"),
+    R2_BUCKET_NAME: z.string().min(1, "R2_BUCKET_NAME is required"),
+    R2_ENDPOINT: z.string().optional(),
   })
   .refine(
     (data) => {

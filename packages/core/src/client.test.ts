@@ -26,7 +26,7 @@ describe("Client Aggregate Roots & Invariants Tests", () => {
   const validContact = { firstName: "John", lastName: "Doe", email: "john@acme.com" };
 
   test("Client creation (Lead status by default and CLIENT_CREATED event generated)", () => {
-    const client = Client.create("client-1", "owner-1", validProfile);
+    const client = Client.create("client-1", "owner-1", "owner-1", validProfile);
     assert.strictEqual(client.id, "client-1");
     assert.strictEqual(client.ownerId, "owner-1");
     assert.strictEqual(client.status, "Lead");
@@ -37,33 +37,26 @@ describe("Client Aggregate Roots & Invariants Tests", () => {
     assert.strictEqual(client.domainEvents[0]!.metadata.ownerId, "owner-1");
   });
 
-  test("Missing owner throws error", () => {
+  test("Missing tenant and owner throws error", () => {
     assert.throws(() => {
-      Client.create("client-1", "  ", validProfile);
-    }, /Owner ID is required/);
+      Client.create("client-1", "  ", "  ", validProfile);
+    }, /Tenant ID is required/);
   });
 
   test("Client update profile success and CLIENT_UPDATED event emitted", () => {
-    const client = Client.create("client-1", "owner-1", validProfile);
+    const client = Client.create("client-1", "owner-1", "owner-1", validProfile);
     client.clearDomainEvents();
 
     const newProfile = { name: "Acme LLC" };
-    client.updateProfile("owner-1", newProfile, validBilling, validContact);
+    client.updateProfile(newProfile, validBilling, validContact);
 
     assert.strictEqual(client.profile.name, "Acme LLC");
     assert.strictEqual(client.domainEvents.length, 1);
     assert.strictEqual(client.domainEvents[0]!.event, CLIENT_UPDATED);
   });
 
-  test("Client update fails if ownership validation fails", () => {
-    const client = Client.create("client-1", "owner-1", validProfile);
-    assert.throws(() => {
-      client.updateProfile("owner-wrong", { name: "Failing Corp" });
-    }, /Ownership validation failed/);
-  });
-
   test("Transition to Active enforces required metadata", () => {
-    const client = Client.create("client-1", "owner-1", validProfile);
+    const client = Client.create("client-1", "owner-1", "owner-1", validProfile);
 
     // Attempt to activate without billing details or contact info
     assert.throws(() => {
@@ -72,18 +65,18 @@ describe("Client Aggregate Roots & Invariants Tests", () => {
 
     // Provide partial contact
     assert.throws(() => {
-      client.updateProfile("owner-1", validProfile, undefined, { firstName: "John" });
+      client.updateProfile(validProfile, undefined, { firstName: "John" });
       client.transitionTo("Active", "owner-1");
     }, /Active client must have a complete primary contact/);
 
     // Complete profile, contact, and billing details
-    client.updateProfile("owner-1", validProfile, validBilling, validContact);
+    client.updateProfile(validProfile, validBilling, validContact);
     client.transitionTo("Active", "owner-1");
     assert.strictEqual(client.status, "Active");
   });
 
   test("Invalid lifecycle status transitions throw error", () => {
-    const client = Client.create("client-1", "owner-1", validProfile);
+    const client = Client.create("client-1", "owner-1", "owner-1", validProfile);
 
     // Cannot transition from Lead directly to Suspended or Archived
     assert.throws(() => {
@@ -96,8 +89,8 @@ describe("Client Aggregate Roots & Invariants Tests", () => {
   });
 
   test("Archive transition emits CLIENT_ARCHIVED and Reactivate transition emits CLIENT_REACTIVATED", () => {
-    const client = Client.create("client-1", "owner-1", validProfile);
-    client.updateProfile("owner-1", validProfile, validBilling, validContact);
+    const client = Client.create("client-1", "owner-1", "owner-1", validProfile);
+    client.updateProfile(validProfile, validBilling, validContact);
 
     // Lead -> Active
     client.transitionTo("Active", "owner-1");
@@ -121,29 +114,29 @@ describe("Client Aggregate Roots & Invariants Tests", () => {
   test("Aggregate invariant validation: name length, country, currency formats", () => {
     // Client Name validation
     assert.throws(() => {
-      Client.create("client-1", "owner-1", { name: "A" });
+      Client.create("client-1", "owner-1", "owner-1", { name: "A" });
     }, /Client name must be between 2 and 100/);
 
     // Contact Email format
     assert.throws(() => {
-      Client.create("client-1", "owner-1", validProfile, undefined, { email: "bademail" });
+      Client.create("client-1", "owner-1", "owner-1", validProfile, undefined, { email: "bademail" });
     }, /Invalid email address format/);
 
     // Currency format
     assert.throws(() => {
-      Client.create("client-1", "owner-1", validProfile, { currency: "USD-extra" });
+      Client.create("client-1", "owner-1", "owner-1", validProfile, { currency: "USD-extra" });
     }, /Currency must be a 3-letter uppercase/);
 
     // Country format
     assert.throws(() => {
-      Client.create("client-1", "owner-1", validProfile, {
+      Client.create("client-1", "owner-1", "owner-1", validProfile, {
         billingAddress: { ...validAddress, country: "USA" },
       });
     }, /Country must be a 2-letter uppercase/);
   });
 
   test("Duplicate identity prevention check", async () => {
-    const client = Client.create("client-1", "owner-1", validProfile, validBilling, validContact);
+    const client = Client.create("client-1", "owner-1", "owner-1", validProfile, validBilling, validContact);
 
     const mockPersistence: DomainPersistenceContract = {
       async checkUniqueEmail(_ownerId, email) {
@@ -158,7 +151,7 @@ describe("Client Aggregate Roots & Invariants Tests", () => {
       await client.validateUniqueness(mockPersistence);
     }, /Duplicate client identity: email already exists/);
 
-    const uniqueEmailClient = Client.create("client-1", "owner-1", validProfile, validBilling, {
+    const uniqueEmailClient = Client.create("client-1", "owner-1", "owner-1", validProfile, validBilling, {
       ...validContact,
       email: "unique@acme.com",
     });
