@@ -14,8 +14,8 @@
   },
   "devDependencies": {
     "@freelanceos/ts-config": "*",
-    "@types/chrome": "0.0.268",
+    "@types/chrome": "0.2.9",
     "fake-indexeddb": "^6.2.5",
-    "typescript": "5.5.4"
+    "typescript": "5.9.3"
   }
 }
