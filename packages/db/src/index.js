@@ -103,7 +103,7 @@ export { verifyConnection, closeDatabaseConnection, db } from "./client.js";
 export { runInTransaction } from "./transaction.js";
 export { tenantIdColumn, primaryKeyColumn, auditTimestamps } from "./schema/helpers.js";
 // Export Authentication Domain Schemas and Relations
-export { users, userStatusEnum, userPasswordHashes, sessions, emailVerifications, passwordResets, usersRelations, userPasswordHashesRelations, sessionsRelations, emailVerificationsRelations, passwordResetsRelations, } from "./schema/auth.js";
+export { users, userPasswordHashes, userMfaSettings, sessions, emailVerifications, passwordResets, userStatusEnum, usersRelations, userPasswordHashesRelations, userMfaSettingsRelations, sessionsRelations, emailVerificationsRelations, passwordResetsRelations, } from "./schema/auth.js";
 // Export Jobs Domain Schemas
 export { jobImports, jobImportStatusEnum } from "./schema/jobs.js";
 // Export Matches Domain Schemas
@@ -116,6 +116,8 @@ export { clientTimelines, timelineEntries, timelineStatusEnum, timelineEventCate
 export { brainAnalyses, brainAnalysisStatusEnum } from "./schema/brain.js";
 // Export Payments Domain Schemas
 export { payments } from "./schema/payments.js";
+// Export Attachments Domain Schemas
+export { attachments } from "./schema/attachments.js";
 // Export Projects Domain Schemas
 export { projects, projectStatusEnum } from "./schema/projects.js";
 // Export Repositories
@@ -126,3 +128,28 @@ export { PostgresClientRepository } from "./repository/client-repository.js";
 export { PostgresBrainAnalysisRepository } from "./repository/brain-analysis-repository.js";
 export { PostgresPaymentRepository } from "./repository/payment-repository.js";
 export { PostgresProjectRepository } from "./repository/project-repository.js";
+export { PostgresAttachmentRepository } from "./repository/attachment-repository.js";
+// Export Prompts Domain Schemas
+export { prompts, promptStatusEnum } from "./schema/prompts.js";
+// Export Memory Domain Schemas
+export { memory, memoryStatusEnum } from "./schema/memory.js";
+// Export Policies Domain Schemas
+export { policies, policyStatusEnum } from "./schema/policies.js";
+// Export Gateway Domain Schemas
+export { aiGatewayLogs, aiRequestStatusEnum } from "./schema/gateway.js";
+export { PostgresGatewayRepository } from "./repository/gateway-repository.js";
+export { PostgresPromptRepository } from "./repository/prompt-repository.js";
+export { promptCompositions } from "./schema/prompt-compositions.js";
+export { PostgresCompositionRepository } from "./repository/composition-repository.js";
+export * from "./schema/client-memories.js";
+export * from "./schema/client-scopes.js";
+export * from "./schema/confidence-scores.js";
+export * from "./schema/conversation-imports.js";
+export * from "./schema/embeddings.js";
+export * from "./schema/insights.js";
+export * from "./schema/outbox.js";
+export * from "./schema/pricing-estimates.js";
+export * from "./schema/prompt-contexts.js";
+export * from "./schema/scope-rules.js";
+export * from "./schema/summary.js";
+export * from "./schema/bid-ledger.js";

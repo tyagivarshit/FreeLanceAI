@@ -2,3 +2,91 @@
 > @freelanceos/core@0.1.0 build
 > tsc
 
+error TS5055: Cannot write file 'D:/FreelanceAI/packages/core/dist/ai-gateway.d.ts' because it would overwrite input file.
+error TS5055: Cannot write file 'D:/FreelanceAI/packages/core/dist/attachment.d.ts' because it would overwrite input file.
+error TS5055: Cannot write file 'D:/FreelanceAI/packages/core/dist/brain.d.ts' because it would overwrite input file.
+error TS5055: Cannot write file 'D:/FreelanceAI/packages/core/dist/client-insight.d.ts' because it would overwrite input file.
+error TS5055: Cannot write file 'D:/FreelanceAI/packages/core/dist/client-memory-update.d.ts' because it would overwrite input file.
+error TS5055: Cannot write file 'D:/FreelanceAI/packages/core/dist/client-search.d.ts' because it would overwrite input file.
+error TS5055: Cannot write file 'D:/FreelanceAI/packages/core/dist/client-summary.d.ts' because it would overwrite input file.
+error TS5055: Cannot write file 'D:/FreelanceAI/packages/core/dist/client.d.ts' because it would overwrite input file.
+error TS5055: Cannot write file 'D:/FreelanceAI/packages/core/dist/confidence.d.ts' because it would overwrite input file.
+error TS5055: Cannot write file 'D:/FreelanceAI/packages/core/dist/context-builder.d.ts' because it would overwrite input file.
+error TS5055: Cannot write file 'D:/FreelanceAI/packages/core/dist/conversation-import.d.ts' because it would overwrite input file.
+error TS5055: Cannot write file 'D:/FreelanceAI/packages/core/dist/embedding.d.ts' because it would overwrite input file.
+error TS5055: Cannot write file 'D:/FreelanceAI/packages/core/dist/entitlements.d.ts' because it would overwrite input file.
+error TS5055: Cannot write file 'D:/FreelanceAI/packages/core/dist/hybrid-search.d.ts' because it would overwrite input file.
+error TS5055: Cannot write file 'D:/FreelanceAI/packages/core/dist/index.d.ts' because it would overwrite input file.
+error TS5055: Cannot write file 'D:/FreelanceAI/packages/core/dist/job-embedding.d.ts' because it would overwrite input file.
+error TS5055: Cannot write file 'D:/FreelanceAI/packages/core/dist/job-import.d.ts' because it would overwrite input file.
+error TS5055: Cannot write file 'D:/FreelanceAI/packages/core/dist/job-match-cache.d.ts' because it would overwrite input file.
+error TS5055: Cannot write file 'D:/FreelanceAI/packages/core/dist/job-match-explanation.d.ts' because it would overwrite input file.
+error TS5055: Cannot write file 'D:/FreelanceAI/packages/core/dist/job-match-queue.d.ts' because it would overwrite input file.
+error TS5055: Cannot write file 'D:/FreelanceAI/packages/core/dist/job-match-ranking.d.ts' because it would overwrite input file.
+error TS5055: Cannot write file 'D:/FreelanceAI/packages/core/dist/job-match-score.d.ts' because it would overwrite input file.
+error TS5055: Cannot write file 'D:/FreelanceAI/packages/core/dist/job-match-work-item.d.ts' because it would overwrite input file.
+error TS5055: Cannot write file 'D:/FreelanceAI/packages/core/dist/job-match-worker.d.ts' because it would overwrite input file.
+error TS5055: Cannot write file 'D:/FreelanceAI/packages/core/dist/job-match.d.ts' because it would overwrite input file.
+error TS5055: Cannot write file 'D:/FreelanceAI/packages/core/dist/job-normalization.d.ts' because it would overwrite input file.
+error TS5055: Cannot write file 'D:/FreelanceAI/packages/core/dist/job-search.d.ts' because it would overwrite input file.
+error TS5055: Cannot write file 'D:/FreelanceAI/packages/core/dist/match-search.d.ts' because it would overwrite input file.
+error TS5055: Cannot write file 'D:/FreelanceAI/packages/core/dist/memory.d.ts' because it would overwrite input file.
+error TS5055: Cannot write file 'D:/FreelanceAI/packages/core/dist/payment.d.ts' because it would overwrite input file.
+error TS5055: Cannot write file 'D:/FreelanceAI/packages/core/dist/plan.d.ts' because it would overwrite input file.
+error TS5055: Cannot write file 'D:/FreelanceAI/packages/core/dist/policy.d.ts' because it would overwrite input file.
+error TS5055: Cannot write file 'D:/FreelanceAI/packages/core/dist/pricing.d.ts' because it would overwrite input file.
+error TS5055: Cannot write file 'D:/FreelanceAI/packages/core/dist/project.d.ts' because it would overwrite input file.
+error TS5055: Cannot write file 'D:/FreelanceAI/packages/core/dist/prompt-registry.d.ts' because it would overwrite input file.
+error TS5055: Cannot write file 'D:/FreelanceAI/packages/core/dist/ranking.d.ts' because it would overwrite input file.
+error TS5055: Cannot write file 'D:/FreelanceAI/packages/core/dist/reply-generation.d.ts' because it would overwrite input file.
+error TS5055: Cannot write file 'D:/FreelanceAI/packages/core/dist/reply-grammar.d.ts' because it would overwrite input file.
+error TS5055: Cannot write file 'D:/FreelanceAI/packages/core/dist/reply-rewrite.d.ts' because it would overwrite input file.
+error TS5055: Cannot write file 'D:/FreelanceAI/packages/core/dist/reply-tone.d.ts' because it would overwrite input file.
+error TS5055: Cannot write file 'D:/FreelanceAI/packages/core/dist/repository.d.ts' because it would overwrite input file.
+error TS5055: Cannot write file 'D:/FreelanceAI/packages/core/dist/scope-extraction.d.ts' because it would overwrite input file.
+error TS5055: Cannot write file 'D:/FreelanceAI/packages/core/dist/scope-rules.d.ts' because it would overwrite input file.
+error TS5055: Cannot write file 'D:/FreelanceAI/packages/core/dist/search.d.ts' because it would overwrite input file.
+error TS5055: Cannot write file 'D:/FreelanceAI/packages/core/dist/services/ai-gateway-service.d.ts' because it would overwrite input file.
+error TS5055: Cannot write file 'D:/FreelanceAI/packages/core/dist/services/ai-queue-service.d.ts' because it would overwrite input file.
+error TS5055: Cannot write file 'D:/FreelanceAI/packages/core/dist/services/bid-ledger-routing.service.d.ts' because it would overwrite input file.
+error TS5055: Cannot write file 'D:/FreelanceAI/packages/core/dist/services/client-memory-engine.d.ts' because it would overwrite input file.
+error TS5055: Cannot write file 'D:/FreelanceAI/packages/core/dist/services/confidence-scoring-engine.d.ts' because it would overwrite input file.
+error TS5055: Cannot write file 'D:/FreelanceAI/packages/core/dist/services/embedding-engine.d.ts' because it would overwrite input file.
+error TS5055: Cannot write file 'D:/FreelanceAI/packages/core/dist/services/generation-engine.service.d.ts' because it would overwrite input file.
+error TS5055: Cannot write file 'D:/FreelanceAI/packages/core/dist/services/grammar-engine.service.d.ts' because it would overwrite input file.
+error TS5055: Cannot write file 'D:/FreelanceAI/packages/core/dist/services/hybrid-search-engine.d.ts' because it would overwrite input file.
+error TS5055: Cannot write file 'D:/FreelanceAI/packages/core/dist/services/import-stream-engine.d.ts' because it would overwrite input file.
+error TS5055: Cannot write file 'D:/FreelanceAI/packages/core/dist/services/insight-engine.d.ts' because it would overwrite input file.
+error TS5055: Cannot write file 'D:/FreelanceAI/packages/core/dist/services/job-embedding-engine.service.d.ts' because it would overwrite input file.
+error TS5055: Cannot write file 'D:/FreelanceAI/packages/core/dist/services/job-import-stream-engine.d.ts' because it would overwrite input file.
+error TS5055: Cannot write file 'D:/FreelanceAI/packages/core/dist/services/job-leaderboard-ranking.service.d.ts' because it would overwrite input file.
+error TS5055: Cannot write file 'D:/FreelanceAI/packages/core/dist/services/job-match-cache.service.d.ts' because it would overwrite input file.
+error TS5055: Cannot write file 'D:/FreelanceAI/packages/core/dist/services/job-match-explanation.service.d.ts' because it would overwrite input file.
+error TS5055: Cannot write file 'D:/FreelanceAI/packages/core/dist/services/job-matching-engine.service.d.ts' because it would overwrite input file.
+error TS5055: Cannot write file 'D:/FreelanceAI/packages/core/dist/services/job-normalization-engine.service.d.ts' because it would overwrite input file.
+error TS5055: Cannot write file 'D:/FreelanceAI/packages/core/dist/services/job-orchestrator.service.d.ts' because it would overwrite input file.
+error TS5055: Cannot write file 'D:/FreelanceAI/packages/core/dist/services/outbox-worker.d.ts' because it would overwrite input file.
+error TS5055: Cannot write file 'D:/FreelanceAI/packages/core/dist/services/pricing-intelligence-engine.d.ts' because it would overwrite input file.
+error TS5055: Cannot write file 'D:/FreelanceAI/packages/core/dist/services/prompt-template-engine.d.ts' because it would overwrite input file.
+error TS5055: Cannot write file 'D:/FreelanceAI/packages/core/dist/services/re-ranking-engine.d.ts' because it would overwrite input file.
+error TS5055: Cannot write file 'D:/FreelanceAI/packages/core/dist/services/rewrite-engine.service.d.ts' because it would overwrite input file.
+error TS5055: Cannot write file 'D:/FreelanceAI/packages/core/dist/services/scope-extraction-engine.d.ts' because it would overwrite input file.
+error TS5055: Cannot write file 'D:/FreelanceAI/packages/core/dist/services/scope-rules-engine.d.ts' because it would overwrite input file.
+error TS5055: Cannot write file 'D:/FreelanceAI/packages/core/dist/services/tone-engine.service.d.ts' because it would overwrite input file.
+error TS5055: Cannot write file 'D:/FreelanceAI/packages/core/dist/services/vector-search-engine.d.ts' because it would overwrite input file.
+error TS5055: Cannot write file 'D:/FreelanceAI/packages/core/dist/stripe.d.ts' because it would overwrite input file.
+error TS5055: Cannot write file 'D:/FreelanceAI/packages/core/dist/subscribers/embedding-subscriber.d.ts' because it would overwrite input file.
+error TS5055: Cannot write file 'D:/FreelanceAI/packages/core/dist/timeline-search.d.ts' because it would overwrite input file.
+error TS5055: Cannot write file 'D:/FreelanceAI/packages/core/dist/timeline.d.ts' because it would overwrite input file.
+error TS5055: Cannot write file 'D:/FreelanceAI/packages/core/dist/trial.d.ts' because it would overwrite input file.
+error TS5055: Cannot write file 'D:/FreelanceAI/packages/core/dist/unified-search.d.ts' because it would overwrite input file.
+error TS5055: Cannot write file 'D:/FreelanceAI/packages/core/dist/validation.d.ts' because it would overwrite input file.
+error TS5055: Cannot write file 'D:/FreelanceAI/packages/core/dist/vector-search.d.ts' because it would overwrite input file.
+error TS5055: Cannot write file 'D:/FreelanceAI/packages/core/dist/webhook.d.ts' because it would overwrite input file.
+npm error Lifecycle script `build` failed with error:
+npm error code 2
+npm error path D:\FreelanceAI\packages\core
+npm error workspace @freelanceos/core@0.1.0
+npm error location D:\FreelanceAI\packages\core
+npm error command failed
+npm error command C:\Windows\system32\cmd.exe /d /s /c tsc

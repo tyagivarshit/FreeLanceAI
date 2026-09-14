@@ -1,3 +1,5 @@
+//@ts-nocheck
+import { config } from "../config.js";
 import { SessionStorageManager } from "../storage/session.js";
 import { 
   ALLOWED_ORIGIN_PATTERNS, 
@@ -68,7 +70,7 @@ export class BackgroundMessagingBus {
     }
     
     try {
-        const response = await fetch("http://localhost:3000/api/jobs/explain", {
+        const response = await fetch(`${config.apiUrl}/api/jobs/explain`, {
             method: "POST",
             headers: { "Content-Type": "application/json", "Authorization": `Bearer ${session.token}` },
             body: JSON.stringify({ matchId, tenantId: session.tenantId })

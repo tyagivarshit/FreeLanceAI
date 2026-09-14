@@ -1,4 +1,4 @@
-export { signAccessToken, verifyAccessToken, AuthError, InvalidTokenError, SessionNotFoundError, CredentialNotFoundError, ReplayAttackDetectedError, SessionExpiredError, SessionRevokedError, } from "./token.js";
+export { signAccessToken, verifyAccessToken, AuthError, InvalidTokenError, SessionNotFoundError, CredentialNotFoundError, ReplayAttackDetectedError, SessionExpiredError, SessionRevokedError, signExtensionToken, verifyExtensionToken, } from "./token.js";
 export type { AccessTokenPayload } from "./token.js";
 export { getSessionCookieConfig, serializeCookie, getSessionCookieClearConfig, issueSessionCookie, issueClearSessionCookie, } from "./cookie.js";
 export type { CookieOptions } from "./cookie.js";

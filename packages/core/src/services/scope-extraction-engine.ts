@@ -77,7 +77,6 @@ export class ScopeExtractionEngineService {
       // 3. Upsert to DB with strict composite uniqueness (tenant_id + client_id)
       await db.insert(clientScopes)
         .values({
-          id: crypto.randomUUID(),
           tenantId,
           clientId,
           projectSpecs: safeData,

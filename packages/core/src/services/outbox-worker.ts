@@ -26,7 +26,7 @@ export class OutboxWorker {
       try {
         await this.processPendingEvents();
       } catch (err) {
-        logger.error({ message: "[Outbox Worker] Execution failed", error: err });
+        logger.error({ message: "[Outbox Worker] Execution failed", error: err instanceof Error ? err : new Error(String(err)) });
       } finally {
         if (this.isRunning) {
           this.timerId = setTimeout(loop, pollIntervalMs);
@@ -64,7 +64,7 @@ export class OutboxWorker {
         FOR UPDATE SKIP LOCKED
       `);
 
-      const rows = pendingRows as any[];
+      const rows = (pendingRows as unknown as any).rows ?? (pendingRows as unknown as any[]);
       if (!rows || rows.length === 0) {
         return 0; // Queue empty
       }
@@ -87,14 +87,14 @@ export class OutboxWorker {
               processedAt: new Date(),
               updatedAt: new Date()
             })
-            .where(eq(outboxEvents.id, row.id));
+            .where(eq((outboxEvents as any).id, row.id));
 
           processedCount++;
         } catch (e) {
           // Mark as FAILED to prevent poison pill infinite loops
           logger.error({ 
             message: `[Outbox Worker] Failed to dispatch event ${row.id}`, 
-            error: e 
+            error: e instanceof Error ? e : new Error(String(e)) 
           });
 
           await tx
@@ -103,7 +103,7 @@ export class OutboxWorker {
               status: "FAILED",
               updatedAt: new Date()
             })
-            .where(eq(outboxEvents.id, row.id));
+            .where(eq((outboxEvents as any).id, row.id));
         }
       }
 

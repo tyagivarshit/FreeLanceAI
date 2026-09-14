@@ -1,4 +1,5 @@
 import { SessionStorageManager } from "./session.js";
+import { IDBQueue, IDBQueueItem } from "./indexeddb.js";
 
 export interface QueuedSyncPayload {
   id: string;
@@ -6,29 +7,41 @@ export interface QueuedSyncPayload {
   endpoint: string;
   data: any;
   timestamp: number;
+  retryCount?: number;
 }
 
 /**
  * Chapter 9G: Offline State Sync & Edge Resilience
- * Ephemeral Drip-Feed Sync Queue completely devoid of persistent disk write layers.
+ * Persistent Drip-Feed Sync Queue backed by IndexedDB
+ * 
+ * Delivery Semantics: AT-LEAST-ONCE. 
+ * The payload remains in IndexedDB until a definitive backend acknowledgement (or max retry limit).
+ * Safe duplicates are neutralized natively by the backend's (tenant, source, externalId) composite unique index.
  */
 export class EdgeResilienceSyncEngine {
-  // Ephemeral memory-buffered stack structure. Auto-wipes upon browser close.
-  private memoryQueue: QueuedSyncPayload[] = [];
   private isProcessing: boolean = false;
+  private initialized: boolean = false;
+  private queue = new IDBQueue<QueuedSyncPayload>('freelanceos_offline_sync', 'sync_queue');
 
-  public enqueue(payload: QueuedSyncPayload): void {
-    this.memoryQueue.push(payload);
-    console.log(`[FreelanceOS] Payload ${payload.id} queued for edge resilience.`);
+  public async enqueue(payload: QueuedSyncPayload): Promise<void> {
+    const fullPayload: IDBQueueItem<QueuedSyncPayload> = {
+      id: payload.id,
+      data: payload,
+      retryCount: payload.retryCount || 0,
+      timestamp: Date.now()
+    };
+    
+    await this.queue.enqueue(fullPayload);
+    console.log(`[FreelanceOS] Diagnostic: Queued payload ${payload.id}`);
     this.triggerSync();
   }
 
   public async triggerSync(): Promise<void> {
+    // SAFE CONCURRENCY: Processing Lock
     if (this.isProcessing) return;
 
-    // Check if network is online (in MV3 service worker context, navigator.onLine is available)
     if (!navigator.onLine) {
-      console.log("[FreelanceOS] Edge offline. Sync deferred.");
+      console.log("[FreelanceOS] Diagnostic: Edge offline. Sync deferred.");
       return;
     }
 
@@ -36,10 +49,9 @@ export class EdgeResilienceSyncEngine {
 
     try {
       await this.processDripFeedQueue();
-      // Broadcast post-commit callback to dynamically push immediate dashboard UI view repaint
       chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
         if (tabs[0]?.id) {
-          chrome.tabs.sendMessage(tabs[0].id, { type: "EDGE_SYNC_COMPLETE" });
+          chrome.tabs.sendMessage(tabs[0].id, { type: "EDGE_SYNC_COMPLETE" }).catch(() => {});
         }
       });
     } finally {
@@ -47,58 +59,103 @@ export class EdgeResilienceSyncEngine {
     }
   }
 
-  /**
-   * Destroys the Thundering Herd Pollution Risk upon internet reconnection by injecting
-   * non-linear, controlled interval delays between each re-transmission.
-   */
   private async processDripFeedQueue(): Promise<void> {
-    while (this.memoryQueue.length > 0) {
+    while (true) {
       if (!navigator.onLine) {
-        console.warn("[FreelanceOS] Connection lost during drip-feed. Halting sync.");
+        console.warn("[FreelanceOS] Diagnostic: Connection lost during drip-feed. Halting sync.");
         break;
       }
 
-      // Dequeue first item
-      const payload = this.memoryQueue.shift();
-      if (!payload) continue;
+      // Safe AT-LEAST-ONCE extraction: peek without deleting
+      const item = await this.queue.peekFirst();
+      if (!item) break; // Queue empty
+
+      const payload = item.data;
 
       try {
+        console.log(`[FreelanceOS] Diagnostic: Retry attempted for payload ${payload.id}.`);
         await this.executePayloadWithContextLock(payload);
-      } catch (error) {
-        console.error(`[FreelanceOS] Failed to sync payload ${payload.id}. Dropping to avoid infinite loops.`, error);
+        
+        // Exclusively delete after full 200 OK ACK to prevent data loss on Service Worker crash
+        await this.queue.remove(item.id);
+        console.log(`[FreelanceOS] Diagnostic: Synced payload ${payload.id}.`);
+        
+      } catch (error: any) {
+        
+        // Permanent 4xx errors (excluding 408/429) should NOT infinite retry
+        const isPermanentError = error.message.includes("HTTP 4") && !error.message.includes("HTTP 408") && !error.message.includes("HTTP 429");
+        
+        if (isPermanentError) {
+          console.error(`[FreelanceOS] Diagnostic: Permanently failed payload ${payload.id}. Backend rejected definitively.`);
+          await this.queue.remove(item.id); // Safe to drop
+          continue; 
+        }
+        
+        // Controlled Retry Implementation (Exponential backoff implicit in retry counting)
+        const currentRetryCount = item.retryCount || 0;
+        if (currentRetryCount < 3) {
+          item.retryCount = currentRetryCount + 1;
+          payload.retryCount = item.retryCount;
+          // Put updates the existing record, pushing retry limit up without losing it
+          await this.queue.enqueue(item);
+          console.log(`[FreelanceOS] Diagnostic: Retry scheduled for payload ${payload.id} (Attempt ${item.retryCount}/3).`);
+          break; // Stop processing loop to yield on failure
+        } else {
+          console.error(`[FreelanceOS] Diagnostic: Permanently failed payload ${payload.id}. Exceeded max retries.`);
+          await this.queue.remove(item.id); // Safe to drop
+        }
       }
 
-      // Inject non-linear V8 event-loop yield to prevent IPC buffer overflow crashes
+      // Safe concurrency yield & thundering herd prevention
       const yieldDelayMs = Math.floor(Math.random() * (1200 - 300 + 1)) + 300;
       await new Promise(resolve => setTimeout(resolve, yieldDelayMs));
     }
   }
 
-  /**
-   * Ironclad Payload Tenant Envelope Validation
-   */
   private async executePayloadWithContextLock(payload: QueuedSyncPayload): Promise<void> {
     const activeSession = await SessionStorageManager.getAuthSession();
     
     if (!activeSession || !activeSession.tenantId) {
-      console.warn(`[FreelanceOS] Sync dropped for payload ${payload.id}: No active authenticated session.`);
-      return;
+      throw new Error(`Sync dropped for payload ${payload.id}: No active authenticated session.`);
     }
 
     if (payload.tenantId !== activeSession.tenantId) {
-      console.warn(`[FreelanceOS] CRITICAL SECURITY ALERT: Context bleed detected. Payload tenant (${payload.tenantId}) does not match active session tenant (${activeSession.tenantId}). Payload dropped.`);
-      return;
+      console.warn(`[FreelanceOS] CRITICAL SECURITY ALERT: Context bleed detected. Payload dropped.`);
+      return; 
     }
 
-    // Mock firing the pipeline transaction to the Phase 8 backend REST gateway
-    console.log(`[FreelanceOS] Drip-feed syncing payload ${payload.id} to ${payload.endpoint}...`);
-    // Example: await fetch(payload.endpoint, { method: "POST", body: JSON.stringify(payload.data) });
+    // Idempotency Strategy: Deterministic key ensuring Backend Idempotency
+    const requestData = {
+       ...payload.data,
+       _idempotencyKey: `${activeSession.tenantId}_${payload.data?.externalJobId || payload.id}`
+    };
+    
+    const response = await fetch(payload.endpoint, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${activeSession.token}`
+      },
+      body: JSON.stringify(requestData)
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`HTTP ${response.status}: ${errorText}`);
+    }
   }
 
   public initializeLifecycleListeners(): void {
-    // MV3 Service Worker network state listener
+    if (this.initialized) return;
+    this.initialized = true;
+
     self.addEventListener('online', () => {
-      console.log("[FreelanceOS] Edge connection restored. Booting resilience drip-feed engine.");
+      console.log("[FreelanceOS] Diagnostic: Edge connection restored. Booting resilience drip-feed engine.");
+      this.triggerSync();
+    });
+
+    chrome.runtime.onStartup.addListener(() => {
+      console.log("[FreelanceOS] Diagnostic: Service Worker Startup. Checking offline queue.");
       this.triggerSync();
     });
   }

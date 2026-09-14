@@ -134,3 +134,21 @@ export function compareRefreshTokenHashes(hashA: string, hashB: string): boolean
 
   return crypto.timingSafeEqual(bufferA, bufferB);
 }
+export function signExtensionToken(userId: string, email: string, sessionId: string): string {
+  return jwt.sign({ userId, email, sessionId, scope: "extension" }, runtimeConfig.JWT_SECRET, {
+    algorithm: "HS256",
+    expiresIn: "12h",
+  });
+}
+
+export function verifyExtensionToken(token: string): { userId: string, email: string, sessionId: string } {
+  try {
+    const decoded = jwt.verify(token, runtimeConfig.JWT_SECRET, { algorithms: ["HS256"] }) as jwt.JwtPayload;
+    if (decoded.scope !== "extension") {
+      throw new InvalidTokenError("Invalid token scope", "INVALID");
+    }
+    return { userId: decoded.userId, email: decoded.email, sessionId: decoded.sessionId };
+  } catch (error) {
+    throw new InvalidTokenError("Extension token is invalid", "INVALID");
+  }
+}

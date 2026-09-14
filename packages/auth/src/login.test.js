@@ -1,0 +1,321 @@
+import { test, describe, beforeEach, afterEach } from "node:test";
+import assert from "node:assert";
+import { db, users, userPasswordHashes, sessions } from "@freelanceos/db";
+import { runtimeConfig } from "@freelanceos/config";
+console.log("DEBUG TOP LEVEL ENV:", process.env.NODE_ENV, "FROZEN:", Object.isFrozen(runtimeConfig));
+import { loginUser, AccountLockedError, AccountSuspendedError, AccountDisabledError, PendingVerificationError, AuthenticationFailureError, } from "./index.js";
+import { getFailedAttemptsMapForTesting } from "./login.js";
+const originalSelect = db.select;
+const originalInsert = db.insert;
+const originalUpdate = db.update;
+describe("Login Use Case & Flow Security Tests", () => {
+    let selectMockResult = [];
+    let sessionsMockResult = [];
+    let updateCalled = false;
+    let updateParams = null;
+    let insertCalled = false;
+    let insertedSessionParams = null;
+    let realPasswordHash = "";
+    let realAlgorithm = "";
+    let realHashVersion = "";
+    beforeEach(async () => {
+        selectMockResult = [];
+        sessionsMockResult = [];
+        updateCalled = false;
+        updateParams = null;
+        insertCalled = false;
+        insertedSessionParams = null;
+        getFailedAttemptsMapForTesting().clear();
+        const { hashPassword } = await import("./hash.js");
+        const pwdResult = await hashPassword("ComplexPass123!");
+        realPasswordHash = pwdResult.passwordHash;
+        realAlgorithm = pwdResult.algorithm;
+        realHashVersion = pwdResult.hashVersion;
+        // Mock select globally to isolate logins
+        // @ts-expect-error db.select is read-only
+        db.select = function () {
+            return {
+                from: (table) => ({
+                    where: () => {
+                        const queryPromise = Promise.resolve(table === users
+                            ? selectMockResult
+                            : table === userPasswordHashes
+                                ? [
+                                    {
+                                        userId: "mock-user-uuid",
+                                        passwordHash: realPasswordHash,
+                                        algorithm: realAlgorithm,
+                                        hashVersion: realHashVersion,
+                                        credentialVersion: 1,
+                                    },
+                                ]
+                                : table === sessions
+                                    ? sessionsMockResult
+                                    : []);
+                        // @ts-expect-error chaining helper
+                        queryPromise.limit = () => queryPromise;
+                        return queryPromise;
+                    },
+                }),
+            };
+        };
+        // Mock insert globally
+        // @ts-expect-error db.insert is read-only
+        db.insert = function (table) {
+            return {
+                values: (values) => {
+                    insertCalled = true;
+                    if (table === sessions) {
+                        insertedSessionParams = values;
+                    }
+                    return {
+                        returning: () => Promise.resolve([{ id: "mock-session-uuid" }]),
+                    };
+                },
+            };
+        };
+        // Mock update globally
+        // @ts-expect-error db.update is read-only
+        db.update = function (table) {
+            return {
+                set: (params) => {
+                    updateCalled = true;
+                    updateParams = { table, params };
+                    return {
+                        where: () => Promise.resolve(),
+                    };
+                },
+            };
+        };
+        // Force default configuration values
+        // Mutating config removed to prevent race conditions
+        // @ts-expect-error runtimeConfig properties are read-only
+        runtimeConfig.CONFIG_LOCKOUT_DURATION_SEC = 900;
+        // @ts-expect-error runtimeConfig properties are read-only
+        runtimeConfig.CONFIG_REQUIRE_VERIFICATION_FOR_SESSION = false;
+        // @ts-expect-error runtimeConfig properties are read-only
+        runtimeConfig.CONFIG_MAX_CONCURRENT_SESSIONS = 2;
+        // @ts-expect-error runtimeConfig properties are read-only
+        runtimeConfig.CONFIG_CONCURRENT_SESSION_STRATEGY = "revoke_oldest";
+    });
+    afterEach(() => {
+        db.select = originalSelect;
+        db.insert = originalInsert;
+        db.update = originalUpdate;
+    });
+    test("should authenticate successfully with correct credentials and active status", async () => {
+        console.log("DEBUG ENV:", process.env.NODE_ENV, "FROZEN:", Object.isFrozen(runtimeConfig));
+        selectMockResult = [
+            {
+                id: "mock-user-uuid",
+                email: "test@gmail.com",
+                normalizedEmail: "test@gmail.com",
+                status: "active",
+                createdAt: new Date(),
+            },
+        ];
+        const result = await loginUser({
+            email: "test@gmail.com",
+            password: "ComplexPass123!",
+            sessionMetadata: {
+                userAgent: "mocha",
+                ipAddress: "127.0.0.1",
+                platform: "Mac",
+                browser: "Chrome",
+            },
+        });
+        assert.strictEqual(result.user.id, "mock-user-uuid");
+        assert.strictEqual(result.user.status, "active");
+        assert.ok(result.tokens?.signedAccessToken);
+        assert.ok(result.tokens?.refreshToken);
+        assert.strictEqual(insertCalled, true);
+        assert.strictEqual(insertedSessionParams?.userId, "mock-user-uuid");
+    });
+    test("should fail with AuthenticationFailureError for unregistered emails (Timing Protection Path)", async () => {
+        selectMockResult = [];
+        await assert.rejects(loginUser({
+            email: "unknown@gmail.com",
+            password: "WrongPassword!",
+            sessionMetadata: {
+                userAgent: "mocha",
+                ipAddress: "127.0.0.1",
+            },
+        }), (err) => {
+            assert.ok(err instanceof AuthenticationFailureError);
+            return true;
+        });
+    });
+    test("should fail with AccountSuspendedError if user status is suspended", async () => {
+        selectMockResult = [
+            {
+                id: "mock-user-uuid",
+                email: "suspended@gmail.com",
+                normalizedEmail: "suspended@gmail.com",
+                status: "suspended",
+                createdAt: new Date(),
+            },
+        ];
+        await assert.rejects(loginUser({
+            email: "suspended@gmail.com",
+            password: "ComplexPass123!",
+            sessionMetadata: {
+                userAgent: "mocha",
+                ipAddress: "127.0.0.1",
+            },
+        }), (err) => {
+            assert.ok(err instanceof AccountSuspendedError);
+            return true;
+        });
+    });
+    test("should fail with AccountDisabledError if user status is disabled", async () => {
+        selectMockResult = [
+            {
+                id: "mock-user-uuid",
+                email: "disabled@gmail.com",
+                normalizedEmail: "disabled@gmail.com",
+                status: "disabled",
+                createdAt: new Date(),
+            },
+        ];
+        await assert.rejects(loginUser({
+            email: "disabled@gmail.com",
+            password: "ComplexPass123!",
+            sessionMetadata: {
+                userAgent: "mocha",
+                ipAddress: "127.0.0.1",
+            },
+        }), (err) => {
+            assert.ok(err instanceof AccountDisabledError);
+            return true;
+        });
+    });
+    test("should fail with PendingVerificationError if user status is pending and verification is required", async () => {
+        // @ts-expect-error runtimeConfig properties are read-only
+        runtimeConfig.CONFIG_REQUIRE_VERIFICATION_FOR_SESSION = true;
+        selectMockResult = [
+            {
+                id: "mock-user-uuid",
+                email: "pending@gmail.com",
+                normalizedEmail: "pending@gmail.com",
+                status: "pending",
+                createdAt: new Date(),
+            },
+        ];
+        await assert.rejects(loginUser({
+            email: "pending@gmail.com",
+            password: "ComplexPass123!",
+            sessionMetadata: {
+                userAgent: "mocha",
+                ipAddress: "127.0.0.1",
+            },
+        }), (err) => {
+            assert.ok(err instanceof PendingVerificationError);
+            return true;
+        });
+    });
+    test("should track failed attempts and lock account upon hitting attempts threshold", async () => {
+        selectMockResult = [
+            {
+                id: "mock-user-uuid",
+                email: "bruteforce@gmail.com",
+                normalizedEmail: "bruteforce@gmail.com",
+                status: "active",
+                createdAt: new Date(),
+            },
+        ];
+        const email = "bruteforce@gmail.com";
+        // First failure
+        await assert.rejects(loginUser({
+            email,
+            password: "WrongPassword1!",
+            sessionMetadata: { userAgent: "mocha", ipAddress: "127.0.0.1" },
+        }), AuthenticationFailureError);
+        assert.strictEqual(getFailedAttemptsMapForTesting().get(email)?.count, 1);
+        assert.strictEqual(updateCalled, false);
+        // Second failure
+        await assert.rejects(loginUser({
+            email,
+            password: "WrongPassword2!",
+            sessionMetadata: { userAgent: "mocha", ipAddress: "127.0.0.1" },
+        }), AuthenticationFailureError);
+        assert.strictEqual(getFailedAttemptsMapForTesting().get(email)?.count, 2);
+        assert.strictEqual(updateCalled, false);
+        // Third failure
+        await assert.rejects(loginUser({
+            email,
+            password: "WrongPassword3!",
+            sessionMetadata: { userAgent: "mocha", ipAddress: "127.0.0.1" },
+        }), AuthenticationFailureError);
+        // Fourth failure
+        await assert.rejects(loginUser({
+            email,
+            password: "WrongPassword4!",
+            sessionMetadata: { userAgent: "mocha", ipAddress: "127.0.0.1" },
+        }), AuthenticationFailureError);
+        // Fifth failure - locks account
+        await assert.rejects(loginUser({
+            email,
+            password: "WrongPassword5!",
+            sessionMetadata: { userAgent: "mocha", ipAddress: "127.0.0.1" },
+        }), AuthenticationFailureError);
+        const tracker = getFailedAttemptsMapForTesting().get(email);
+        assert.strictEqual(tracker?.count, undefined); // It is deleted on lockout!
+        // Verify DB update status set to locked
+        assert.strictEqual(updateCalled, true);
+        assert.strictEqual(updateParams?.table, users);
+        assert.ok(updateParams?.params.lockedUntil instanceof Date);
+        // Update the mock to simulate the DB having saved the lockedUntil date
+        selectMockResult[0].lockedUntil = updateParams?.params.lockedUntil;
+        // Fourth attempt immediately throws AccountLockedError
+        await assert.rejects(loginUser({
+            email,
+            password: "ComplexPass123!", // Must provide correct password to bypass generic failure and hit lock check
+            sessionMetadata: { userAgent: "mocha", ipAddress: "127.0.0.1" },
+        }), AccountLockedError);
+    });
+    test("should revoke oldest active sessions if max sessions limit is exceeded", async () => {
+        selectMockResult = [
+            {
+                id: "mock-user-uuid",
+                email: "concurrency@gmail.com",
+                normalizedEmail: "concurrency@gmail.com",
+                status: "active",
+                createdAt: new Date(),
+            },
+        ];
+        sessionsMockResult = [
+            { id: "sess-1", lastActivityAt: new Date(Date.now() - 50000) },
+            { id: "sess-2", lastActivityAt: new Date(Date.now() - 40000) },
+            { id: "sess-3", lastActivityAt: new Date(Date.now() - 30000) },
+            { id: "sess-4", lastActivityAt: new Date(Date.now() - 20000) },
+            { id: "sess-5", lastActivityAt: new Date() },
+        ];
+        let updateCount = 0;
+        const updatedSessionIds = [];
+        // Mock update globally
+        // @ts-expect-error db.update is read-only
+        db.update = function () {
+            return {
+                set: () => {
+                    return {
+                        where: () => {
+                            updateCount++;
+                            updatedSessionIds.push("sess-1");
+                            return Promise.resolve();
+                        },
+                    };
+                },
+            };
+        };
+        await loginUser({
+            email: "concurrency@gmail.com",
+            password: "ComplexPass123!",
+            sessionMetadata: {
+                userAgent: "mocha",
+                ipAddress: "127.0.0.1",
+            },
+        });
+        assert.ok(updateCount > 0);
+        assert.ok(updatedSessionIds.includes("sess-1"));
+    });
+});

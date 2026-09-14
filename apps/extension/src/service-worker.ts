@@ -144,53 +144,200 @@ async function executeApiRequest<T>(
   }
 }
 
+
+import { SessionStorageManager } from "./storage/session.js";
+
+function generateCodeVerifier() {
+  const array = new Uint8Array(32);
+  crypto.getRandomValues(array);
+  return Array.from(array, dec => ('0' + dec.toString(16)).substr(-2)).join('');
+}
+
+async function generateCodeChallenge(verifier: string) {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(verifier);
+  const hash = await crypto.subtle.digest('SHA-256', data);
+  const bytes = new Uint8Array(hash);
+  let str = '';
+  for (let i = 0; i < bytes.byteLength; i++) {
+    str += String.fromCharCode(bytes[i] as number);
+  }
+  return btoa(str).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+
+dispatcher.registerHandler("AUTHORIZE_EXTENSION", async () => {
+  console.log("[AUTH_TRACE] service worker handler entered");
+  
+  const verifier = generateCodeVerifier();
+  const challenge = await generateCodeChallenge(verifier);
+  console.log("[AUTH_TRACE] PKCE generated");
+  
+  const authUrl = `${config.apiUrl}/api/extension/authorize?challenge=${challenge}`;
+  console.log("[AUTH_TRACE] authorization URL origin/path", new URL(authUrl).origin, new URL(authUrl).pathname);
+  
+  console.log("[AUTH_TRACE] tabs.create started");
+  
+  // Create tab but DO NOT await the entire flow
+  chrome.tabs.create({ url: authUrl }, (tab) => {
+    if (chrome.runtime.lastError || !tab || !tab.id) {
+      console.log("[AUTH_TRACE] tabs.create rejected");
+      return;
+    }
+    
+    console.log("[AUTH_TRACE] tabs.create succeeded, tab id =", tab.id);
+    const tabId = tab.id as number;
+    let finished = false;
+    
+    const cleanup = () => {
+      if (finished) return false;
+        finished = true;
+      chrome.tabs.onUpdated.removeListener(updateListener);
+      chrome.tabs.onRemoved.removeListener(removeListener);
+        return true;
+      };
+
+    const removeListener = (removedTabId: number) => {
+      if (removedTabId === tabId && !finished) {
+        cleanup();
+        console.log("[AUTH_TRACE] Tab closed by user");
+      }
+    };
+
+    const updateListener = async (updatedTabId: number, _info: chrome.tabs.TabChangeInfo) => {
+      if (updatedTabId !== tabId) return;
+
+      let currentTab;
+      try {
+        currentTab = await chrome.tabs.get(tabId);
+      } catch (e) {
+        return; // Tab no longer exists or inaccessible
+      }
+
+      if (!currentTab.url) return;
+
+      let url;
+      try { 
+        url = new URL(currentTab.url); 
+      } catch(e) { 
+        return; 
+      }
+
+      if (url.origin === new URL(config.apiUrl).origin && url.pathname === '/api/extension/callback') {
+        const hashParams = new URLSearchParams(url.hash.substring(1));
+        const authCode = hashParams.get("code");
+        const authError = hashParams.get("error");
+
+        if (!authCode && !authError) {
+          console.log("[AUTH_TRACE] Callback base URL detected, waiting for fragment");
+          return;
+        }
+
+        // Terminal state reached, only cleanup now
+        if (!cleanup()) return;
+
+        console.log("[AUTH_TRACE] callback terminal state detected");
+        chrome.tabs.remove(tabId).catch(() => {});
+
+        if (authError) {
+          console.log("[AUTH_TRACE] Callback error=" + authError);
+          return;
+        }
+
+        console.log("[AUTH_TRACE] exchange started");
+        try {
+          const res = await fetch(`${config.apiUrl}/api/extension/exchange`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ code: authCode, verifier })
+          });
+          
+          console.log("[AUTH_TRACE] exchange response status", res.status);
+          
+          if (!res.ok) {
+            console.log("[AUTH_TRACE] Exchange failed");
+            return;
+          }
+          
+          const data = await res.json();
+          if (data.success && data.token && data.tenantId) {
+            await SessionStorageManager.setAuthToken(data.token, data.tenantId);
+            console.log("[AUTH_TRACE] token stored successfully");
+          }
+        } catch (e: any) {
+          console.log("[AUTH_TRACE] Backend unavailable", e.message);
+        }
+      }
+    };
+      
+      chrome.tabs.onUpdated.addListener(updateListener);
+    chrome.tabs.onRemoved.addListener(removeListener);
+    console.log("[AUTH_TRACE] onUpdated listener registered");
+  });
+
+  // Resolve immediately so the popup receives success for the "request" part
+  console.log("[AUTH_TRACE] handler resolved immediately");
+  return { success: true, status: "STARTED" };
+});
+
 // Register dispatcher handlers
 dispatcher.registerHandler("EXTRACT_JOB", async (payload: unknown) => {
-  // Reject mutations immediately if offline
-  if (!currentOfflineStatus.isOnline) {
-    throw new Error("Job extraction is unavailable in offline mode.");
-  }
-
-  const ctx = validateContext(payload);
-  const adapter = reg.resolve(ctx);
-  const result = await reg.executeExtract(adapter, ctx);
-
-  if (result.status === "SUCCESS" && result.jobId) {
-    try {
-      await fetch(`${config.apiUrl}/api/jobs/import`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify(result),
-      });
-    } catch (err) {
-      console.error("[Service Worker] Failed to forward extraction to backend contract:", err);
+    // Reject mutations immediately if offline
+    if (!currentOfflineStatus.isOnline) {
+      throw new Error("Job extraction is unavailable in offline mode.");
     }
-  }
-  return result;
-});
+  
+    const ctx = validateContext(payload);
+    const adapter = reg.resolve(ctx);
+    const result = await reg.executeExtract(adapter, ctx);
+  
+    if (result.status === "SUCCESS" && result.jobId) {
+      try {
+        const session = await SessionStorageManager.getAuthSession();
+        if (!session.token || !session.tenantId) {
+           throw new Error("Missing auth fingerprint.");
+        }
+        await fetch(`${config.apiUrl}/api/jobs/import`, {
+          method: "POST",
+          headers: { 
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${session.token}`
+          },
+          body: JSON.stringify({ ...result, tenantId: session.tenantId }),
+        });
+      } catch (err) {
+        console.error("[Service Worker] Failed to forward extraction to backend contract:", err);
+      }
+    }
+    return result;
+  });
 
 dispatcher.registerHandler("JOB_DETECTED", async (payload: unknown) => {
-  if (!currentOfflineStatus.isOnline) {
-    throw new Error("Job detection is disabled in offline mode.");
-  }
-
-  const data = payload as { jobId: string; title: string; url: string };
-  console.log(`[Service Worker] Job detected: ${data.jobId} - ${data.title}`);
-
-  try {
-    await fetch(`${config.apiUrl}/api/jobs/detect`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      credentials: "include",
-      body: JSON.stringify(data),
-    });
-  } catch (err) {
-    console.error("[Service Worker] Failed to forward job detection to backend:", err);
-  }
-
-  return { status: "ACK" };
-});
+    if (!currentOfflineStatus.isOnline) {
+      throw new Error("Job detection is disabled in offline mode.");
+    }
+  
+    const data = payload as { jobId: string; title: string; url: string };
+    console.log(`[Service Worker] Job detected: ${data.jobId} - ${data.title}`);
+  
+    try {
+      const session = await SessionStorageManager.getAuthSession();
+      if (!session.token || !session.tenantId) {
+         throw new Error("Missing auth fingerprint.");
+      }
+      await fetch(`${config.apiUrl}/api/jobs/detect`, {
+        method: "POST",
+        headers: { 
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${session.token}`
+        },
+        body: JSON.stringify(data),
+      });
+    } catch (err) {
+      console.error("[Service Worker] Failed to forward job detection to backend:", err);
+    }
+  
+    return { status: "ACK" };
+  });
 
 dispatcher.registerHandler("PING", async () => {
   return "PONG";

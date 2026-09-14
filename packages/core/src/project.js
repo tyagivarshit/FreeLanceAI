@@ -206,7 +206,7 @@ export class Project {
     }
     cancel(ownerId) {
         this.verifyOwnership(ownerId);
-        if (this._status !== "Active" && this._status !== "Paused") {
+        if (this._status === "Completed" || this._status === "Archived" || this._status === "Cancelled") {
             throw new Error(`Cannot cancel project in status: ${this._status}`);
         }
         this._status = "Cancelled";
@@ -224,7 +224,7 @@ export class Project {
     }
     updateDetails(ownerId, metadata, visibility) {
         this.verifyOwnership(ownerId);
-        if (this._status !== "Draft" && this._status !== "Planned") {
+        if (this._status === "Completed" || this._status === "Archived" || this._status === "Cancelled") {
             throw new Error(`Cannot modify project details in status: ${this._status}`);
         }
         this._metadata = metadata;
@@ -243,6 +243,9 @@ export class Project {
     validateInvariants() {
         if (!this._projectId || this._projectId.trim() === "") {
             throw new Error("Project ID is required.");
+        }
+        if (!this._tenantId || this._tenantId.trim() === "") {
+            throw new Error("Tenant ID is required.");
         }
         if (!this._clientId || this._clientId.trim() === "") {
             throw new Error("Client ID reference is required.");

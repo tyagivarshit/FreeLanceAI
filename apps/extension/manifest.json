@@ -8,13 +8,13 @@
   },
   "options_page": "src/options.html",
   "background": {
-    "service_worker": "dist/src/service-worker.js",
+    "service_worker": "src/service-worker.js",
     "type": "module"
   },
   "content_scripts": [
     {
       "matches": ["https://*.upwork.com/*", "https://*.linkedin.com/*"],
-      "js": ["dist/src/content-script.js"],
+      "js": ["src/content-script.js"],
       "run_at": "document_idle"
     }
   ],

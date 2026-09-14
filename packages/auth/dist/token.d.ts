@@ -55,4 +55,10 @@ export declare function hashRefreshToken(token: string): string;
  * Performs a constant-time comparison of two token hashes to prevent timing attacks.
  */
 export declare function compareRefreshTokenHashes(hashA: string, hashB: string): boolean;
+export declare function signExtensionToken(userId: string, email: string, sessionId: string): string;
+export declare function verifyExtensionToken(token: string): {
+    userId: string;
+    email: string;
+    sessionId: string;
+};
 //# sourceMappingURL=token.d.ts.map

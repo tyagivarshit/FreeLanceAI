@@ -123,4 +123,22 @@ export function compareRefreshTokenHashes(hashA, hashB) {
     }
     return crypto.timingSafeEqual(bufferA, bufferB);
 }
+export function signExtensionToken(userId, email, sessionId) {
+    return jwt.sign({ userId, email, sessionId, scope: "extension" }, runtimeConfig.JWT_SECRET, {
+        algorithm: "HS256",
+        expiresIn: "12h",
+    });
+}
+export function verifyExtensionToken(token) {
+    try {
+        const decoded = jwt.verify(token, runtimeConfig.JWT_SECRET, { algorithms: ["HS256"] });
+        if (decoded.scope !== "extension") {
+            throw new InvalidTokenError("Invalid token scope", "INVALID");
+        }
+        return { userId: decoded.userId, email: decoded.email, sessionId: decoded.sessionId };
+    }
+    catch (error) {
+        throw new InvalidTokenError("Extension token is invalid", "INVALID");
+    }
+}
 //# sourceMappingURL=token.js.map

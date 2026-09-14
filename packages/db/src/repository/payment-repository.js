@@ -61,7 +61,7 @@ export class PostgresPaymentRepository {
             return null;
         return this.mapToDomain(rows[0]);
     }
-    async checkUniqueIntent(ownerId, paymentReference, paymentId) {
+    async checkUniqueIntent(_ownerId, _paymentReference, _paymentId) {
         // We don't actually need this pre-check because save() relies on the unique constraint!
         // But we satisfy the interface just in case.
         // In our new model, uniqueness is per tenant, but ownerId isn't necessarily tenantId, 

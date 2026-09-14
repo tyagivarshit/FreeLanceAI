@@ -2,3 +2,12 @@
 > @freelanceos/redis@0.1.0 typecheck
 > tsc --noEmit
 
+src/cache-store.ts(1,28): error TS2307: Cannot find module '@freelanceos/core' or its corresponding type declarations.
+src/usage-repository.ts(1,33): error TS2307: Cannot find module '@freelanceos/core' or its corresponding type declarations.
+npm error Lifecycle script `typecheck` failed with error:
+npm error code 2
+npm error path D:\FreelanceAI\packages\redis
+npm error workspace @freelanceos/redis@0.1.0
+npm error location D:\FreelanceAI\packages\redis
+npm error command failed
+npm error command C:\Windows\system32\cmd.exe /d /s /c tsc --noEmit

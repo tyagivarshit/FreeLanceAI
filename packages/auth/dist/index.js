@@ -34,7 +34,7 @@
  *    - Numeric properties (access token lifetime, refresh token lifetime, grace seconds,
  *      cookie name, SameSite flag) are resolved dynamically from `@freelanceos/config`.
  */
-export { signAccessToken, verifyAccessToken, AuthError, InvalidTokenError, SessionNotFoundError, CredentialNotFoundError, ReplayAttackDetectedError, SessionExpiredError, SessionRevokedError, } from "./token.js";
+export { signAccessToken, verifyAccessToken, AuthError, InvalidTokenError, SessionNotFoundError, CredentialNotFoundError, ReplayAttackDetectedError, SessionExpiredError, SessionRevokedError, signExtensionToken, verifyExtensionToken, } from "./token.js";
 export { getSessionCookieConfig, serializeCookie, getSessionCookieClearConfig, issueSessionCookie, issueClearSessionCookie, } from "./cookie.js";
 export { createSession, validateSession, rotateSession, revokeSession, revokeAllSessions, findActiveSession, } from "./session.js";
 export { signupUser, SignupError, DuplicateEmailError, ValidationError, UserCreationError, CredentialCreationError, VerificationCreationError, SignupTransactionError, } from "./signup.js";

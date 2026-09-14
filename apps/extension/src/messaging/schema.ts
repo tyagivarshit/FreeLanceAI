@@ -108,6 +108,7 @@ export function validatePayload(type: string, category: MessageCategory, payload
   }
 
   switch (type) {
+    case "AUTHORIZE_EXTENSION":
     case "PING":
     case "GET_SETTINGS":
     case "TIMEOUT_TEST":

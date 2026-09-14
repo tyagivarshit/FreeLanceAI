@@ -10,6 +10,13 @@ import { validateEnvelope, validatePayload } from "./schema.js";
 
 // Approved Message Registry
 const MESSAGE_REGISTRY: Record<string, MessageDefinition> = {
+  AUTHORIZE_EXTENSION: {
+    type: "AUTHORIZE_EXTENSION",
+    category: "REQUEST",
+    allowedSenders: ["EXTENSION_UI"],
+    allowedReceivers: ["SERVICE_WORKER"],
+    timeoutMs: 300000,
+  },
   PING: {
     type: "PING",
     category: "REQUEST",

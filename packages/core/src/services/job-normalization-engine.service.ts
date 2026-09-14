@@ -1,5 +1,5 @@
 import { Redis } from "ioredis";
-import { db, jobImports, jobImports } from "@freelanceos/db";
+import { db, jobImports } from "@freelanceos/db";
 import { eq, and } from "drizzle-orm";
 import { z } from "zod";
 import crypto from "crypto";
@@ -23,132 +23,103 @@ export interface NormalizationRequest {
 
 /**
  * Chapter 8B: Throttled Semaphore Parsing Engine
- * Normalizes raw external job streams safely into our strict database types.
+ * Enforces rate limits across upstream APIs/AI while securely sandboxing dirty data.
  */
-export class JobNormalizationEngineService {
+export class JobNormalizationEngine {
   private mainRedis: Redis;
-  private workerRedis: Redis;
-
-  // Max 5 concurrent tracks to protect downstream AI APIs from HTTP 429 errors
-  private readonly MAX_CONCURRENT_TRACKS = 5;
+  private throttleRedis: Redis;
+  private readonly MAX_CONCURRENT_PARSES = 10;
 
   constructor(redisUrl: string = process.env.REDIS_URL || "redis://localhost:6379") {
     this.mainRedis = new Redis(redisUrl);
-    this.workerRedis = new Redis(redisUrl);
+    this.throttleRedis = new Redis(redisUrl);
   }
 
-  /**
-   * Pushes the job into the Redis async background queue.
-   */
-  public async enqueueNormalization(request: NormalizationRequest): Promise<string> {
-    const jobId = crypto.randomUUID();
-    const payload = JSON.stringify({ jobId, request });
-    
-    await this.mainRedis.hset(`norm:job:${jobId}`, "status", "Queued");
-    await this.mainRedis.lpush("job_normalization:queue:pending", payload);
-    
-    return jobId;
+  async enqueueNormalization(request: NormalizationRequest): Promise<void> {
+    const { tenantId, jobImportId } = request;
+
+    // 1. Pre-validation checks
+    if (!tenantId || !jobImportId) throw new Error("Missing required fields for Normalization.");
+
+    // 2. Insert onto distributed queue
+    await this.mainRedis.lpush("queue:normalization", JSON.stringify(request));
+    await this.mainRedis.hset(`norm:job:${jobImportId}`, "status", "Queued");
   }
 
-  /**
-   * Executes as a background worker with strict semaphore concurrency pooling.
-   */
-  public async startWorker(signal?: AbortSignal): Promise<void> {
-    console.log("[Job Normalization] Worker online. Awaiting tasks...");
-    
-    let activeExecutions = 0;
-
-    while (!signal?.aborted) {
-      if (activeExecutions >= this.MAX_CONCURRENT_TRACKS) {
-        // Backpressure block if semaphore pool is saturated
-        await new Promise(r => setTimeout(r, 100));
+  async processQueueWorker(): Promise<void> {
+    while (true) {
+      const activeCount = await this.throttleRedis.get("throttle:normalization:active");
+      if (Number(activeCount) >= this.MAX_CONCURRENT_PARSES) {
+        await new Promise((r) => setTimeout(r, 1000));
         continue;
       }
 
+      const jobDataStr = await this.mainRedis.rpop("queue:normalization");
+      if (!jobDataStr) {
+        await new Promise((r) => setTimeout(r, 2000));
+        continue;
+      }
+
+      await this.throttleRedis.incr("throttle:normalization:active");
+
       try {
-        const result = await this.workerRedis.brpop("job_normalization:queue:pending", 1);
-        if (!result) continue;
-
-        activeExecutions++;
-
-        const [_, payloadString] = result;
-        const { jobId, request } = JSON.parse(payloadString);
-
-        // Fire off dynamically without awaiting the loop, creating parallel tracks
-        this.processNormalization(jobId, request).finally(() => {
-          activeExecutions--;
-        });
-      } catch (e) {
-        console.error("[Job Normalization Worker] Error popping queue", e);
-        await new Promise(r => setTimeout(r, 1000));
+        const req: NormalizationRequest = JSON.parse(jobDataStr);
+        await this.executeNormalization(req);
+      } finally {
+        await this.throttleRedis.decr("throttle:normalization:active");
       }
     }
   }
 
-  /**
-   * Primary normalization parser logic.
-   */
-  public async processNormalization(jobId: string, request: NormalizationRequest): Promise<void> {
+  private async executeNormalization(request: NormalizationRequest): Promise<void> {
+    const jobId = request.jobImportId;
     await this.mainRedis.hset(`norm:job:${jobId}`, "status", "Processing");
 
     try {
-      // 1. STRICT TENANT BOUNDARY: Cross-contamination Guard
+      // 1. Fetch unnormalized raw payload
       const [importRecord] = await db
         .select()
         .from(jobImports)
         .where(
           and(
-            eq(jobImports.id, request.jobImportId),
+            eq(jobImports.id, jobId),
             eq(jobImports.tenantId, request.tenantId)
           )
         )
         .limit(1);
 
-      if (!importRecord) {
-        throw new Error("Authorization fault: jobImportId not found or tenant mismatch. Operation force-dropped.");
-      }
+      if (!importRecord) throw new Error("Job Import not found or cross-tenant access denied.");
+      if (importRecord.status !== "RECEIVED") throw new Error("Job already processed.");
 
-      // 2. DYNAMIC JITTER DELAYS
-      // Add random 50-250ms jitter to explicitly prevent bursting the OpenAI/DeepSeek 429 rate limit bucket
-      const jitter = Math.floor(Math.random() * 200) + 50;
-      await new Promise(r => setTimeout(r, jitter));
+      // 2. Emulate AI processing (mocking actual gateway)
+      //    In real life this goes to ReRanking/AI-Gateway
+      const rawText = JSON.stringify(importRecord.rawPayload);
+      const extractedTitle = rawText.substring(0, 50) + "...";
+      const extractedDesc = rawText.substring(0, 100);
 
-      // 3. (Mocked LLM Processing)
-      // Extract from the raw jsonb
-      const rawString = JSON.stringify(importRecord.rawPayload);
-      const extractedData = {
-        title: importRecord.externalJobId + " - Extracted Role",
-        description: rawString.substring(0, 500) + "...",
+      // 3. Strict Zod Boundary
+      const validated = NormalizationSchema.parse({
+        title: extractedTitle,
+        description: extractedDesc,
         budgetMin: 50,
-        budgetMax: 200,
+        budgetMax: 100,
         currency: "USD",
-        tags: ["contract", "backend"],
-        skills: ["nodejs", "typescript"]
-      };
-
-      // 4. SANITIZE VIA ZOD
-      const validated = NormalizationSchema.parse(extractedData);
+        tags: ["software", "ai"],
+        skills: ["typescript", "react"],
+      });
 
       // 5. UPDATE DB TO NORMALIZED
       await db.transaction(async (tx) => {
         // Enforce postgres strictly typed bounds (text[], numeric(12,2))
-        await tx.insert(jobs).values({
-          id: crypto.randomUUID(),
-          tenantId: request.tenantId,
-          ownerId: request.ownerId,
-          sourcePlatform: importRecord.source,
-          externalJobId: importRecord.externalJobId,
-          title: validated.title,
-          description: validated.description,
-          budgetMin: validated.budgetMin ? String(validated.budgetMin) : null,
-          budgetMax: validated.budgetMax ? String(validated.budgetMax) : null,
-          currency: validated.currency || null,
-          tags: validated.tags,
-          skills: validated.skills,
-        }).onConflictDoNothing();
-
-        // Mark import status lifecycle
-        await tx.update(jobImports).set({ status: "IMPORTED" }).where(eq(jobImports.id, importRecord.id));
+        await tx.update(jobImports).set({ 
+          status: "IMPORTED",
+          rawPayload: {
+            title: validated.title,
+            description: validated.description,
+            budget: { type: "fixed", minimum: validated.budgetMin, maximum: validated.budgetMax, currency: validated.currency },
+            skills: validated.skills
+          }
+        }).where(eq(jobImports.id, importRecord.id));
       });
 
       await this.mainRedis.hset(`norm:job:${jobId}`, "status", "Completed");

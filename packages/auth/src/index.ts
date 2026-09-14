@@ -44,7 +44,7 @@ export {
   CredentialNotFoundError,
   ReplayAttackDetectedError,
   SessionExpiredError,
-  SessionRevokedError,
+  SessionRevokedError, signExtensionToken, verifyExtensionToken,
 } from "./token.js";
 export type { AccessTokenPayload } from "./token.js";
 

@@ -17,9 +17,9 @@ function logFail(msg: string) {
 }
 
 // 1. Check Manifest Exists & parses
-const manifestPath = path.join(extensionRoot, "manifest.json");
+const manifestPath = path.join(extensionRoot, "dist", "manifest.json");
 if (!fs.existsSync(manifestPath)) {
-  logFail("manifest.json does not exist in root.");
+  logFail("manifest.json does not exist in dist.");
 }
 
 let manifest: any;
@@ -67,18 +67,10 @@ logSuccess(`Version consistency verified: ${manifest.version}`);
 
 // 5. File Integrity check
 const checkFileExists = (relPath: string) => {
-  // Normalize dist/ references to actual built assets or source files for validation
-  const targetPath = path.join(extensionRoot, relPath);
-  if (relPath.startsWith("dist/")) {
-    // If it's a built JS asset, check both typescript source or transpiled asset
-    const srcPath = path.join(extensionRoot, relPath.replace("dist/", "").replace(/\.js$/, ".ts"));
-    if (!fs.existsSync(targetPath) && !fs.existsSync(srcPath)) {
-      logFail(`Referenced resource does not exist in source or build directory: ${relPath}`);
-    }
-  } else {
-    if (!fs.existsSync(targetPath)) {
-      logFail(`Referenced resource does not exist: ${relPath}`);
-    }
+  // Normalize references to actual built assets for validation
+  const targetPath = path.join(extensionRoot, "dist", relPath);
+  if (!fs.existsSync(targetPath)) {
+    logFail(`Referenced resource does not exist in dist directory: ${relPath}`);
   }
 };
 

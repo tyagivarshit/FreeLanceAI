@@ -1,6 +1,7 @@
 import { AiQueueService } from "./ai-queue-service.js";
 import { AiGatewayService } from "./ai-gateway-service.js";
-import { db, clientProjectPricingEstimates } from "@freelanceos/db";
+import { db, clientProjectPricingEstimates, clients } from "@freelanceos/db";
+import { eq } from "drizzle-orm";
 import { z } from "zod";
 import crypto from "crypto";
 
@@ -74,9 +75,7 @@ export class PricingIntelligenceEngineService {
   ): Promise<void> {
     try {
       // 0. Pre-Flight Tenancy Validation Guard (Cross-Tenant Hardware Bypass Block)
-      const clientRecord = await db.query.clients.findFirst({
-        where: (clients, { eq }) => eq(clients.id, clientId)
-      });
+      const [clientRecord] = await db.select().from(clients).where(eq(clients.id, clientId)).limit(1);
       if (!clientRecord || clientRecord.tenantId !== tenantId) {
         throw new Error(`UnauthorizedAccessException: Tenancy violation detected. Client ${clientId} does not belong to Tenant ${tenantId}.`);
       }
@@ -100,7 +99,6 @@ export class PricingIntelligenceEngineService {
       // 4. Upsert isolated metrics directly to DB avoiding cross-tenant state bleed
       await db.insert(clientProjectPricingEstimates)
         .values({
-          id: crypto.randomUUID(),
           tenantId,
           clientId,
           currencyCode: safePricing.currencyCode,

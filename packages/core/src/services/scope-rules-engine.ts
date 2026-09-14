@@ -1,6 +1,6 @@
 import { AiQueueService } from "./ai-queue-service.js";
 import { AiGatewayService } from "./ai-gateway-service.js";
-import { db, scopeComplianceRules, scopeRuleViolationsLog } from "@freelanceos/db";
+import { db, scopeComplianceRules, scopeRuleViolationsLog, clients } from "@freelanceos/db";
 import { eq, and } from "drizzle-orm";
 import { z } from "zod";
 import crypto from "crypto";
@@ -92,9 +92,7 @@ export class ScopeRulesEngineService {
   ): Promise<void> {
     try {
       // 0. Pre-Flight Tenancy Validation Guard
-      const clientRecord = await db.query.clients.findFirst({
-        where: (clients, { eq }) => eq(clients.id, clientId)
-      });
+      const [clientRecord] = await db.select().from(clients).where(eq(clients.id, clientId)).limit(1);
       if (!clientRecord || clientRecord.tenantId !== tenantId) {
         throw new Error(`UnauthorizedAccessException: Tenancy violation detected. Client ${clientId} does not belong to Tenant ${tenantId}.`);
       }

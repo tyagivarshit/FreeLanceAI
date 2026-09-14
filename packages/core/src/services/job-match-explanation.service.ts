@@ -98,7 +98,7 @@ export class JobMatchExplanationService {
     // Fetch the attached Job
     const [jobRecord] = await db
       .select()
-      .from(jobs)
+      .from(jobImports)
       .where(
         and(
           eq(jobImports.id, matchRecord.jobId),
@@ -136,10 +136,9 @@ export class JobMatchExplanationService {
       // Execute the pre-flight multi-tenant boundary checks
       const { jobRecord, candidateRecord } = await this.validateExplanationAccess(request.tenantId, request.matchId);
 
-      // 3. TOKEN CLIPPING & ASYNC STREAMER
-      // Truncate payloads to absolute 2000 character maximums to eliminate HTTP 400 Context Overflow
-      const safeJobDescription = jobRecord.description.substring(0, 2000);
-      const safeJobTags = (jobRecord.tags || []).join(", ").substring(0, 500);
+      const rawPayload = jobRecord.rawPayload as { description?: string, tags?: string[], title?: string };
+      const safeJobDescription = (rawPayload.description || "").substring(0, 2000);
+      const safeJobTags = (rawPayload.tags || []).join(", ").substring(0, 500);
       
       const safeCandidateProfile = candidateRecord.chunkText.substring(0, 2000);
 
@@ -147,7 +146,7 @@ export class JobMatchExplanationService {
         System: Act as an expert B2B technical recruiter.
         Task: Explain exactly why this candidate is a strong fit for this job based on their metadata. Keep it concise.
         
-        Job Role: ${jobRecord.title}
+        Job Role: ${rawPayload.title}
         Job Tags: ${safeJobTags}
         Job Details: ${safeJobDescription}
         

@@ -61,7 +61,7 @@ export class JobImportStreamEngine {
             // High-performance batch UPSERT utilizing composite index protection
             // Strict max 100 records per transaction loop
             await tx
-              .insert(jobs)
+              .insert(jobImports)
               .values(insertPayloads)
               .onConflictDoNothing({
                 // DO NOTHING guarantees strict protection against multi-tenant data collision

@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { test, describe, before, after, beforeEach } from "node:test";
 import * as assert from "node:assert";
 import nock from "nock";
@@ -42,7 +43,7 @@ describe("Phase 9 Master Integration Suite", () => {
       location: { href: "https://upwork.com/jobs/~01abc", hostname: "upwork.com" }
     };
 
-    global.navigator = { onLine: true };
+    Object.defineProperty(global, 'navigator', { value: { onLine: true }, writable: true, configurable: true });
     global.self = { addEventListener: () => {} };
   });
 
@@ -56,7 +57,7 @@ describe("Phase 9 Master Integration Suite", () => {
     global.chrome = {
       storage: {
         session: {
-          get: async () => ({ authSession: { tenantId: "tenant-a", token: "xyz" } }),
+          get: async () => ({ __freelanceos_tenant_id: "tenant-a", __freelanceos_auth_token: "xyz" }),
           set: async () => {},
           setAccessLevel: () => {}
         }

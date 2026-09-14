@@ -19,9 +19,8 @@ export class PostgresProjectRepository {
                     classification: project.visibility.classification,
                 },
                 status: project.status,
-                updatedAt: project.updatedAt,
             })
-                .where(eq(projects.id, project.projectId))
+                .where(and(eq(projects.id, project.projectId), eq(projects.tenantId, project.tenantId)))
                 .returning({ id: projects.id });
             // If no existing row was updated, it's a new project. 
             // We do a plain insert with NO onConflictDoUpdate.
@@ -45,8 +44,6 @@ export class PostgresProjectRepository {
                         classification: project.visibility.classification,
                     },
                     status: project.status,
-                    createdAt: project.createdAt,
-                    updatedAt: project.updatedAt,
                 });
             }
         }
@@ -77,7 +74,7 @@ export class PostgresProjectRepository {
             return null;
         return this.mapToDomain(rows[0]);
     }
-    async checkUniqueReference(tenantId, projectReference, projectId) {
+    async checkUniqueReference(_tenantId, _projectReference, _projectId) {
         // We rely on DB constraint during save(), this just satisfies the interface if needed elsewhere
         return true;
     }

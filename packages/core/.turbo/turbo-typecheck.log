@@ -2,3 +2,216 @@
 > @freelanceos/core@0.1.0 typecheck
 > tsc --noEmit
 
+src/phase3-integration.test.ts(4,23): error TS2307: Cannot find module 'ioredis-mock' or its corresponding type declarations.
+src/phase3-integration.test.ts(8,3): error TS2305: Module '"./policy.js"' has no exported member 'PolicyEvaluationEngine'.
+src/phase3-integration.test.ts(9,3): error TS2305: Module '"./policy.js"' has no exported member 'PolicyViolationStore'.
+src/phase3-integration.test.ts(10,3): error TS2305: Module '"./policy.js"' has no exported member 'PolicyViolationType'.
+src/phase3-integration.test.ts(10,3): error TS6133: 'PolicyViolationType' is declared but its value is never read.
+src/phase3-integration.test.ts(14,3): error TS2305: Module '"./memory.js"' has no exported member 'MemoryEngine'.
+src/phase3-integration.test.ts(15,3): error TS2305: Module '"./memory.js"' has no exported member 'MemorySessionStore'.
+src/phase3-integration.test.ts(15,3): error TS6133: 'MemorySessionStore' is declared but its value is never read.
+src/phase3-integration.test.ts(16,3): error TS2305: Module '"./memory.js"' has no exported member 'MemoryMessageStore'.
+src/phase3-integration.test.ts(16,3): error TS6133: 'MemoryMessageStore' is declared but its value is never read.
+src/phase3-integration.test.ts(17,3): error TS2305: Module '"./memory.js"' has no exported member 'MemoryCachePort'.
+src/phase3-integration.test.ts(18,3): error TS2305: Module '"./memory.js"' has no exported member 'MemoryMessage'.
+src/phase3-integration.test.ts(18,3): error TS6133: 'MemoryMessage' is declared but its value is never read.
+src/phase3-integration.test.ts(19,3): error TS2305: Module '"./memory.js"' has no exported member 'MemorySession'.
+src/phase3-integration.test.ts(19,3): error TS6133: 'MemorySession' is declared but its value is never read.
+src/phase3-integration.test.ts(23,3): error TS2305: Module '"./embedding.js"' has no exported member 'EmbeddingEngine'.
+src/phase3-integration.test.ts(24,3): error TS2724: '"./embedding.js"' has no exported member named 'EmbeddingStore'. Did you mean 'EmbeddingVector'?
+src/phase3-integration.test.ts(25,3): error TS2305: Module '"./embedding.js"' has no exported member 'EmbeddingProviderPort'.
+src/phase3-integration.test.ts(26,3): error TS2305: Module '"./embedding.js"' has no exported member 'DocumentChunk'.
+src/phase3-integration.test.ts(59,28): error TS6133: 'tenantId' is declared but its value is never read.
+src/phase3-integration.test.ts(59,28): error TS7006: Parameter 'tenantId' implicitly has an 'any' type.
+src/phase3-integration.test.ts(59,38): error TS6133: 'userId' is declared but its value is never read.
+src/phase3-integration.test.ts(59,38): error TS7006: Parameter 'userId' implicitly has an 'any' type.
+src/phase3-integration.test.ts(59,46): error TS7006: Parameter 'type' implicitly has an 'any' type.
+src/phase3-integration.test.ts(59,52): error TS6133: 'content' is declared but its value is never read.
+src/phase3-integration.test.ts(59,52): error TS7006: Parameter 'content' implicitly has an 'any' type.
+src/phase3-integration.test.ts(78,28): error TS6133: 'tenantId' is declared but its value is never read.
+src/phase3-integration.test.ts(78,28): error TS7006: Parameter 'tenantId' implicitly has an 'any' type.
+src/phase3-integration.test.ts(78,38): error TS6133: 'userId' is declared but its value is never read.
+src/phase3-integration.test.ts(78,38): error TS7006: Parameter 'userId' implicitly has an 'any' type.
+src/phase3-integration.test.ts(78,46): error TS6133: 'type' is declared but its value is never read.
+src/phase3-integration.test.ts(78,46): error TS7006: Parameter 'type' implicitly has an 'any' type.
+src/phase3-integration.test.ts(78,52): error TS7006: Parameter 'content' implicitly has an 'any' type.
+src/phase3-integration.test.ts(169,29): error TS6133: 't' is declared but its value is never read.
+src/phase3-integration.test.ts(169,32): error TS6133: 'idx' is declared but its value is never read.
+src/phase4-integration.test.ts(1,71): error TS2307: Cannot find module 'vitest' or its corresponding type declarations.
+src/phase4-integration.test.ts(5,3): error TS6133: 'clientSummaries' is declared but its value is never read.
+src/phase4-integration.test.ts(6,3): error TS6133: 'clientSummarySnapshots' is declared but its value is never read.
+src/phase4-integration.test.ts(11,3): error TS2305: Module '"@freelanceos/db"' has no exported member 'tenants'.
+src/phase4-integration.test.ts(18,10): error TS2305: Module '"./client-summary.js"' has no exported member 'SummaryMapReduceEngine'.
+src/phase4-integration.test.ts(18,34): error TS2305: Module '"./client-summary.js"' has no exported member 'SummaryRepository'.
+src/phase4-integration.test.ts(18,34): error TS6133: 'SummaryRepository' is declared but its value is never read.
+src/phase4-integration.test.ts(20,32): error TS6133: 'InsightRepository' is declared but its value is never read.
+src/phase4-integration.test.ts(28,19): error TS2554: Expected 3 arguments, but got 0.
+src/phase4-integration.test.ts(47,30): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(value: { id: string | SQL<unknown> | Placeholder<string, any>; tenantId: string | SQL<unknown> | Placeholder<string, any>; status: SQL<unknown> | Placeholder<string, any> | ... 4 more ... | "Closed"; ... 8 more ...; suspendedAt?: SQL<...> | ... 2 more ... | null; }): PgInsertBase<...>', gave the following error.
+    Type '"ACTIVE"' is not assignable to type 'SQL<unknown> | Placeholder<string, any> | "Lead" | "Active" | "Suspended" | "Archived" | "Closed"'. Did you mean '"Active"'?
+  Overload 2 of 2, '(values: { id: string | SQL<unknown> | Placeholder<string, any>; tenantId: string | SQL<unknown> | Placeholder<string, any>; status: SQL<unknown> | Placeholder<string, any> | ... 4 more ... | "Closed"; ... 8 more ...; suspendedAt?: SQL<...> | ... 2 more ... | null; }[]): PgInsertBase<...>', gave the following error.
+    Object literal may only specify known properties, and 'id' does not exist in type '{ id: string | SQL<unknown> | Placeholder<string, any>; tenantId: string | SQL<unknown> | Placeholder<string, any>; status: SQL<unknown> | Placeholder<string, any> | ... 4 more ... | "Closed"; ... 8 more ...; suspendedAt?: SQL<...> | ... 2 more ... | null; }[]'.
+src/phase4-integration.test.ts(140,43): error TS2339: Property 'id' does not exist on type 'PgTableWithColumns<{ name: "conversation_imports"; schema: undefined; columns: { createdAt: PgColumn<{ name: "created_at"; tableName: "conversation_imports"; dataType: "date"; columnType: "PgTimestamp"; data: Date; ... 8 more ...; generated: undefined; }, {}, {}>; ... 7 more ...; tenantId: PgColumn<...>; }; dialect:...'.
+src/phase4-integration.test.ts(237,23): error TS2532: Object is possibly 'undefined'.
+src/phase4-integration.test.ts(243,14): error TS2532: Object is possibly 'undefined'.
+src/phase4-integration.test.ts(273,23): error TS2532: Object is possibly 'undefined'.
+src/phase5-integration.test.ts(1,59): error TS2307: Cannot find module 'vitest' or its corresponding type declarations.
+src/phase5-integration.test.ts(4,30): error TS6133: 'clientEmbeddings' is declared but its value is never read.
+src/phase5-integration.test.ts(48,28): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(value: { email: string | SQL<unknown> | Placeholder<string, any>; normalizedEmail: string | SQL<unknown> | Placeholder<string, any>; id?: string | SQL<unknown> | Placeholder<...>; ... 4 more ...; lockedUntil?: SQL<...> | ... 2 more ... | null; }): PgInsertBase<...>', gave the following error.
+    Object literal may only specify known properties, and 'role' does not exist in type '{ email: string | SQL<unknown> | Placeholder<string, any>; normalizedEmail: string | SQL<unknown> | Placeholder<string, any>; id?: string | SQL<unknown> | Placeholder<...>; ... 4 more ...; lockedUntil?: SQL<...> | ... 2 more ... | null; }'.
+  Overload 2 of 2, '(values: { email: string | SQL<unknown> | Placeholder<string, any>; normalizedEmail: string | SQL<unknown> | Placeholder<string, any>; id?: string | SQL<unknown> | Placeholder<...>; ... 4 more ...; lockedUntil?: SQL<...> | ... 2 more ... | null; }[]): PgInsertBase<...>', gave the following error.
+    Object literal may only specify known properties, and 'id' does not exist in type '{ email: string | SQL<unknown> | Placeholder<string, any>; normalizedEmail: string | SQL<unknown> | Placeholder<string, any>; id?: string | SQL<unknown> | Placeholder<...>; ... 4 more ...; lockedUntil?: SQL<...> | ... 2 more ... | null; }[]'.
+src/phase5-integration.test.ts(55,28): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(value: { email: string | SQL<unknown> | Placeholder<string, any>; normalizedEmail: string | SQL<unknown> | Placeholder<string, any>; id?: string | SQL<unknown> | Placeholder<...>; ... 4 more ...; lockedUntil?: SQL<...> | ... 2 more ... | null; }): PgInsertBase<...>', gave the following error.
+    Object literal may only specify known properties, and 'role' does not exist in type '{ email: string | SQL<unknown> | Placeholder<string, any>; normalizedEmail: string | SQL<unknown> | Placeholder<string, any>; id?: string | SQL<unknown> | Placeholder<...>; ... 4 more ...; lockedUntil?: SQL<...> | ... 2 more ... | null; }'.
+  Overload 2 of 2, '(values: { email: string | SQL<unknown> | Placeholder<string, any>; normalizedEmail: string | SQL<unknown> | Placeholder<string, any>; id?: string | SQL<unknown> | Placeholder<...>; ... 4 more ...; lockedUntil?: SQL<...> | ... 2 more ... | null; }[]): PgInsertBase<...>', gave the following error.
+    Object literal may only specify known properties, and 'id' does not exist in type '{ email: string | SQL<unknown> | Placeholder<string, any>; normalizedEmail: string | SQL<unknown> | Placeholder<string, any>; id?: string | SQL<unknown> | Placeholder<...>; ... 4 more ...; lockedUntil?: SQL<...> | ... 2 more ... | null; }[]'.
+src/phase5-integration.test.ts(62,30): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(value: { id: string | SQL<unknown> | Placeholder<string, any>; tenantId: string | SQL<unknown> | Placeholder<string, any>; status: SQL<unknown> | Placeholder<string, any> | ... 4 more ... | "Closed"; ... 8 more ...; suspendedAt?: SQL<...> | ... 2 more ... | null; }): PgInsertBase<...>', gave the following error.
+    Object literal may only specify known properties, and 'name' does not exist in type '{ id: string | SQL<unknown> | Placeholder<string, any>; tenantId: string | SQL<unknown> | Placeholder<string, any>; status: SQL<unknown> | Placeholder<string, any> | ... 4 more ... | "Closed"; ... 8 more ...; suspendedAt?: SQL<...> | ... 2 more ... | null; }'.
+  Overload 2 of 2, '(values: { id: string | SQL<unknown> | Placeholder<string, any>; tenantId: string | SQL<unknown> | Placeholder<string, any>; status: SQL<unknown> | Placeholder<string, any> | ... 4 more ... | "Closed"; ... 8 more ...; suspendedAt?: SQL<...> | ... 2 more ... | null; }[]): PgInsertBase<...>', gave the following error.
+    Object literal may only specify known properties, and 'id' does not exist in type '{ id: string | SQL<unknown> | Placeholder<string, any>; tenantId: string | SQL<unknown> | Placeholder<string, any>; status: SQL<unknown> | Placeholder<string, any> | ... 4 more ... | "Closed"; ... 8 more ...; suspendedAt?: SQL<...> | ... 2 more ... | null; }[]'.
+src/phase5-integration.test.ts(92,14): error TS2532: Object is possibly 'undefined'.
+src/phase5-integration.test.ts(94,14): error TS2532: Object is possibly 'undefined'.
+src/phase5-integration.test.ts(110,14): error TS2532: Object is possibly 'undefined'.
+src/phase5-integration.test.ts(111,14): error TS2532: Object is possibly 'undefined'.
+src/phase5-integration.test.ts(125,14): error TS2532: Object is possibly 'undefined'.
+src/phase6-integration.test.ts(15,24): error TS6133: 'payload' is declared but its value is never read.
+src/phase6-integration.test.ts(45,7): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(value: { tenantId: string | SQL<unknown> | Placeholder<string, any>; description: string | SQL<unknown> | Placeholder<string, any>; ruleKey: string | SQL<unknown> | Placeholder<...>; createdAt?: SQL<...> | ... 1 more ... | Placeholder<...>; updatedAt?: SQL<...> | ... 1 more ... | Placeholder<...>; isActive?: boolean | ... 1 more ... | Placeholder<...>; }): PgInsertBase<...>', gave the following error.
+    Object literal may only specify known properties, and 'id' does not exist in type '{ tenantId: string | SQL<unknown> | Placeholder<string, any>; description: string | SQL<unknown> | Placeholder<string, any>; ruleKey: string | SQL<unknown> | Placeholder<...>; createdAt?: SQL<...> | ... 1 more ... | Placeholder<...>; updatedAt?: SQL<...> | ... 1 more ... | Placeholder<...>; isActive?: boolean | ... ...'.
+  Overload 2 of 2, '(values: { tenantId: string | SQL<unknown> | Placeholder<string, any>; description: string | SQL<unknown> | Placeholder<string, any>; ruleKey: string | SQL<unknown> | Placeholder<...>; createdAt?: SQL<...> | ... 1 more ... | Placeholder<...>; updatedAt?: SQL<...> | ... 1 more ... | Placeholder<...>; isActive?: boolean | ... 1 more ... | Placeholder<...>; }[]): PgInsertBase<...>', gave the following error.
+    Object literal may only specify known properties, and 'id' does not exist in type '{ tenantId: string | SQL<unknown> | Placeholder<string, any>; description: string | SQL<unknown> | Placeholder<string, any>; ruleKey: string | SQL<unknown> | Placeholder<...>; createdAt?: SQL<...> | ... 1 more ... | Placeholder<...>; updatedAt?: SQL<...> | ... 1 more ... | Placeholder<...>; isActive?: boolean | ... ...'.
+src/phase6-integration.test.ts(68,28): error TS2551: Property 'processExtractionResult' does not exist on type 'ScopeExtractionEngineService'. Did you mean 'processExtractedResult'?
+src/phase6-integration.test.ts(70,39): error TS2339: Property 'clientScopes' does not exist on type 'DrizzleTypeError<"Seems like the schema generic is missing - did you forget to add it to your DB type?">'.
+src/phase6-integration.test.ts(80,24): error TS2551: Property 'processExtractionResult' does not exist on type 'ScopeExtractionEngineService'. Did you mean 'processExtractedResult'?
+src/phase6-integration.test.ts(102,24): error TS2532: Object is possibly 'undefined'.
+src/phase6-integration.test.ts(103,25): error TS2532: Object is possibly 'undefined'.
+src/phase6-integration.test.ts(116,37): error TS2339: Property 'clientScopeConfidenceScores' does not exist on type 'DrizzleTypeError<"Seems like the schema generic is missing - did you forget to add it to your DB type?">'.
+src/phase6-integration.test.ts(130,40): error TS2339: Property 'clientScopeConfidenceScores' does not exist on type 'DrizzleTypeError<"Seems like the schema generic is missing - did you forget to add it to your DB type?">'.
+src/phase6-integration.test.ts(148,39): error TS2339: Property 'clientProjectPricingEstimates' does not exist on type 'DrizzleTypeError<"Seems like the schema generic is missing - did you forget to add it to your DB type?">'.
+src/phase8-integration.test.ts(5,10): error TS2724: '"./services/job-normalization-engine.service.js"' has no exported member named 'JobNormalizationEngineService'. Did you mean 'JobNormalizationEngine'?
+src/phase8-integration.test.ts(10,1): error TS6133: 'JobMatchExplanationService' is declared but its value is never read.
+src/phase8-integration.test.ts(12,1): error TS6133: 'AiGatewayService' is declared but its value is never read.
+src/phase8-integration.test.ts(104,24): error TS2532: Object is possibly 'undefined'.
+src/phase8-integration.test.ts(108,11): error TS6133: 'tenantId' is declared but its value is never read.
+src/phase8-integration.test.ts(109,11): error TS6133: 'maliciousTenantId' is declared but its value is never read.
+src/phase8-integration.test.ts(110,11): error TS6133: 'jobId' is declared but its value is never read.
+src/services/ai-queue-service.ts(10,22): error TS2709: Cannot use namespace 'Redis' as a type.
+src/services/ai-queue-service.ts(11,24): error TS2709: Cannot use namespace 'Redis' as a type.
+src/services/ai-queue-service.ts(14,26): error TS2351: This expression is not constructable.
+  Type 'typeof import("D:/FreelanceAI/node_modules/ioredis/built/index")' has no construct signatures.
+src/services/ai-queue-service.ts(15,28): error TS2351: This expression is not constructable.
+  Type 'typeof import("D:/FreelanceAI/node_modules/ioredis/built/index")' has no construct signatures.
+src/services/ai-queue-service.ts(102,32): error TS2551: Property 'processExtractionResult' does not exist on type 'ScopeExtractionEngineService'. Did you mean 'processExtractedResult'?
+src/services/ai-queue-service.ts(107,71): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+src/services/ai-queue-service.ts(112,67): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+src/services/ai-queue-service.ts(117,68): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+src/services/ai-queue-service.ts(129,37): error TS6133: 'jobId' is declared but its value is never read.
+src/services/client-memory-engine.ts(2,19): error TS6133: 'sql' is declared but its value is never read.
+src/services/client-memory-engine.ts(21,11): error TS6133: 'gateway' is declared but its value is never read.
+src/services/client-memory-engine.ts(28,5): error TS2412: Type 'AiGatewayService | undefined' is not assignable to type 'AiGatewayService' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the type of the target.
+  Type 'undefined' is not assignable to type 'AiGatewayService'.
+src/services/client-memory-engine.ts(112,11): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(value: { tenantId: string | SQL<unknown> | Placeholder<string, any>; clientId: string | SQL<unknown> | Placeholder<string, any>; memoryKey: string | SQL<unknown> | Placeholder<...>; contentBuffer: string | ... 1 more ... | Placeholder<...>; createdAt?: SQL<...> | ... 1 more ... | Placeholder<...>; updatedAt?: SQL<...> | ... 1 more ... | Placeholder<...>; version?: number | ... 1 more ... | Placeholder<...>; }): PgInsertBase<...>', gave the following error.
+    Object literal may only specify known properties, and 'id' does not exist in type '{ tenantId: string | SQL<unknown> | Placeholder<string, any>; clientId: string | SQL<unknown> | Placeholder<string, any>; memoryKey: string | SQL<unknown> | Placeholder<...>; contentBuffer: string | ... 1 more ... | Placeholder<...>; createdAt?: SQL<...> | ... 1 more ... | Placeholder<...>; updatedAt?: SQL<...> | .....'.
+  Overload 2 of 2, '(values: { tenantId: string | SQL<unknown> | Placeholder<string, any>; clientId: string | SQL<unknown> | Placeholder<string, any>; memoryKey: string | SQL<unknown> | Placeholder<...>; contentBuffer: string | ... 1 more ... | Placeholder<...>; createdAt?: SQL<...> | ... 1 more ... | Placeholder<...>; updatedAt?: SQL<...> | ... 1 more ... | Placeholder<...>; version?: number | ... 1 more ... | Placeholder<...>; }[]): PgInsertBase<...>', gave the following error.
+    Object literal may only specify known properties, and 'id' does not exist in type '{ tenantId: string | SQL<unknown> | Placeholder<string, any>; clientId: string | SQL<unknown> | Placeholder<string, any>; memoryKey: string | SQL<unknown> | Placeholder<...>; contentBuffer: string | ... 1 more ... | Placeholder<...>; createdAt?: SQL<...> | ... 1 more ... | Placeholder<...>; updatedAt?: SQL<...> | .....'.
+src/services/client-memory-engine.ts(139,31): error TS2339: Property 'id' does not exist on type 'PgTableWithColumns<{ name: "client_memories"; schema: undefined; columns: { createdAt: PgColumn<{ name: "created_at"; tableName: "client_memories"; dataType: "date"; columnType: "PgTimestamp"; data: Date; driverParam: string; ... 7 more ...; generated: undefined; }, {}, {}>; ... 5 more ...; tenantId: PgColumn<...>; ...'.
+src/services/client-memory-engine.ts(139,44): error TS2339: Property 'id' does not exist on type '{ tenantId: string; clientId: string; createdAt: Date; updatedAt: Date; memoryKey: string; contentBuffer: string; version: number; }'.
+src/services/client-memory-engine.ts(151,35): error TS2769: No overload matches this call.
+  The last overload gave the following error.
+    Argument of type '"CLIENT_MEMORY_UPDATED"' is not assignable to parameter of type '"IDENTITY_INVALIDATED"'.
+src/services/confidence-scoring-engine.ts(21,22): error TS6138: Property 'gatewayService' is declared but its value is never read.
+src/services/confidence-scoring-engine.ts(87,11): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(value: { tenantId: string | SQL<unknown> | Placeholder<string, any>; clientId: string | SQL<unknown> | Placeholder<string, any>; createdAt?: SQL<unknown> | Date | Placeholder<...>; ... 4 more ...; adjustedScore?: string | ... 1 more ... | Placeholder<...>; }): PgInsertBase<...>', gave the following error.
+    Object literal may only specify known properties, and 'id' does not exist in type '{ tenantId: string | SQL<unknown> | Placeholder<string, any>; clientId: string | SQL<unknown> | Placeholder<string, any>; createdAt?: SQL<unknown> | Date | Placeholder<...>; ... 4 more ...; adjustedScore?: string | ... 1 more ... | Placeholder<...>; }'.
+  Overload 2 of 2, '(values: { tenantId: string | SQL<unknown> | Placeholder<string, any>; clientId: string | SQL<unknown> | Placeholder<string, any>; createdAt?: SQL<unknown> | Date | Placeholder<...>; ... 4 more ...; adjustedScore?: string | ... 1 more ... | Placeholder<...>; }[]): PgInsertBase<...>', gave the following error.
+    Object literal may only specify known properties, and 'id' does not exist in type '{ tenantId: string | SQL<unknown> | Placeholder<string, any>; clientId: string | SQL<unknown> | Placeholder<string, any>; createdAt?: SQL<unknown> | Date | Placeholder<...>; ... 4 more ...; adjustedScore?: string | ... 1 more ... | Placeholder<...>; }[]'.
+src/services/embedding-engine.ts(14,32): error TS6138: Property 'aiGateway' is declared but its value is never read.
+src/services/embedding-engine.ts(35,12): error TS2532: Object is possibly 'undefined'.
+src/services/embedding-engine.ts(50,26): error TS2379: Argument of type '{ tenantId: string; clientId: string; resourceType: "SUMMARY" | "MEMORY" | "INSIGHT" | "DOCUMENT"; resourceId: string; chunkText: string; metadata: Record<string, any> | undefined; }' is not assignable to parameter of type 'EmbedChunkRequest' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+  Types of property 'metadata' are incompatible.
+    Type 'Record<string, any> | undefined' is not assignable to type 'Record<string, any>'.
+      Type 'undefined' is not assignable to type 'Record<string, any>'.
+src/services/embedding-engine.ts(67,31): error TS6133: 'tenantId' is declared but its value is never read.
+src/services/embedding-engine.ts(92,12): error TS18046: 'data' is of type 'unknown'.
+src/services/import-stream-engine.ts(77,78): error TS2322: Type 'unknown' is not assignable to type 'Error | undefined'.
+src/services/import-stream-engine.ts(116,39): error TS2769: No overload matches this call.
+  The last overload gave the following error.
+    Argument of type '"BULK_IMPORT_COMPLETED"' is not assignable to parameter of type '"IDENTITY_INVALIDATED"'.
+src/services/insight-engine.ts(4,28): error TS6133: 'GatewayRequestOptions' is declared but its value is never read.
+src/services/insight-engine.ts(89,57): error TS2345: Argument of type '{ systemPrompt: string; userPrompt: string; contextReference: string; }' is not assignable to parameter of type 'GatewayRequestOptions'.
+  Type '{ systemPrompt: string; userPrompt: string; contextReference: string; }' is missing the following properties from type 'GatewayRequestOptions': tenantId, ownerId
+src/services/insight-engine.ts(107,11): error TS2322: Type 'unknown' is not assignable to type 'Error | undefined'.
+src/services/insight-engine.ts(123,11): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(value: { tenantId: string | SQL<unknown> | Placeholder<string, any>; clientId: string | SQL<unknown> | Placeholder<string, any>; description: string | SQL<...> | Placeholder<...>; ... 5 more ...; status?: string | ... 1 more ... | Placeholder<...>; }): PgInsertBase<...>', gave the following error.
+    Object literal may only specify known properties, and 'id' does not exist in type '{ tenantId: string | SQL<unknown> | Placeholder<string, any>; clientId: string | SQL<unknown> | Placeholder<string, any>; description: string | SQL<unknown> | Placeholder<...>; ... 5 more ...; status?: string | ... 1 more ... | Placeholder<...>; }'.
+  Overload 2 of 2, '(values: { tenantId: string | SQL<unknown> | Placeholder<string, any>; clientId: string | SQL<unknown> | Placeholder<string, any>; description: string | SQL<...> | Placeholder<...>; ... 5 more ...; status?: string | ... 1 more ... | Placeholder<...>; }[]): PgInsertBase<...>', gave the following error.
+    Object literal may only specify known properties, and 'id' does not exist in type '{ tenantId: string | SQL<unknown> | Placeholder<string, any>; clientId: string | SQL<unknown> | Placeholder<string, any>; description: string | SQL<unknown> | Placeholder<...>; ... 5 more ...; status?: string | ... 1 more ... | Placeholder<...>; }[]'.
+src/services/insight-engine.ts(146,37): error TS2769: No overload matches this call.
+  The last overload gave the following error.
+    Argument of type '"INSIGHT_GENERATED"' is not assignable to parameter of type '"IDENTITY_INVALIDATED"'.
+src/services/job-embedding-engine.service.ts(73,15): error TS2304: Cannot find name 'jobs'.
+src/services/job-import-stream-engine.ts(64,23): error TS2304: Cannot find name 'jobs'.
+src/services/job-import-stream-engine.ts(70,30): error TS2339: Property 'sourcePlatform' does not exist on type 'PgTableWithColumns<{ name: "job_imports"; schema: undefined; columns: { createdAt: PgColumn<{ name: "created_at"; tableName: "job_imports"; dataType: "date"; columnType: "PgTimestamp"; data: Date; driverParam: string; ... 7 more ...; generated: undefined; }, {}, {}>; ... 12 more ...; snapshots: PgColumn<...>; }; dia...'.
+src/services/job-leaderboard-ranking.service.ts(59,25): error TS2339: Property 'weightedScore' does not exist on type 'PgTableWithColumns<{ name: "job_matches"; schema: undefined; columns: { createdAt: PgColumn<{ name: "created_at"; tableName: "job_matches"; dataType: "date"; columnType: "PgTimestamp"; data: Date; driverParam: string; ... 7 more ...; generated: undefined; }, {}, {}>; ... 13 more ...; snapshots: PgColumn<...>; }; dia...'.
+src/services/job-leaderboard-ranking.service.ts(61,27): error TS2339: Property 'weightedScore' does not exist on type 'PgTableWithColumns<{ name: "job_matches"; schema: undefined; columns: { createdAt: PgColumn<{ name: "created_at"; tableName: "job_matches"; dataType: "date"; columnType: "PgTimestamp"; data: Date; driverParam: string; ... 7 more ...; generated: undefined; }, {}, {}>; ... 13 more ...; snapshots: PgColumn<...>; }; dia...'.
+src/services/job-leaderboard-ranking.service.ts(73,35): error TS2339: Property 'weightedScore' does not exist on type 'PgTableWithColumns<{ name: "job_matches"; schema: undefined; columns: { createdAt: PgColumn<{ name: "created_at"; tableName: "job_matches"; dataType: "date"; columnType: "PgTimestamp"; data: Date; driverParam: string; ... 7 more ...; generated: undefined; }, {}, {}>; ... 13 more ...; snapshots: PgColumn<...>; }; dia...'.
+src/services/job-leaderboard-ranking.service.ts(74,41): error TS2339: Property 'vectorDistanceScore' does not exist on type 'PgTableWithColumns<{ name: "job_matches"; schema: undefined; columns: { createdAt: PgColumn<{ name: "created_at"; tableName: "job_matches"; dataType: "date"; columnType: "PgTimestamp"; data: Date; driverParam: string; ... 7 more ...; generated: undefined; }, {}, {}>; ... 13 more ...; snapshots: PgColumn<...>; }; dia...'.
+src/services/job-leaderboard-ranking.service.ts(75,39): error TS2339: Property 'booleanStackScore' does not exist on type 'PgTableWithColumns<{ name: "job_matches"; schema: undefined; columns: { createdAt: PgColumn<{ name: "created_at"; tableName: "job_matches"; dataType: "date"; columnType: "PgTimestamp"; data: Date; driverParam: string; ... 7 more ...; generated: undefined; }, {}, {}>; ... 13 more ...; snapshots: PgColumn<...>; }; dia...'.
+src/services/job-leaderboard-ranking.service.ts(76,45): error TS2339: Property 'financialAlignmentScore' does not exist on type 'PgTableWithColumns<{ name: "job_matches"; schema: undefined; columns: { createdAt: PgColumn<{ name: "created_at"; tableName: "job_matches"; dataType: "date"; columnType: "PgTimestamp"; data: Date; driverParam: string; ... 7 more ...; generated: undefined; }, {}, {}>; ... 13 more ...; snapshots: PgColumn<...>; }; dia...'.
+src/services/job-leaderboard-ranking.service.ts(83,25): error TS2339: Property 'weightedScore' does not exist on type 'PgTableWithColumns<{ name: "job_matches"; schema: undefined; columns: { createdAt: PgColumn<{ name: "created_at"; tableName: "job_matches"; dataType: "date"; columnType: "PgTimestamp"; data: Date; driverParam: string; ... 7 more ...; generated: undefined; }, {}, {}>; ... 13 more ...; snapshots: PgColumn<...>; }; dia...'.
+src/services/job-leaderboard-ranking.service.ts(95,20): error TS18048: 'lastItem' is possibly 'undefined'.
+src/services/job-leaderboard-ranking.service.ts(96,26): error TS18048: 'lastItem' is possibly 'undefined'.
+src/services/job-leaderboard-ranking.service.ts(100,5): error TS2375: Type '{ data: { id: string; freelancerId: string; weightedScore: any; vectorDistanceScore: any; booleanStackScore: any; financialAlignmentScore: any; }[]; nextCursor: LeaderboardCursor | undefined; }' is not assignable to type 'LeaderboardResult' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+  Types of property 'nextCursor' are incompatible.
+    Type 'LeaderboardCursor | undefined' is not assignable to type 'LeaderboardCursor'.
+      Type 'undefined' is not assignable to type 'LeaderboardCursor'.
+src/services/job-match-explanation.service.ts(25,22): error TS6138: Property 'aiGateway' is declared but its value is never read.
+src/services/job-match-explanation.service.ts(141,44): error TS2339: Property 'description' does not exist on type '{ status: "ARCHIVED" | "RECEIVED" | "IMPORTED"; createdAt: Date; updatedAt: Date; id: string; tenantId: string; ownerId: string; snapshots: unknown; clientId: string | null; source: string; ... 4 more ...; fingerprint: string; }'.
+src/services/job-match-explanation.service.ts(142,38): error TS2339: Property 'tags' does not exist on type '{ status: "ARCHIVED" | "RECEIVED" | "IMPORTED"; createdAt: Date; updatedAt: Date; id: string; tenantId: string; ownerId: string; snapshots: unknown; clientId: string | null; source: string; ... 4 more ...; fingerprint: string; }'.
+src/services/job-match-explanation.service.ts(146,13): error TS6133: 'promptPayload' is declared but its value is never read.
+src/services/job-match-explanation.service.ts(150,31): error TS2339: Property 'title' does not exist on type '{ status: "ARCHIVED" | "RECEIVED" | "IMPORTED"; createdAt: Date; updatedAt: Date; id: string; tenantId: string; ownerId: string; snapshots: unknown; clientId: string | null; source: string; ... 4 more ...; fingerprint: string; }'.
+src/services/job-normalization-engine.service.ts(5,1): error TS6133: 'crypto' is declared but its value is never read.
+src/services/job-orchestrator.service.ts(2,10): error TS2724: '"./job-normalization-engine.service.js"' has no exported member named 'JobNormalizationEngineService'. Did you mean 'JobNormalizationEngine'?
+src/services/outbox-worker.ts(2,14): error TS6133: 'and' is declared but its value is never read.
+src/services/outbox-worker.ts(29,69): error TS2322: Type 'unknown' is not assignable to type 'Error | undefined'.
+src/services/outbox-worker.ts(67,20): error TS2352: Conversion of type 'QueryResult<Record<string, unknown>>' to type 'any[]' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.
+  Type 'QueryResult<Record<string, unknown>>' is missing the following properties from type 'any[]': length, pop, push, concat, and 29 more.
+src/services/outbox-worker.ts(90,36): error TS2339: Property 'id' does not exist on type 'PgTableWithColumns<{ name: "outbox_events"; schema: undefined; columns: { processedAt: PgColumn<{ name: "processed_at"; tableName: "outbox_events"; dataType: "date"; columnType: "PgTimestamp"; data: Date; driverParam: string; ... 7 more ...; generated: undefined; }, {}, {}>; ... 5 more ...; tenantId: PgColumn<...>; ...'.
+src/services/outbox-worker.ts(97,13): error TS2322: Type 'unknown' is not assignable to type 'Error | undefined'.
+src/services/outbox-worker.ts(106,36): error TS2339: Property 'id' does not exist on type 'PgTableWithColumns<{ name: "outbox_events"; schema: undefined; columns: { processedAt: PgColumn<{ name: "processed_at"; tableName: "outbox_events"; dataType: "date"; columnType: "PgTimestamp"; data: Date; driverParam: string; ... 7 more ...; generated: undefined; }, {}, {}>; ... 5 more ...; tenantId: PgColumn<...>; ...'.
+src/services/pricing-intelligence-engine.ts(23,22): error TS6138: Property 'gatewayService' is declared but its value is never read.
+src/services/pricing-intelligence-engine.ts(102,11): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(value: { tenantId: string | SQL<unknown> | Placeholder<string, any>; clientId: string | SQL<unknown> | Placeholder<string, any>; createdAt?: Date | SQL<...> | Placeholder<...>; ... 6 more ...; totalEstimatedValue?: string | ... 1 more ... | Placeholder<...>; }): PgInsertBase<...>', gave the following error.
+    Object literal may only specify known properties, and 'id' does not exist in type '{ tenantId: string | SQL<unknown> | Placeholder<string, any>; clientId: string | SQL<unknown> | Placeholder<string, any>; createdAt?: Date | SQL<unknown> | Placeholder<...>; ... 6 more ...; totalEstimatedValue?: string | ... 1 more ... | Placeholder<...>; }'.
+  Overload 2 of 2, '(values: { tenantId: string | SQL<unknown> | Placeholder<string, any>; clientId: string | SQL<unknown> | Placeholder<string, any>; createdAt?: Date | SQL<...> | Placeholder<...>; ... 6 more ...; totalEstimatedValue?: string | ... 1 more ... | Placeholder<...>; }[]): PgInsertBase<...>', gave the following error.
+    Object literal may only specify known properties, and 'id' does not exist in type '{ tenantId: string | SQL<unknown> | Placeholder<string, any>; clientId: string | SQL<unknown> | Placeholder<string, any>; createdAt?: Date | SQL<unknown> | Placeholder<...>; ... 6 more ...; totalEstimatedValue?: string | ... 1 more ... | Placeholder<...>; }[]'.
+src/services/pricing-intelligence-engine.ts(127,23): error TS2339: Property 'dispatch' does not exist on type 'EventDispatcher'.
+src/services/re-ranking-engine.ts(11,32): error TS6138: Property 'aiGateway' is declared but its value is never read.
+src/services/re-ranking-engine.ts(59,5): error TS6133: 'queryText' is declared but its value is never read.
+src/services/scope-extraction-engine.ts(20,22): error TS6138: Property 'gatewayService' is declared but its value is never read.
+src/services/scope-extraction-engine.ts(80,11): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(value: { tenantId: string | SQL<unknown> | Placeholder<string, any>; clientId: string | SQL<unknown> | Placeholder<string, any>; createdAt?: SQL<unknown> | Date | Placeholder<...>; updatedAt?: SQL<...> | ... 1 more ... | Placeholder<...>; projectSpecs?: unknown; rawTextData?: string | ... 2 more ... | null; }): PgInsertBase<...>', gave the following error.
+    Object literal may only specify known properties, and 'id' does not exist in type '{ tenantId: string | SQL<unknown> | Placeholder<string, any>; clientId: string | SQL<unknown> | Placeholder<string, any>; createdAt?: SQL<unknown> | Date | Placeholder<...>; updatedAt?: SQL<...> | ... 1 more ... | Placeholder<...>; projectSpecs?: unknown; rawTextData?: string | ... 2 more ... | null; }'.
+  Overload 2 of 2, '(values: { tenantId: string | SQL<unknown> | Placeholder<string, any>; clientId: string | SQL<unknown> | Placeholder<string, any>; createdAt?: SQL<unknown> | Date | Placeholder<...>; updatedAt?: SQL<...> | ... 1 more ... | Placeholder<...>; projectSpecs?: unknown; rawTextData?: string | ... 2 more ... | null; }[]): PgInsertBase<...>', gave the following error.
+    Object literal may only specify known properties, and 'id' does not exist in type '{ tenantId: string | SQL<unknown> | Placeholder<string, any>; clientId: string | SQL<unknown> | Placeholder<string, any>; createdAt?: SQL<unknown> | Date | Placeholder<...>; updatedAt?: SQL<...> | ... 1 more ... | Placeholder<...>; projectSpecs?: unknown; rawTextData?: string | ... 2 more ... | null; }[]'.
+src/services/scope-rules-engine.ts(22,22): error TS6138: Property 'gatewayService' is declared but its value is never read.
+src/services/scope-rules-engine.ts(121,23): error TS2339: Property 'dispatch' does not exist on type 'EventDispatcher'.
+src/subscribers/embedding-subscriber.ts(14,19): error TS2339: Property 'subscribe' does not exist on type 'EventDispatcher'.
+src/subscribers/embedding-subscriber.ts(38,28): error TS2339: Property 'id' does not exist on type '{ tenantId: string; clientId: string; createdAt: Date; updatedAt: Date; status: string; sourceProvider: string; externalReferenceId: string; payload: unknown; processedAt: Date | null; }'.
+src/subscribers/embedding-subscriber.ts(39,34): error TS2551: Property 'rawPayload' does not exist on type '{ tenantId: string; clientId: string; createdAt: Date; updatedAt: Date; status: string; sourceProvider: string; externalReferenceId: string; payload: unknown; processedAt: Date | null; }'. Did you mean 'payload'?
+src/subscribers/embedding-subscriber.ts(39,67): error TS2551: Property 'rawPayload' does not exist on type '{ tenantId: string; clientId: string; createdAt: Date; updatedAt: Date; status: string; sourceProvider: string; externalReferenceId: string; payload: unknown; processedAt: Date | null; }'. Did you mean 'payload'?
+src/subscribers/embedding-subscriber.ts(39,102): error TS2551: Property 'rawPayload' does not exist on type '{ tenantId: string; clientId: string; createdAt: Date; updatedAt: Date; status: string; sourceProvider: string; externalReferenceId: string; payload: unknown; processedAt: Date | null; }'. Did you mean 'payload'?
+npm error Lifecycle script `typecheck` failed with error:
+npm error code 2
+npm error path D:\FreelanceAI\packages\core
+npm error workspace @freelanceos/core@0.1.0
+npm error location D:\FreelanceAI\packages\core
+npm error command failed
+npm error command C:\Windows\system32\cmd.exe /d /s /c tsc --noEmit

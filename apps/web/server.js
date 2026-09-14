@@ -20,7 +20,7 @@ import { eventDispatcher } from "@freelanceos/auth";
 import { PostgresGatewayRepository, PostgresPromptRepository, PostgresCompositionRepository } from "@freelanceos/db";
 import { RedisUsageRepository, RedisCacheStore } from "@freelanceos/redis";
 import { fileURLToPath } from "url";
-import { randomUUID } from "crypto";
+import crypto, { randomUUID } from "crypto";
 import { eq, and, desc, inArray, sql, ne, gt, isNull } from "drizzle-orm";
 import {
   signupUser,
@@ -442,6 +442,8 @@ const healthService = {
 const promptsStore = [];
 const memoryStore = [];
 const policiesStore = [];
+const extensionAuthCodes = new Map();
+
 
 const server = http.createServer(async (req, res) => {
   const startTime = performance.now();
@@ -658,7 +660,7 @@ const server = http.createServer(async (req, res) => {
 
         // Build session metadata from request details
         const userAgent = req.headers["user-agent"] || "unknown";
-        const ipAddress = req.socket.remoteAddress || "127.0.0.1";
+        const ipAddress = req.headers["x-forwarded-for"] || req.socket.remoteAddress || "127.0.0.1";
         const sessionMetadata = parseUserAgent(userAgent, ipAddress);
 
         const result = await signupUser({
@@ -681,6 +683,7 @@ const server = http.createServer(async (req, res) => {
           }),
         );
       } catch (err) {
+        console.error("SIGNUP 500 ERROR:", err);
         logger.error({
           message: "Signup API request failed",
           error: err instanceof Error ? err : new Error(String(err)),
@@ -989,14 +992,42 @@ const server = http.createServer(async (req, res) => {
   async function checkAuthentication() {
     let sessionToken = "";
     if (req.headers.cookie) {
+      const cookieName = runtimeConfig.SESSION_COOKIE_NAME;
       const cookies = req.headers.cookie.split(";").map((c) => c.trim());
-      const sessionCookie = cookies.find((c) => c.startsWith("session_token="));
+      const sessionCookie = cookies.find((c) => c.startsWith(`${cookieName}=`));
       if (sessionCookie) {
         sessionToken = sessionCookie.split("=")[1];
       }
     }
 
-    if (!sessionToken) return null;
+    let extensionAuth = null;
+    if (!sessionToken && req.headers.authorization && req.headers.authorization.startsWith("Bearer ")) {
+      try {
+        const { verifyExtensionToken, findActiveSession } = await import("@freelanceos/auth");
+        extensionAuth = verifyExtensionToken(req.headers.authorization.substring(7));
+        
+        // Ensure the session hasn't been revoked/logged out
+        if (extensionAuth.sessionId && extensionAuth.sessionId !== "unknown") {
+          const sessionData = await findActiveSession(extensionAuth.sessionId);
+          if (!sessionData) {
+            throw new Error("Session revoked or expired");
+          }
+        }
+      } catch (e) {
+        console.error("Extension token invalid", e);
+        extensionAuth = null;
+      }
+    }
+
+    if (extensionAuth) {
+      return {
+        userId: extensionAuth.userId,
+        email: extensionAuth.email,
+        tenantId: "tenant_" + extensionAuth.userId
+      };
+    }
+
+    if (!sessionToken) { console.log('NO SESSION TOKEN'); return null; }
     try {
       const authResult = await authenticateRequest({
         credentialToken: sessionToken,
@@ -1011,7 +1042,9 @@ const server = http.createServer(async (req, res) => {
             authResult.context.identity.sessionId = decoded.sessionId;
           }
         } catch(e) {}
-        return authResult.context.identity;
+        const identity = authResult.context.identity; 
+        identity.tenantId = "tenant_" + identity.userId;
+        return identity;
       }
     } catch (e) {
       console.error(e);
@@ -1053,11 +1086,11 @@ const server = http.createServer(async (req, res) => {
   }
 
   function requireAuthenticatedOwner(auth) {
-    if (!auth?.context?.identity?.userId) {
+    if (!auth?.userId) {
       sendJson(401, { success: false, error: "Unauthorized" });
       return null;
     }
-    return auth.context.identity.userId;
+    return auth.userId;
   }
 
   const CLIENT_STATUSES = ["Lead", "Active", "Suspended", "Archived", "Closed"];
@@ -4782,6 +4815,172 @@ const server = http.createServer(async (req, res) => {
   }
 
       // PHASE 8: REST STREAM GATEWAY & LEADERBOARD ENTRY REGISTRATION
+
+  if (pathname === '/api/extension/authorize' && req.method === 'GET') {
+    const auth = await checkAuthentication();
+    if (!auth?.userId) {
+       res.writeHead(401, { 'Content-Type': 'text/html' });
+       res.end('<h1>Authentication Required</h1><p>Please log in to FreelanceOS before authorizing the extension.</p>');
+       return;
+    }
+    const challenge = parsedUrl.searchParams.get('challenge');
+    if (!challenge) {
+       res.writeHead(400, { 'Content-Type': 'text/html' });
+       res.end('<h1>Missing Challenge</h1>');
+       return;
+    }
+    
+    
+      const csrfToken = crypto.randomUUID();
+      res.setHeader('Set-Cookie', `ext_csrf=${csrfToken}; HttpOnly; Path=/api/extension; SameSite=Lax`);
+
+      res.writeHead(200, { 'Content-Type': 'text/html' });
+    res.end(`
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>Authorize Extension</title>
+        <style>
+          body { font-family: system-ui; max-width: 400px; margin: 40px auto; text-align: center; }
+          .btn { background: #007bff; color: white; border: none; padding: 10px 20px; font-size: 16px; border-radius: 4px; cursor: pointer; }
+          .btn-cancel { background: #ccc; margin-top: 10px; }
+        </style>
+      </head>
+      <body>
+        <h2>Authorize FreelanceOS Extension</h2>
+        <p>The extension is requesting access to your account.</p>
+        <form method='POST' action='/api/extension/approve'>
+          <input type='hidden' name='challenge' value='${challenge}' />
+            <input type='hidden' name='csrf' value='${csrfToken}' />
+          <input type='hidden' name='action' value='approve' />
+          <button type='submit' class='btn'>Authorize Extension</button>
+        </form>
+        <form method='POST' action='/api/extension/approve'>
+          <input type='hidden' name='action' value='deny' />
+            <input type='hidden' name='csrf' value='${csrfToken}' />
+          <button type='submit' class='btn btn-cancel'>Cancel</button>
+        </form>
+      </body>
+      </html>
+    `);
+    return;
+  }
+
+  if (pathname === '/api/extension/approve' && req.method === 'POST') {
+    const auth = await checkAuthentication();
+    if (!auth?.userId) {
+       res.writeHead(401, { 'Content-Type': 'text/html' });
+       res.end('<h1>Authentication Required</h1>');
+       return;
+    }
+    
+    let body = '';
+    req.on('data', chunk => { body += chunk.toString(); });
+    req.on('end', () => {
+      const params = new URLSearchParams(body);
+      const action = params.get('action');
+        const csrfPayload = params.get('csrf');
+        const cookieHeader = req.headers.cookie || '';
+        const csrfCookieMatch = cookieHeader.match(/ext_csrf=([^;]+)/);
+        const csrfCookie = csrfCookieMatch ? csrfCookieMatch[1] : null;
+        if (!csrfPayload || !csrfCookie || csrfPayload !== csrfCookie) {
+          res.writeHead(403, { 'Content-Type': 'text/html' });
+          res.end('<h1>CSRF Validation Failed</h1>');
+          return;
+        }
+
+      if (action === 'deny') {
+        res.writeHead(302, { Location: '/api/extension/callback#error=denied' });
+        res.end();
+        return;
+      }
+      
+      const challenge = params.get('challenge');
+            const code = crypto.randomBytes(32).toString('hex');
+      
+      extensionAuthCodes.set(code, {
+        userId: auth.userId,
+        email: auth.email,
+        tenantId: auth.tenantId,
+        sessionId: auth.sessionId,
+        challenge: challenge,
+        expiresAt: Date.now() + 5 * 60 * 1000
+      });
+      
+      res.writeHead(302, { Location: `/api/extension/callback#code=${code}` });
+      res.end();
+    });
+    return;
+  }
+
+  if (pathname === '/api/extension/exchange' && req.method === 'POST') {
+    let body = '';
+    req.on('data', chunk => { body += chunk.toString(); });
+    req.on('end', async () => {
+      try {
+        const payload = JSON.parse(body);
+        const { code, verifier } = payload;
+        
+        const record = extensionAuthCodes.get(code);
+        if (!record) {
+           sendJson(400, { success: false, error: 'Invalid or expired authorization code' });
+           return;
+        }
+        extensionAuthCodes.delete(code);
+        
+        if (Date.now() > record.expiresAt) {
+           sendJson(400, { success: false, error: 'Authorization expired' });
+           return;
+        }
+        
+                const hash = crypto.createHash('sha256').update(verifier).digest();
+        const expectedChallenge = hash.toString('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+        
+        
+          const expectedChallengeBuffer = Buffer.from(expectedChallenge);
+          const recordChallengeBuffer = Buffer.from(record.challenge);
+          let match = false;
+          if (expectedChallengeBuffer.length === recordChallengeBuffer.length) {
+            match = crypto.timingSafeEqual(expectedChallengeBuffer, recordChallengeBuffer);
+          }
+          if (!match) {
+
+           sendJson(400, { success: false, error: 'Invalid verifier' });
+           return;
+        }
+        
+        const { signExtensionToken, findActiveSession } = await import('@freelanceos/auth');
+        
+        if (!(await findActiveSession(record.sessionId))) {
+           sendJson(401, { success: false, error: 'Authentication required' });
+           return;
+        }
+        
+        const token = signExtensionToken(record.userId, record.email, record.sessionId);
+        sendJson(200, { success: true, token, tenantId: record.tenantId });
+      } catch (e) {
+        sendJson(500, { success: false, error: 'Backend unavailable' });
+      }
+    });
+    return;
+  }
+
+  if (pathname === '/api/extension/token' && req.method === 'GET') {
+    const auth = await checkAuthentication();
+    const ownerId = requireAuthenticatedOwner(auth);
+    if (!ownerId) return;
+
+    try {
+      const { signExtensionToken } = await import('@freelanceos/auth');
+      // Pass the active sessionId from auth context
+      const token = signExtensionToken(auth.userId, auth.email, auth.sessionId || "unknown");
+      sendJson(200, { success: true, token, tenantId: auth.tenantId });
+    } catch (e) {
+      handleClientApiError(e);
+    }
+    return;
+  }
+
   if (pathname === '/api/jobs/import' && req.method === 'POST') {
     const auth = await checkAuthentication();
     const ownerId = requireAuthenticatedOwner(auth);
